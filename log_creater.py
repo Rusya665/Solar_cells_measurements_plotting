@@ -2,13 +2,15 @@ from read_iv import ReadData
 import os
 from pathlib import Path
 from datetime import datetime
+import time
 
 
 class LogCreate:
-    def __init__(self, path: str):
+    def __init__(self, path: str, start_time: float):
         if not path.endswith('/'):  # Adding the '/' at the end of the given path if not there
             path = path + '/'
         self.main_path = path
+        self.start_time = start_time
         self._indicator = os.path.basename(os.path.dirname(self.main_path))  # See scratch.txt
         self.log_folder = self.create_folder()
         self.log()
@@ -44,8 +46,7 @@ class LogCreate:
             #     log.write(f'Ageing video: {video_name}\n')
             #     log.write(f'Frame rate: {frame_rate}\n')
             #     log.write(f'Frame size: {img_shape(cropped[0])[0:2]}\n')
-            # log.write(f'\nImages processing time: \t{executed_time - start_time} sec'
-            #           f'\nTotal time: \t{time.time() - start_time} sec\n')
+            log.write(f'\nTotal analyzing and plotting time: \t{time.time() - self.start_time} sec')
         os.startfile(log_path)
 
 

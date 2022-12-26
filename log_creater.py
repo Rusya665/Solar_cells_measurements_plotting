@@ -31,8 +31,8 @@ class LogCreate:
             log.write(f"Date: {today}\n\n")
             log.write(f"Source folder: {self.main_path}\n")
             log.write(f'Source folder contained:\n')
-            for i, j in enumerate(ReadData.data_files):
-                log.write(f"{i + 1}. {j}\n")
+            for i, j in enumerate(zip(ReadData.data_files, ReadData.encoding_list)):
+                log.write(f"{i + 1}. {j[0]} \t encoding={j[1]}\n")
 
             # # print(f'Skipped list: {skipped_img_index}')
             # if skipped_img_index:

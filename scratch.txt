@@ -1,0 +1,8 @@
+Question to ask:
+1. What is the current hierarchy for the storing the data? I mean were in the path to raw data file is the name of the
+project/bath/any-indicator?
+2. Do we need some sorting?
+3. Check all potentiostats output. It seems like Gamry returns current as I, but not as mI
+
+Things to do:
+1. Apply sorting if said so in Q2.

@@ -1,8 +1,10 @@
-from read_iv import ReadData
 import os
-from pathlib import Path
-from datetime import datetime
+import sys
 import time
+import subprocess
+from datetime import datetime
+
+from read_iv import ReadData
 
 
 class LogCreate:
@@ -23,6 +25,14 @@ class LogCreate:
         else:
             return str(self.main_path + 'Log/')
 
+    @classmethod
+    def open_file(cls, path_to_file):
+        if sys.platform == "win32":
+            os.startfile(path_to_file)
+        else:
+            opener = "open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.call([opener, path_to_file])
+
     def log(self):
         today = f'{datetime.now():%Y-%m-%d %H.%M.%S%z}'
         log_path = f"{self.log_folder}Log for {self._indicator}, {today}.txt"
@@ -31,9 +41,11 @@ class LogCreate:
             log.write(f"Date: {today}\n\n")
             log.write(f"Source folder: {self.main_path}\n")
             log.write(f'Source folder contained:\n')
-            for i, j in enumerate(zip(ReadData.data_files, ReadData.encoding_list)):
-                log.write(f"{i + 1}. {j[0]} \t encoding={j[1]}\n")
-
+            if not len(ReadData.data_files) == 0:
+                for i, j in enumerate(zip(ReadData.data_files, ReadData.encoding_list, ReadData.potentiostat)):
+                    log.write(f"{i + 1}. {j[0]}\t{j[2]}\tencoding={j[1]}\n")
+            else:
+                log.write('The given directory contained no applicable files\n')
             # # print(f'Skipped list: {skipped_img_index}')
             # if skipped_img_index:
             #     log.write(f'\nErrors\n')
@@ -47,6 +59,8 @@ class LogCreate:
             #     log.write(f'Frame rate: {frame_rate}\n')
             #     log.write(f'Frame size: {img_shape(cropped[0])[0:2]}\n')
             log.write(f'\nTotal analyzing and plotting time: \t{time.time() - self.start_time} sec')
-        os.startfile(log_path)
+        self.open_file(log_path)
+
+
 
 

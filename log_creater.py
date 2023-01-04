@@ -2,19 +2,26 @@ import os
 import sys
 import time
 import subprocess
+import instruments
 from datetime import datetime
 
 from read_iv import ReadData
+from xlsx_plotter import PlotIV
 
 
 class LogCreate:
+    """
+    A class for creating some logs
+    """
     def __init__(self, path: str, start_time: float):
         if not path.endswith('/'):  # Adding the '/' at the end of the given path if not there
             path = path + '/'
         self.main_path = path
         self.start_time = start_time
-        self._indicator = os.path.basename(os.path.dirname(self.main_path))  # See scratch.txt
-        self.log_folder = self.create_folder()
+        self._indicator = os.path.basename(os.path.dirname(self.main_path))  # See scratch.txt "indicator" here stands
+        # for the experiment name
+        # self.log_folder = self.create_folder()
+        self.log_folder = instruments.create_folder(self.main_path, 'Log/')
         self.log()
 
     def create_folder(self):  # Creating new folder for storing new data
@@ -25,13 +32,13 @@ class LogCreate:
         else:
             return str(self.main_path + 'Log/')
 
-    @classmethod
-    def open_file(cls, path_to_file):
-        if sys.platform == "win32":
-            os.startfile(path_to_file)
-        else:
-            opener = "open" if sys.platform == "darwin" else "xdg-open"
-            subprocess.call([opener, path_to_file])
+    # @classmethod
+    # def open_file(cls, path_to_file):
+    #     if sys.platform == "win32":
+    #         os.startfile(path_to_file)
+    #     else:
+    #         opener = "open" if sys.platform == "darwin" else "xdg-open"
+    #         subprocess.call([opener, path_to_file])
 
     def log(self):
         today = f'{datetime.now():%Y-%m-%d %H.%M.%S%z}'
@@ -39,18 +46,21 @@ class LogCreate:
         with open(log_path, "w") as log:
             log.write(f"Log for {self._indicator}\n\n")
             log.write(f"Date: {today}\n\n")
+            log.write(f'Location of the created xlsx doc: {PlotIV.test_name[0]}\n')
             log.write(f"Source folder: {self.main_path}\n")
             log.write(f'Source folder contained:\n')
-            if not len(ReadData.data_files) == 0:
-                for i, j in enumerate(zip(ReadData.data_files, ReadData.encoding_list, ReadData.potentiostat)):
-                    log.write(f"{i + 1}. {j[0]}\t{j[2]}\tencoding={j[1]}\n")
+            if ReadData.data:
+                for i in range(1, len(ReadData.data) + 1):
+                    log.write(f"{i}. {ReadData.data[f'{i}']['File name']}\t"
+                              f"{ReadData.data[f'{i}']['Potentiostat']}\t"
+                              f"{ReadData.data[f'{i}']['Encoding']}\n")
             else:
                 log.write('The given directory contained no applicable files\n')
-            # # print(f'Skipped list: {skipped_img_index}')
-            # if skipped_img_index:
-            #     log.write(f'\nErrors\n')
-            #     for w in range(len(skipped_img_index)):
-            #         log.write(f'Skipped images: {skipped_img_index[w]}. {error_list[w]}\n')
+            if ReadData.skipped_files:
+                log.write(f'\nIgnored files:\n')
+                for skip_index, skip_file in enumerate(ReadData.skipped_files, 1):
+                    log.write(f'{skip_index}. {skip_file}\n')
+
             # log.write(f'\nParameters being used\n')
             # log.write(f'Number of background erasing cycles: {cycles}\n')
             # log.write(f'Did film was created: {film}\n')
@@ -59,7 +69,8 @@ class LogCreate:
             #     log.write(f'Frame rate: {frame_rate}\n')
             #     log.write(f'Frame size: {img_shape(cropped[0])[0:2]}\n')
             log.write(f'\nTotal analyzing and plotting time: \t{time.time() - self.start_time} sec')
-        self.open_file(log_path)
+        # self.open_file(log_path)
+        instruments.open_file(log_path)
 
 
 

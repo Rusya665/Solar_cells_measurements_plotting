@@ -1,5 +1,6 @@
 from read_iv import ReadData
 from log_creater import LogCreate
+from xlsx_plotter import PlotIV
 import time
 from tester import do_smth
 
@@ -14,8 +15,10 @@ path = "/home/rusya665/OneDrive/IV_plotting_project/Input"  # Ubuntu case
 def main():
     start_time = time.time()
     ReadData(path)
-    LogCreate(path, start_time)
     do_smth()
+    PlotIV(path, open_wb=1)
+    LogCreate(path, start_time)
+    print("\n", "--- %s seconds ---" % (time.time() - start_time))
 
 
 if __name__ == "__main__":

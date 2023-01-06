@@ -9,3 +9,5 @@ def do_smth():
     # print(ReadData.raw_data)
     # print("")
 
+# for j in range(10):
+#     print(j)

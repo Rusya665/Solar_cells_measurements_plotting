@@ -1,6 +1,7 @@
 import os.path
 import pandas as pd
 import instruments
+import time
 
 
 # Set pandas' console output width
@@ -22,14 +23,15 @@ class ReadData:  # The main class for reading raw data
         |  'Potentiostat' - potentiostats names being used to collect given IV data
         |  'Encoding' - used encodings (some raw dara require different encoding to be read)
     """
-    data_files, skipped_files = [], []
-    data = {}
 
     def __init__(self, path_file: str, raw_files=None):
-
+        self.start_time = time.time()
         if not path_file.endswith('/'):  # Adding the '/' at the end of the given path if not there
             path_file = path_file + '/'
 
+        self.data_files = []  # Check this line
+        self.skipped_files = []
+        self.data = {}
         self.path_file = path_file
         self.raw_files = raw_files
         if not raw_files:
@@ -114,11 +116,9 @@ class ReadData:  # The main class for reading raw data
             df.drop(df.columns[[0, 2, 5, 6, 7, 8, 9, 10]], axis=1, inplace=True)  # Drop unnecessary columns. Check the
             # Q3 from scratch.txt
             df.columns = ['Pt', 'V', 'I']  # Keep the "Pt" column for further filtering
-            df = df[df["Pt"].str.contains(r'^\d+$')]  # Filter the df by "Pt" column
-            df.drop('Pt', axis=1, inplace=True)  # Finally, drop that column
-            df["I"] = df["I"].astype(float)  # Change var type from str to float
-            # df['I'] = df['I'].divide(10 ** 3)  # Uniforming the result. Gamry saves the current in mA. Check the
-            #             # Q3 from scratch.txt
+            df = df[df["Pt"].str.contains(r'^\d+$')].reset_index()  # Filter the df by "Pt" column
+            df.drop('Pt', axis=1, inplace=True)  # Drop that column
+            df.drop('index', axis=1, inplace=True)  # Finally, drop a column created by reset_index()
             df.name = file
             return instruments.columns_swap(df)
 

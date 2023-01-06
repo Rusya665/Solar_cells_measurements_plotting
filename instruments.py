@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 
+
 def columns_swap(df, col1='V', col2='I'):
     """
     Swapping two columns in a PandasDataframe
@@ -37,7 +38,7 @@ def create_folder(path: str, suffix: str):  # Creating new folder for storing ne
 
 def open_file(path_to_file):
     """
-    Run a file
+    Run a file. Works on different platforms
     :param path_to_file: Path to a file
     :return:
     """
@@ -46,3 +47,20 @@ def open_file(path_to_file):
     else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
         subprocess.call([opener, path_to_file])
+
+
+def logger(log_dict: dict):
+    """
+    The custom "logging" decorator which stores return values of the chosen method/function in a given dict.
+    :param log_dict: dict where the method's/function's return is going to be stored
+    :return: dict with key as method's/function's name and return values
+    """
+    def wrap(function):
+        def wrapper_log(*args, **kwargs):
+            return_value = function(*args, **kwargs)
+            log_dict[f'{function.__name__}'] = {}
+            log_dict[f'{function.__name__}'][f'{function.__code__.co_varnames[:function.__code__.co_argcount]}'] = \
+                return_value
+            return return_value
+        return wrapper_log
+    return wrap

@@ -1,16 +1,20 @@
 import os
 import sys
+import numpy as np
 import subprocess
 
 
 def columns_swap(df, col1='V', col2='I'):
     """
-    Swapping two columns in a PandasDataframe
+    Swapping two columns in a PandasDataframe and convert str values to floats.
     :param df: An initial dataframe
     :param col1: First column to swap
     :param col2: Second column to swap
     :return: A swapped dataframe
     """
+    df[col2] = df[col2].astype(float)
+    df[col1] = df[col1].astype(float)
+    df[col2] = df[col2].multiply(-1)
     col_list = list(df.columns)
     x, y = col_list.index(col1), col_list.index(col2)
     col_list[y], col_list[x] = col_list[x], col_list[y]
@@ -64,3 +68,19 @@ def logger(log_dict: dict):
             return return_value
         return wrapper_log
     return wrap
+
+
+def axis_crossing(df, col_name):
+    """
+    Detect sign changing along the columns in PandasDataframe. If more than one detected,
+    drop the first row.
+    :param df: df
+    :param col_name: column's name
+    :return: Int with corresponding row id
+    """
+    df = df[col_name].loc[np.sign(df[col_name]).diff().ne(0)]
+    if df.index[0] == 0:  # .diff() always detects the first row as True. Drop that result
+        df.drop(df.index[0], inplace=True)
+    if len(df.index) == 0:  # If no sign-changes was found return None
+        return None
+    return df.index[0]

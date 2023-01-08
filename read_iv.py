@@ -44,9 +44,13 @@ class ReadData:  # The main class for reading raw data
             encoding = self.potentiostat_check(os.path.join(self.path_file, file))[1]
             self.data[f'{ind}'] = {}  # Create an empty dict with the index as dict name
             self.data[f'{ind}'][f'File name'] = file
-            self.data[f'{ind}'][f'IV'] = self.read_file(os.path.join(self.path_file, file), encoding)
+            df = self.read_file(os.path.join(self.path_file, file), encoding)
+            self.data[f'{ind}'][f'IV'] = df
             self.data[f'{ind}'][f'Potentiostat'] = self.potentiostat_check(os.path.join(self.path_file, file))[2]
             self.data[f'{ind}'][f'Encoding'] = encoding
+            self.data[f'{ind}'][f'Axis crossing'] = {}
+            self.data[f'{ind}'][f'Axis crossing']['I'] = instruments.axis_crossing(df, 'I')
+            self.data[f'{ind}'][f'Axis crossing']['V'] = instruments.axis_crossing(df, 'V')
 
     def check_files(self):
         """
@@ -66,9 +70,9 @@ class ReadData:  # The main class for reading raw data
         Check this out
         https://youtu.be/tmeKsb2Fras?t=247
         :param file: A file with raw data created by a potentiostat
-        :return: True -> if file contains applicable data;
-                 encoding_flag -> encoding being used;
-                 str -> potentiostat's name
+        :return: |  True -> if file contains applicable data
+                 |  encoding_flag -> encoding being used
+                 |  str -> potentiostat's name
         """
         try:
             encode_flag = 'utf-8'

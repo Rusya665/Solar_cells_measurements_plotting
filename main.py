@@ -1,8 +1,4 @@
-from read_iv import ReadData
 from log_creater import LogCreate
-from xlsx_plotter import PlotIV
-import time
-from tester import do_smth
 
 
 """

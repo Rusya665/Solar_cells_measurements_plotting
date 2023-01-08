@@ -9,9 +9,9 @@ class LogCreate(PlotIV):
     """
     A class for creating some logs. Inherits from PlotIV
     """
-    def __init__(self, path_file: str):
+    def __init__(self, path_file: str, open_log=False):
         super().__init__(path_file)
-        # self.log_folder = self.create_folder()
+        self.open_log = open_log
         self.log_folder = instruments.create_folder(self.path_file, 'Log/')
         self.log()
         print("\n", "--- %s seconds ---" % (time.time() - self.start_time))
@@ -37,13 +37,6 @@ class LogCreate(PlotIV):
                 for skip_index, skip_file in enumerate(self.skipped_files, 1):
                     log.write(f'{skip_index}. {skip_file}\n')
 
-            # log.write(f'\nParameters being used\n')
-            # log.write(f'Number of background erasing cycles: {cycles}\n')
-            # log.write(f'Did film was created: {film}\n')
-            # if film == 'y':
-            #     log.write(f'Ageing video: {video_name}\n')
-            #     log.write(f'Frame rate: {frame_rate}\n')
-            #     log.write(f'Frame size: {img_shape(cropped[0])[0:2]}\n')
             log.write(f'\nTotal analyzing and plotting time: \t{time.time() - self.start_time} sec')
-        # self.open_file(log_path)
-        instruments.open_file(log_path)
+        if self.open_log:
+            instruments.open_file(log_path)

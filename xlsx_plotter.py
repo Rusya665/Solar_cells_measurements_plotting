@@ -51,6 +51,7 @@ class PlotIV(ReadData):
         return self.workbook
 
     def set_worksheets(self):
+        self.wb_main.insert_chart(0, 1, self.add_all_together_plot())
         for row_index in range(1, len(self.data) + 1):
             ws = self.workbook.add_worksheet(f"{self.data[f'{row_index}']['File name']}")
             self.wb_table.write(row_index, 0, f"{self.data[f'{row_index}']['File name'].split('.')[0]}")
@@ -68,12 +69,13 @@ class PlotIV(ReadData):
             ws.write(0, self.col_start + 4, 'Value', self.center)
             ws.insert_chart(1, 7, self.add_iv_plot(self.data[f'{row_index}']['File name'],
                             len(self.data[f'{row_index}']['IV'].index)))
-            self.wb_main.insert_chart(1, row_index * 3, self.add_iv_plot(self.data[f'{row_index}']['File name'],
+            self.wb_main.insert_chart(20, (row_index - 1) * 8, self.add_iv_plot(self.data[f'{row_index}']['File name'],
                                       len(self.data[f'{row_index}']['IV'].index)))
             for JV_val in range(len(self.data[f'{row_index}']['IV'].index)):  # Write IV data points
                 ws.write_row(JV_val + 1, self.col_start, self.data[f'{row_index}']['IV'].loc[JV_val])
                 ws.write_formula(JV_val + 1, self.col_start + 2, f'=A{JV_val + 2}*B{JV_val + 2}')
-            if self.data[f'{row_index}']['Axis crossing']['I']:  # If sign change has been found complete following
+            # If sign change has been found complete following
+            if self.data[f'{row_index}']['Axis crossing']['I'] and self.data[f'{row_index}']['Axis crossing']['V']:
                 i_cross_2 = self.data[f'{row_index}']['Axis crossing']['I'] + 2
                 i_cross_1 = self.data[f'{row_index}']['Axis crossing']['I'] + 1
                 v_cross_1 = self.data[f'{row_index}']['Axis crossing']['V'] + 1
@@ -118,13 +120,13 @@ class PlotIV(ReadData):
         })
         chart_iv.set_title({
             'name': f"{sheet_name}",
-            'name_font': {
-                'size': 14,
-                'italic': False,
-                'bold': False,
-                'name': 'Calibri (Body)',
-                # 'color': ,
-            },
+            # 'name_font': {
+            #     'size': 14,
+            #     'italic': False,
+            #     'bold': False,
+            #     'name': 'Calibri (Body)',
+            #     # 'color': ,
+            # },
         })
         chart_iv.set_x_axis({
             'name': 'V, mV',
@@ -139,6 +141,72 @@ class PlotIV(ReadData):
             'minor_tick_mark': 'outside',
         })
         chart_iv.set_legend(({'none': True}))
+        chart_iv.set_y_axis({
+            # 'min': 0, 'max': iv[f'iv_{j}']['max'],
+            'name': 'I, mA',
+            # 'line': {'color': axis_colour},
+            # 'name_font': {'size': axis_size, 'italic': True, 'bold': False, 'color': text_colour},
+            # 'num_font': {'size': num_size, 'color': text_colour},
+            'major_gridlines': {'visible': False},
+            'minor_gridlines': {'visible': False},
+            'major_tick_mark': 'outside',
+        })
+        # chart_iv.set_plotarea({
+        #     'border': {'none': True},
+        #     'layout': {
+        #         'x': 0.8,
+        #         'y': 0.1,
+        #         'width': 0.8,
+        #         'height': 0.7,
+        #     }
+        # })
+        chart_iv.set_chartarea({'border': {'none': True}})
+        chart_iv.set_size({'x_scale': 1, 'y_scale': 1})  # The default chart width x height is 480 x 288 pixels.
+        return chart_iv
+
+    def add_all_together_plot(self):
+
+        chart_iv = self.workbook.add_chart({'type': 'scatter',
+                                            'subtype': 'straight'})  # Delete subtype here to return markers
+        for row_index in range(1, len(self.data) + 1):
+            sheet_name = self.data[f'{row_index}']['File name']
+            row_len = len(self.data[f'{row_index}']['IV'].index)
+            chart_iv.add_series({
+                'name': f'{sheet_name}',
+                'categories': [f'{sheet_name}', 1, 1, row_len, 1],
+                'values': [f'{sheet_name}', 1, 0, row_len, 0],
+                # 'line': {'width': 2},
+                # 'marker': {
+                #     'type': cmyk_lines[f'{i}']['marker'],
+                #     'size': marker_size,
+                #     # 'border': {'color': CMYK_lines[f'{i}']['colour']},
+                #     # 'fill': {'color': CMYK_lines[f'{i}']['colour']},
+                # },
+                # 'y2_axis': colors[f'cs_{l_v}']['axis'][f'{i}'],
+            }),
+        chart_iv.set_title({
+            'name': 'All together',
+            # 'name_font': {
+            #     'size': 14,
+            #     'italic': False,
+            #     'bold': False,
+            #     'name': 'Calibri (Body)',
+            #     # 'color': ,
+            # },
+        })
+        chart_iv.set_x_axis({
+            'name': 'V, mV',
+            # 'line': {'color': axis_colour},
+            # 'name_font': {'size': axis_size, 'italic': True, 'bold': False, 'color': text_colour},
+            # 'num_font': {'size': num_size, 'color': text_colour},
+            # 'min': 0, 'max': max_time,
+            # 'minor_unit': 250, 'major_unit': 500,
+            # 'major_gridlines': {'visible': False},
+            # 'minor_gridlines': {'visible': False},
+            'major_tick_mark': 'cross',
+            'minor_tick_mark': 'outside',
+        })
+        chart_iv.set_legend(({'none': False}))
         chart_iv.set_y_axis({
             # 'min': 0, 'max': iv[f'iv_{j}']['max'],
             'name': 'I, mA',

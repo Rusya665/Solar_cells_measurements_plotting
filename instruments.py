@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 import subprocess
+from screeninfo import get_monitors
 
 
 def columns_swap(df, col1='V', col2='I'):
@@ -84,3 +85,13 @@ def axis_crossing(df, col_name):
     if len(df.index) == 0:  # If no sign-changes was found return None
         return None
     return df.index[0]
+
+
+def get_screen_settings():
+    """
+    Get a monitor resolution
+    :return: Width and height
+    """
+    for m in get_monitors():
+        if str(m).endswith('is_primary=True)'):
+            return int(str(m).split('width=')[-1][:4]), int(str(m).split('height=')[-1][:4])

@@ -14,6 +14,7 @@ class LogCreate(PlotIV):
         self.open_log = open_log
         self.log_folder = instruments.create_folder(self.path_file, 'Log/')
         self.log()
+        print('Stage 3 "Logging" is done')
         print("\n", "--- %s seconds ---" % (time.time() - self.start_time))
 
     def log(self):

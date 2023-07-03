@@ -21,7 +21,7 @@ class ReadData:  # The main class for reading raw data
         |  'File name' - file names
         |  'IV' - ready-to-use PandasDataframe of IV data
         |  'Potentiostat' - potentiostats names being used to collect given IV data
-        |  'Encoding' - used encodings (some raw dara require different encoding to be read)
+        |  'Encoding' - used encodings (some raw data require different encoding to be read)
     """
 
     def __init__(self, path_file: str, raw_files=None):
@@ -38,6 +38,7 @@ class ReadData:  # The main class for reading raw data
             self.raw_files = self.check_files()
 
         self.dict_filling()
+        print('Stage 1 "Reading" is done')
 
     def dict_filling(self):
         for ind, file in enumerate(self.raw_files, 1):

@@ -7,3 +7,4 @@ project/bath/any-indicator?
 
 Things to do:
 1. Apply sorting if said so in Q2.
+2. Plot current density instead of pure current.

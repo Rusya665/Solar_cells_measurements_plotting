@@ -37,6 +37,7 @@ class PlotIV(ReadData):
         if open_wb:
             time.sleep(0.2)
             instruments.open_file(self.xlsx_name)
+        print('Stage 2 "Plotting" is done')
 
     def create_workbook(self):
         """

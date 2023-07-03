@@ -15,7 +15,7 @@ class FirstFrame(ctk.CTkFrame):
         self.collapse = ctk.CTkButton(self, text='Collapse all', width=20,
                                       command=lambda: self.parent.expand_collapse(False))
 
-        self.aging_mode_checkbox = ctk.CTkCheckBox(self, text='Aging mode', command=self.parent.set_first_img, width=20)
+        self.aging_mode_checkbox = ctk.CTkCheckBox(self, text='Aging mode', command=self.parent.aging_mode_activator, width=20)
         self.save_after_CheckBox = ctk.CTkCheckBox(self, text='SA', command=self.save_after)
 
         self.expand.grid(row=0, column=0, pady=15, padx=0)

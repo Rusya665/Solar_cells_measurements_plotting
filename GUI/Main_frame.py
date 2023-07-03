@@ -9,6 +9,7 @@ from Treeviews_frame import TableFrames
 from The_lower_frames import LowestFrame, ProceedFrame
 from Top_frame import FirstFrame
 from Potentostats_check import PotentiostatFileChecker
+from icecream import ic
 
 
 class SpecifyPath(ctk.CTkFrame):
@@ -22,10 +23,8 @@ class SpecifyPath(ctk.CTkFrame):
         self.file_directory = '/'
         self.files_selected = []
         self.get_data = get_data
-        self.data = defaultdict(dict)
-        self.nodes = {}
-        self.new_data = {}
-        self.first_img = 0
+        self.added_iv = defaultdict(dict)
+        self.aging_mode = False
 
         # widgets
         self.pack(fill=ctk.BOTH, expand=True)
@@ -51,13 +50,12 @@ class SpecifyPath(ctk.CTkFrame):
         self.progress_bar.pack()
         self.progress_bar.set(0)
 
-    def set_first_img(self, event) -> None:
+    def aging_mode_activator(self) -> None:
         """
-        Set first image to be shown
-        :param event: Pick given int
+        Activate the "Aging mode"
         :return: None
         """
-        self.first_img = int(event) - 1
+        self.aging_mode = bool(self.first_frame.aging_mode_checkbox.get())
 
     def exit(self) -> None:
         """
@@ -75,13 +73,12 @@ class SpecifyPath(ctk.CTkFrame):
         """
         ctk.set_appearance_mode(new_appearance_mode)
 
-    def final_output(self, state):
+    def final_output(self, state) -> None:
         """
         Choose the state to work on
-        :param state: Selected files or all the files
+        :param state: Selected some files or all the files
         :return: None
         """
-        self.data.clear()
         self.files_selected = []
         if state == "Selected":
             for item in self.table_frame.files_table.selection():
@@ -96,7 +93,7 @@ class SpecifyPath(ctk.CTkFrame):
             self.items_select()
             self.out()
 
-    def expand_collapse(self, expand=True):
+    def expand_collapse(self, expand=True) -> None:
         """
         Only expand/collapse item in treeview
         :param expand: expand if True, collapse if False
@@ -105,7 +102,7 @@ class SpecifyPath(ctk.CTkFrame):
         for item in self.table_frame.files_table.get_children():
             self.treeview_expand_collapse(item, expand, select=False)
 
-    def treeview_expand_collapse(self, item, expand_collapse, select=False):
+    def treeview_expand_collapse(self, item, expand_collapse, select=False) -> None:
         """
         Expand/collapse treeview. Select all nested elements in a table and expand parental ones
         :param select: select expanded values
@@ -122,7 +119,7 @@ class SpecifyPath(ctk.CTkFrame):
             for item_inner in self.table_frame.files_table.get_children(item):
                 self.treeview_expand_collapse(item_inner, expand_collapse, select)
 
-    def items_select(self):
+    def items_select(self) -> None:
         """
         Returns selected value/clues from the table
         :return: None
@@ -131,7 +128,7 @@ class SpecifyPath(ctk.CTkFrame):
             if self.table_frame.files_table.item(i)['tags'] == ['file']:
                 self.files_selected.append(self.table_frame.files_table.item(i)['values'][-1])
 
-    def ask_directory(self):
+    def ask_directory(self) -> None:
         """
         Built-in Tkinter function to return a str with a path
         :return: String with a path
@@ -161,17 +158,17 @@ class SpecifyPath(ctk.CTkFrame):
         root_node = self.table_frame.files_table.insert('', 'end', text=os.path.basename(abspath), open=True)
         self.process_directory(root_node, abspath)
 
-    def process_directory(self, parent, path, depth=1, potentiostat_choice='All'):
+    def process_directory(self, parent, path, depth=1):
         """
         Insert to a table and into the file_list filtered by extension type of files, including nested folders.
         Will show folders only if it contains required file.
         :param parent: parent folder
         :param path: path to work with
         :param depth: depth of the folders path
-        :param potentiostat_choice: The potentiostat type to filter files by. Default is 'All'.
         :return: None
         """
         potentiostat_checker = PotentiostatFileChecker(potentiostat_choice=self.potentiostat)
+        self.added_iv.clear()
         for file in os.listdir(path):
             abspath = os.path.join(path, file).replace('\\', '/')
             b = path.replace(self.file_directory, '').count('/')
@@ -179,7 +176,10 @@ class SpecifyPath(ctk.CTkFrame):
                 checking = potentiostat_checker.check_file(abspath)
                 if checking[0]:  # Insert a file only if it's potentiostats file
                     potentiostat = checking[-1]
-                    data = [potentiostat, None, abspath]
+                    data = [potentiostat, checking[1], abspath]
+                    self.added_iv[f'{file}'] = {"path": f'{abspath}',
+                                                'measurement device': f'{potentiostat}',
+                                                'encoding': f'{checking[1]}'}
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')
             if os.path.isdir(abspath):
@@ -198,6 +198,7 @@ class SpecifyPath(ctk.CTkFrame):
                     oid = self.table_frame.files_table.insert(parent, 'end', text=file, open=False, tags='folder',
                                                               values=['', '', abspath])
                     self.process_directory(oid, abspath)
+        self.table_frame.construct_active_areas_entries(data=self.added_iv)
 
     def out(self):
         """
@@ -223,4 +224,4 @@ class SpecifyPath(ctk.CTkFrame):
             for widget in self.winfo_children():
                 widget.quit()
             self.pack_forget()
-            self.get_data(data=self.data, extension=self.potentiostat, first_img=self.first_img)
+            self.get_data(data=self.added_iv, extension=self.potentiostat, first_img=self.aging_mode)

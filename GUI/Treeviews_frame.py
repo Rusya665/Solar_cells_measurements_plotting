@@ -1,5 +1,6 @@
 import customtkinter as ctk
-from tkinter import ttk
+from tkinter import ttk, END
+from Device_filter import DeviceDetector
 
 
 class TableFrames(ctk.CTkFrame):
@@ -17,7 +18,7 @@ class TableFrames(ctk.CTkFrame):
         self.files_table = None
         self.files_table_scrollbar = None
         self.files_table_insert()
-        self.active_areas_table_insert()
+        # self.active_areas_table_insert()
 
     def files_table_insert(self):
         self.files_table_scrollbar = ctk.CTkScrollbar(master=self.files_table_frame)
@@ -35,16 +36,26 @@ class TableFrames(ctk.CTkFrame):
         self.files_table_scrollbar.configure(command=self.files_table.yview)
         self.files_table.bind('<<TreeviewSelect>>', lambda event: self.parent.items_select())
 
-    def active_areas_table_insert(self):
-        self.active_areas_table_scrollbar = ctk.CTkScrollbar(master=self.active_areas_table_frame)
-        self.active_areas_table_scrollbar.pack(side='right', fill='y')
-        self.active_areas_table = ttk.Treeview(master=self.active_areas_table_frame, columns=('#1', '#2'),
-                                               selectmode='extended', height=self.parent.table_size, show="headings",
-                                               yscrollcommand=self.active_areas_table_scrollbar.set)
-        self.active_areas_table.heading('#1', text='Name', anchor='w')
-        self.active_areas_table.heading('#2', text='Active area', anchor='w')
-        self.active_areas_table.column('#1', width=250)
-        self.active_areas_table.column('#2', width=150)
-        self.active_areas_table.pack(side='right', fill='y')
-        self.active_areas_table_scrollbar.configure(command=self.files_table.yview)
-        self.active_areas_table.bind('<<TreeviewSelect>>', lambda event: self.parent.items_select())
+    # def active_areas_table_insert(self):
+        # self.active_areas_table_scrollbar = ctk.CTkScrollbar(master=self.active_areas_table_frame)
+        # self.active_areas_table_scrollbar.pack(side='right', fill='y')
+        # self.active_areas_table = ttk.Treeview(master=self.active_areas_table_frame, columns=('#1', '#2'),
+        #                                        selectmode='extended', height=self.parent.table_size, show="headings",
+        #                                        yscrollcommand=self.active_areas_table_scrollbar.set)
+        # self.active_areas_table.heading('#1', text='Name', anchor='w')
+        # self.active_areas_table.heading('#2', text='Active area', anchor='w')
+        # self.active_areas_table.column('#1', width=250)
+        # self.active_areas_table.column('#2', width=150)
+        # self.active_areas_table.pack(side='right', fill='y')
+        # self.active_areas_table_scrollbar.configure(command=self.files_table.yview)
+        # self.active_areas_table.bind('<<TreeviewSelect>>', lambda event: self.parent.items_select())
+
+    def construct_active_areas_entries(self, data) -> None:
+        for child in self.active_areas_table_frame.winfo_children():
+            if isinstance(child, ctk.CTkEntry):
+                child.destroy()
+        DeviceDetector(data_dict=data).detector()
+        for i in range(len(data)):
+            e = ctk.CTkEntry(master=self.active_areas_table_frame)
+            e.grid(row=i + 1, column=0, sticky='nsew')
+            e.insert(END, data[i])

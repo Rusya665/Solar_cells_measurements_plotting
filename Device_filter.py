@@ -22,3 +22,4 @@ class DeviceDetector:
         if not self.smu_ones:
             return
         else:
+            pass

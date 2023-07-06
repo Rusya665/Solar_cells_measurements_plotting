@@ -1,6 +1,7 @@
 from icecream import ic
 import pandas as pd
 import numpy as np
+from instruments import axis_crossing
 
 
 class DeviceDetector:
@@ -11,7 +12,7 @@ class DeviceDetector:
     def __init__(self, data_dict):
         self.smu_ones = None
         self.data = data_dict
-        # ic(self.data)
+        ic(self.data)
 
     def detector(self):
         self.smu_ones = []
@@ -28,19 +29,11 @@ class DeviceDetector:
         else:
             pass
 
-    def axis_crossing(self, df, col_name):
-        df = df[col_name].loc[np.sign(df[col_name]).diff().ne(0)]
-        if df.index[0] == 0:  # .diff() always detects the first row as True. Drop that result
-            df.drop(df.index[0], inplace=True)
-        if len(df.index) == 0:  # If no sign-changes was found return None
-            return None
-        return df.index[0]
-
     def divide_sweeps(self, data_frame):
         current_values = data_frame['current']
         voltage_values = data_frame['voltage']
 
-        crossing_index = self.axis_crossing(data_frame, 'voltage')
+        crossing_index = axis_crossing(data_frame, 'voltage')
 
         if crossing_index is None:  # Only one sweep
             if voltage_values.iloc[-1] > voltage_values.iloc[0]:  # Forward sweep

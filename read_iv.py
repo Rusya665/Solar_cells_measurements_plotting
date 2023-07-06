@@ -98,22 +98,22 @@ class ReadData:  # The main class for reading raw data
             return False, None
 
     @classmethod
-    def read_file(cls, file, encoding: str):
+    def read_file(cls, path_to_file, encoding: str):
         """
         A "class" method for parsing filtered potentiostats IV data
-        :param file: Filename to be parsed
+        :param path_to_file: Filename to be parsed
         :param encoding: File's encoding
         :return: A PandasDataframe with two columns 'I' and 'V', standing for current in mA and voltage in V
          respectively
         """
-        if file.lower().endswith('.txt'):  # The source measurement unit case
-            df = pd.read_csv(file, sep='\t', engine='python', header=None, encoding=encoding,
+        if path_to_file.lower().endswith('.txt'):  # The source measurement unit case
+            df = pd.read_csv(path_to_file, sep='\t', engine='python', header=None, encoding=encoding,
                              names=['V', 'I'], skiprows=2)
-            df.name = file
+            df.name = path_to_file
             return instruments.columns_swap(df)
 
-        if file.lower().endswith('.dta'):  # The Gamry case
-            df = pd.read_csv(file, engine='python', header=None, skiprows=65, encoding=encoding, sep='\t')
+        if path_to_file.lower().endswith('.dta'):  # The Gamry case
+            df = pd.read_csv(path_to_file, engine='python', header=None, skiprows=65, encoding=encoding, sep='\t')
             """
             A special note for future me. If the skiprows=65 is not gonna work anymore, add a method to actually 
             check the .DTA file before parsing. Love you. You are the best.
@@ -124,13 +124,13 @@ class ReadData:  # The main class for reading raw data
             df = df[df["Pt"].str.contains(r'^\d+$')].reset_index()  # Filter the df by "Pt" column
             df.drop('Pt', axis=1, inplace=True)  # Drop that column
             df.drop('index', axis=1, inplace=True)  # Finally, drop a column created by reset_index()
-            df.name = file
+            df.name = path_to_file
             return instruments.columns_swap(df)
 
-        if file.lower().endswith('.csv'):  # The PalmSens 4 case
-            df = pd.read_csv(file, engine='python', header=None, encoding=encoding,
+        if path_to_file.lower().endswith('.csv'):  # The PalmSens 4 case
+            df = pd.read_csv(path_to_file, engine='python', header=None, encoding=encoding,
                              skiprows=6, keep_default_na=True, na_filter=False, names=['V', 'I'])
             df = df[df['I'].notna()]  # Picking only the data which is not "Nan" <- dropping the last raw
             df['I'] = df['I'].divide(10 ** 6)  # Uniforming the result. PalmSens saves the current in µA
-            df.name = file
+            df.name = path_to_file
             return instruments.columns_swap(df)

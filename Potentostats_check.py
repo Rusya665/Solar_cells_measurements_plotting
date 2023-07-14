@@ -1,5 +1,6 @@
 import os
 import chardet
+from instruments import axis_crossing
 
 
 class PotentiostatFileChecker:
@@ -57,3 +58,6 @@ class PotentiostatFileChecker:
 
         # If we got this far, the file didn't match any potentiostat
         return False, encoding, None
+
+    def efficiency_check(self):
+        ...

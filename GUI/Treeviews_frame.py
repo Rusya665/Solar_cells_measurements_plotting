@@ -49,6 +49,8 @@ class TableFrames(ctk.CTkFrame):
         for i, (key, value) in enumerate(data.items()):
             device_counter = ctk.CTkLabel(master=self.active_areas_scrollable_frame,
                                           text=f'{i + 1}', fg_color="transparent")
+            # device_counter = ctk.CTkLabel(master=self.active_areas_scrollable_frame,
+            #                               text=os.path.splitext(key)[0], fg_color="transparent")
             device_counter.grid(row=i, column=0, sticky='nsew', padx=5)
             device_name = ctk.CTkEntry(master=self.active_areas_scrollable_frame)
             device_name.grid(row=i, column=1, sticky='nsew')

@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from instruments import axis_crossing
+from icecream import ic
 
 
 class DeviceDetector:
@@ -10,6 +11,7 @@ class DeviceDetector:
 
     def __init__(self, data_dict):
         self.data = data_dict
+        ic(self.data)
 
 
     def detector(self):

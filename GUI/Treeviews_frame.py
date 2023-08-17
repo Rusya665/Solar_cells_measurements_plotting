@@ -3,7 +3,7 @@ from tkinter import ttk, END
 
 import customtkinter as ctk
 
-from Device_filter import DeviceDetector
+from GUI.Device_filter import DeviceDetector
 
 
 class TableFrames(ctk.CTkFrame):
@@ -45,7 +45,7 @@ class TableFrames(ctk.CTkFrame):
     def construct_active_areas_entries(self, data) -> None:
         for child in self.active_areas_scrollable_frame.winfo_children():
             child.destroy()
-        DeviceDetector(data_dict=data).detector()
+        devices = DeviceDetector(data_dict=data).detector()
         for i, (key, value) in enumerate(data.items()):
             device_counter = ctk.CTkLabel(master=self.active_areas_scrollable_frame,
                                           text=f'{i + 1}', fg_color="transparent")

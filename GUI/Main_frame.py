@@ -8,8 +8,7 @@ import customtkinter as ctk
 from Treeviews_frame import TableFrames
 from The_lower_frames import LowestFrame, ProceedFrame
 from Top_frame import FirstFrame
-from Potentostats_check import PotentiostatFileChecker
-from icecream import ic
+from GUI.Potentostats_check import PotentiostatFileChecker
 
 
 class SpecifyPath(ctk.CTkFrame):
@@ -175,11 +174,13 @@ class SpecifyPath(ctk.CTkFrame):
             if os.path.isfile(abspath):
                 checking = potentiostat_checker.check_file(abspath)
                 if checking[0]:  # Insert a file only if it's potentiostats file
-                    potentiostat = checking[-1]
+                    potentiostat = checking[2]
                     data = [potentiostat, checking[1], abspath]
-                    self.added_iv[f'{file}'] = {"path": f'{abspath}',
-                                                'measurement device': f'{potentiostat}',
-                                                'encoding': f'{checking[1]}'}
+                    self.added_iv[f'{file}'] = {"path": abspath,
+                                                'measurement device': potentiostat,
+                                                'encoding': checking[1],
+                                                'number of sweeps': checking[-1],
+                                                'data': checking[-1][1]}
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')
             if os.path.isdir(abspath):

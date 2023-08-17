@@ -4,7 +4,6 @@ from tkinter import ttk
 import customtkinter as ctk
 
 from Main_frame import SpecifyPath
-from log_creater import LogCreate
 
 
 class RGBMainRoot(ctk.CTk):
@@ -34,7 +33,7 @@ class RGBMainRoot(ctk.CTk):
         all_instances = []
         temp_value = None
         self.data = data
-        LogCreate(self.data)
+
         self.destroy()
 
 

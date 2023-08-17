@@ -11,7 +11,7 @@ from Top_frame import FirstFrame
 from GUI.Potentostats_check import PotentiostatFileChecker
 
 
-class SpecifyPath(ctk.CTkFrame):
+class IVProcessingMainClass(ctk.CTkFrame):
     def __init__(self, parent, get_data, *args, **kwargs):
         super().__init__(master=parent, *args, **kwargs)
 
@@ -179,8 +179,8 @@ class SpecifyPath(ctk.CTkFrame):
                     self.added_iv[f'{file}'] = {"path": abspath,
                                                 'measurement device': potentiostat,
                                                 'encoding': checking[1],
-                                                'number of sweeps': checking[-1],
-                                                'data': checking[-1][1]}
+                                                'number of sweeps': checking[3]["Counts"],
+                                                'data': checking[3]["Data"]}
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')
             if os.path.isdir(abspath):

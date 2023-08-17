@@ -11,7 +11,14 @@ class DeviceDetector:
 
     def __init__(self, data_dict):
         self.data = data_dict
-        ic(self.data)
+        self.print_nested_dict(self.data)
+    def print_nested_dict(self, d, indent=0):
+        for key, value in d.items():
+            print('  ' * indent + str(key))
+            if isinstance(value, dict):
+                self.print_nested_dict(value, indent + 1)
+            else:
+                print('  ' * (indent + 1) + str(value))
 
 
     def detector(self):

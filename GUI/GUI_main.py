@@ -3,7 +3,7 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
-from Main_frame import SpecifyPath
+from Main_frame import IVProcessingMainClass
 
 
 class RGBMainRoot(ctk.CTk):
@@ -21,7 +21,7 @@ class RGBMainRoot(ctk.CTk):
         self.minsize(700, 600)
         self.resizable(True, True)
 
-        SpecifyPath(parent=self, get_data=self.get_data)
+        IVProcessingMainClass(parent=self, get_data=self.get_data)
 
     def get_data(self, data=None, aging_mode=False):
         """

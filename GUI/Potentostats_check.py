@@ -57,21 +57,17 @@ class PotentiostatFileChecker:
                     if i >= 100:  # limit number of lines read to 100
                         break
                     if target_text in line:
-                        number_of_sweeps = self._get_number_of_sweeps(file, potentiostat)
-                        return True, self.encoding, potentiostat, number_of_sweeps
+                        sweeps_data = self.detect_iv_sweeps(file, potentiostat, 'V')
+                        return True, self.encoding, potentiostat, sweeps_data
 
         # If we got this far, the file didn't match any potentiostat
         return False, self.encoding, None, None
 
-    def _get_number_of_sweeps(self, file, potentiostat):
-        df = IVDataReader(file, potentiostat, self.encoding).read()
-        # return axis_crossing(df, 'V')
-        return detect_iv_sweeps(df, 'V')
-
-    def detect_iv_sweeps(df, col_name):
+    def detect_iv_sweeps(self, file, potentiostat, col_name='V'):
         """
         Detect the number of IV sweeps and their direction based on sign changes in a column of a dataframe.
-        :param df: DataFrame
+        :param file: Path to IV data
+        :param potentiostat: Type of the potentiostat
         :param col_name: Name of the column to check
         :return: Dictionary containing:
                  - "Counts": Dictionary with counts for:
@@ -83,29 +79,35 @@ class PotentiostatFileChecker:
                      - "2": Data for the second detected sweep
                      - (and so on...)
         """
-        df_sign_changes = df[col_name].loc[np.sign(df[col_name]).diff().ne(0)]
+        df = IVDataReader(file, potentiostat, self.encoding).read()
 
-        if df_sign_changes.index[0] == 0:  # To handle the edge case where the first row is 0
-            df_sign_changes.drop(df_sign_changes.index[0], inplace=True)
+        forward_data = []
+        reverse_data = []
 
-        forward_count = 0
-        reverse_count = 0
-        sweeps_data = []  # List to store data associated with each sweep
+        for idx in range(1, len(df)):
+            current_v = df[col_name].iloc[idx]
+            previous_v = df[col_name].iloc[idx - 1]
 
-        # Start with the first data point
-        start_idx = 0
+            # Forward sweep
+            if current_v > previous_v:
+                if not forward_data:
+                    forward_data.append({'V': previous_v, 'I': df['I'].iloc[idx - 1]})
+                forward_data.append({'V': current_v, 'I': df['I'].iloc[idx]})
 
-        for idx in df_sign_changes.index:
-            end_idx = idx
-            if df[col_name].iloc[idx - 1] < df[col_name].iloc[idx]:
-                forward_count += 1
-            else:
-                reverse_count += 1
-            sweeps_data.append(df.iloc[start_idx:end_idx])
-            start_idx = idx
+            # Reverse sweep
+            elif current_v < previous_v:
+                if not reverse_data:
+                    reverse_data.append({'V': previous_v, 'I': df['I'].iloc[idx - 1]})
+                reverse_data.append({'V': current_v, 'I': df['I'].iloc[idx]})
 
-        # Final sweep after the last sign change
-        sweeps_data.append(df.iloc[start_idx:])
+        sweeps_data = []
+        if forward_data:
+            sweeps_data.append(pd.DataFrame(forward_data))
+        if reverse_data:
+            sweeps_data.append(pd.DataFrame(reverse_data))
+
+        forward_count = 1 if forward_data else 0
+        reverse_count = 1 if reverse_data else 0
 
         counts = {
             "Total Sweeps": forward_count + reverse_count,
@@ -114,5 +116,20 @@ class PotentiostatFileChecker:
         }
 
         data = {str(idx): segment for idx, segment in enumerate(sweeps_data, start=1)}
-
+        print(self.check_data_integrity(df, {"Counts": counts, "Data": data}))
         return {"Counts": counts, "Data": data}
+
+    def check_data_integrity(self, df, result, col_name='V'):
+        """
+        Check if the total number of rows in the initial dataframe matches the sum of the rows from the divided segments.
+        """
+        # Retrieve the initial dataframe
+
+        # Get the divided segments
+        sweeps_data = [data for _, data in result["Data"].items()]
+
+        # Compute the total number of rows in the divided segments
+        total_rows_in_segments = sum(segment.shape[0] for segment in sweeps_data)
+
+        # Check if the counts match
+        return df.shape[0] == total_rows_in_segments

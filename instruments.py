@@ -95,3 +95,18 @@ def get_screen_settings():
     for m in get_monitors():
         if str(m).endswith('is_primary=True)'):
             return int(str(m).split('width=')[-1][:4]), int(str(m).split('height=')[-1][:4])
+
+
+def print_nested_dict(d, indent=0):
+    """
+    Recursively prints keys and values of a nested dictionary.
+
+    :param d: Dictionary to be printed.
+    :param indent: Initial indentation for pretty printing. Default is 0.
+    """
+    for key, value in d.items():
+        print('  ' * indent + str(key))
+        if isinstance(value, dict):
+            print_nested_dict(value, indent + 1)
+        else:
+            print('  ' * (indent + 1) + str(value))

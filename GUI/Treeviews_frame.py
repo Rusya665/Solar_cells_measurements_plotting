@@ -45,13 +45,15 @@ class TableFrames(ctk.CTkFrame):
     def construct_active_areas_entries(self, data) -> None:
         for child in self.active_areas_scrollable_frame.winfo_children():
             child.destroy()
-        devices = DeviceDetector(data_dict=data).detector()
-        for i, (key, value) in enumerate(data.items()):
+        devices = DeviceDetector(data_dict=data).detect_and_filter()
+        # print(devices)
+        for i, (key, value) in enumerate(devices.items()):
+            print(key)
             device_counter = ctk.CTkLabel(master=self.active_areas_scrollable_frame,
-                                          text=f'{i + 1}', fg_color="transparent")
+                                          text=os.path.splitext(key)[0], fg_color="transparent")
             # device_counter = ctk.CTkLabel(master=self.active_areas_scrollable_frame,
             #                               text=os.path.splitext(key)[0], fg_color="transparent")
             device_counter.grid(row=i, column=0, sticky='nsew', padx=5)
             device_name = ctk.CTkEntry(master=self.active_areas_scrollable_frame)
             device_name.grid(row=i, column=1, sticky='nsew')
-            device_name.insert(END, os.path.splitext(key)[0])
+            device_name.insert(END, '')

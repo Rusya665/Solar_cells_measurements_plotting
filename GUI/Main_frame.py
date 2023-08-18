@@ -132,7 +132,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
         Built-in Tkinter function to return a str with a path
         :return: String with a path
         """
-        self.file_directory = filedialog.askdirectory(mustexist=True)
+        # self.file_directory = filedialog.askdirectory(mustexist=True)
+        self.file_directory = r'C:\Users\runiza.TY2206042\OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
         self.list_files()
         self.label_1.configure(text=self.file_directory)
 
@@ -179,7 +180,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
                     self.added_iv[f'{file}'] = {"path": abspath,
                                                 'measurement device': potentiostat,
                                                 'encoding': checking[1],
-                                                'number of sweeps': checking[3]["Counts"],
+                                                'Sweeps': checking[3]["Counts"],
                                                 'data': checking[3]["Data"]}
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')

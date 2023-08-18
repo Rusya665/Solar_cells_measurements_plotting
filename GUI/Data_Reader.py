@@ -6,8 +6,6 @@ from instruments import columns_swap
 class IVDataReader:
     """
     Class to read IV data
-    Every positive-to-negative transition will be counted as a Reverse sweep.
-    Every negative-to-positive transition will be counted as a Forward sweep.
     """
 
     def __init__(self, path, potentiostat, encoding):

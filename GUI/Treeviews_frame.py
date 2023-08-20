@@ -26,7 +26,7 @@ class TableFrames(ctk.CTkFrame):
         self.active_areas_table_scrollbar = None
         self.files_table = None
         self.files_table_scrollbar = None
-        self.given_areas = {}
+        self.cached_areas = {}
         self.files_table_insert()
 
     def files_table_insert(self):
@@ -59,7 +59,9 @@ class TableFrames(ctk.CTkFrame):
         label1.grid(row=0, column=1, sticky='nsew', padx=5)
         label2.grid(row=0, column=2, sticky='nsew')
         areas = ActiveAreaDetector(path=path).check_directory()
-        self.given_areas = {key: {} for key in devices}
+        # Only initialize self.cached_areas if it's empty
+        if not self.cached_areas:
+            self.cached_areas = {key: {} for key in devices}
 
         for i, (key, value) in enumerate(devices.items()):
             device_counter = ctk.CTkLabel(master=self.active_areas_scrollable_frame,
@@ -89,6 +91,35 @@ class TableFrames(ctk.CTkFrame):
         entry_widget = event.widget
         # Extract the value typed by the user into the Entry widget
         entered_value = entry_widget.get()
-        # Update the self.given_areas dictionary
-        self.given_areas[device_name] = entered_value
-        ic(self.given_areas)
+
+        # If self.parent.iaa is True, then update all other Entry widgets with the entered value
+        if self.parent.iaa:
+            for child in self.active_areas_scrollable_frame.winfo_children():
+                if isinstance(child,
+                              ctk.CTkEntry) and child != entry_widget:  # Exclude the original entry from being updated again
+                    child.delete(0, END)
+                    child.insert(0, entered_value)
+        else:
+            # Only update the cached_areas dictionary for the specific device
+            self.cached_areas[device_name] = entered_value
+
+    def update_entries_from_cache(self):
+        """
+        Update the Entry widgets from the cached self.cached_areas dictionary based on device names (keys).
+        """
+        # Loop through the children of the active_areas_scrollable_frame to find Entry widgets
+        print("Cached areas at start:", self.cached_areas)
+
+        for child in self.active_areas_scrollable_frame.winfo_children():
+            if isinstance(child, ctk.CTkEntry):
+                # Assuming the device name (key) is the text of the preceding label (child.grid_info()['row']
+                # gives the row number)
+                device_label = self.active_areas_scrollable_frame.grid_slaves(row=child.grid_info()['row'], column=1)[0]
+                device_name = device_label.cget(
+                    'text')  # Getting the text of the label which corresponds to the device name
+                # Check if the device name exists in the cached dictionary and update the Entry content
+                if device_name in self.cached_areas and self.cached_areas[device_name]:
+                    child.delete(0, END)  # Clear the Entry
+                    child.insert(0, self.cached_areas[device_name])
+        print("Cached areas at the end:", self.cached_areas)
+

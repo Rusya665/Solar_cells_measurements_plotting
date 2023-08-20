@@ -24,7 +24,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.get_data = get_data
         self.added_iv = defaultdict(dict)
         self.aging_mode = False
-        self.iaa = False
+        self.iaa = True
+        # self.cached_active_areas = {}
 
         # widgets
         self.pack(fill=ctk.BOTH, expand=True)
@@ -34,10 +35,10 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.button_1 = ctk.CTkButton(self, text='Choose a directory', command=lambda: self.ask_directory())
         self.button_1.pack()
 
+        self.table_frame = TableFrames(parent=self, height=400)
         self.first_frame = FirstFrame(parent=self, width=350, height=70, fg_color='transparent')
         self.first_frame.pack()
 
-        self.table_frame = TableFrames(parent=self, height=400)
         self.table_frame.pack(pady=10)
 
         self.frame = ProceedFrame(parent=self, width=200, height=200)
@@ -64,7 +65,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :return: None
         """
         self.iaa = bool(self.first_frame.identical_areas_CheckBox.get())
-        self.list_files()
+        # self.list_files()
 
     def exit(self) -> None:
         """

@@ -24,6 +24,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.get_data = get_data
         self.added_iv = defaultdict(dict)
         self.aging_mode = False
+        self.iaa = False
 
         # widgets
         self.pack(fill=ctk.BOTH, expand=True)
@@ -55,6 +56,15 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :return: None
         """
         self.aging_mode = bool(self.first_frame.aging_mode_checkbox.get())
+        self.list_files()
+
+    def identical_active_areas_activator(self) -> None:
+        """
+        Apply the same active areas for all devices
+        :return: None
+        """
+        self.iaa = bool(self.first_frame.identical_areas_CheckBox.get())
+        self.list_files()
 
     def exit(self) -> None:
         """
@@ -133,7 +143,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :return: String with a path
         """
         # self.file_directory = filedialog.askdirectory(mustexist=True)
-        self.file_directory = r'C:\Users\runiza.TY2206042\OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
+        self.file_directory = r'D:\OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
         self.list_files()
         self.label_1.configure(text=self.file_directory)
 
@@ -151,7 +161,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
         """
         Update and fill the file table with filtered files
         """
-        # Clean the treeview before filling
+        if self.file_directory == '/':
+            return
+        # Check if there are any items in the treeview
         for i in self.table_frame.files_table.get_children():
             self.table_frame.files_table.delete(i)
         abspath = os.path.abspath(self.file_directory).replace('\\', '/')
@@ -200,7 +212,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
                     oid = self.table_frame.files_table.insert(parent, 'end', text=file, open=False, tags='folder',
                                                               values=['', '', abspath])
                     self.process_directory(oid, abspath)
-        self.table_frame.construct_active_areas_entries(data=self.added_iv)
+        self.table_frame.construct_active_areas_entries(data=self.added_iv, path=self.file_directory)
 
     def out(self):
         """

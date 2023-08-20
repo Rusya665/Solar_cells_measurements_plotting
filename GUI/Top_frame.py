@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import tkinter as ttk
 from idlelib.tooltip import Hovertip
+from icecream import ic
 
 
 class FirstFrame(ctk.CTkFrame):
@@ -15,14 +16,21 @@ class FirstFrame(ctk.CTkFrame):
         self.collapse = ctk.CTkButton(self, text='Collapse all', width=20,
                                       command=lambda: self.parent.expand_collapse(False))
 
-        self.aging_mode_checkbox = ctk.CTkCheckBox(self, text='Aging mode', command=self.parent.aging_mode_activator, width=20)
-        self.save_after_CheckBox = ctk.CTkCheckBox(self, text='SA', command=self.save_after)
+        self.aging_mode_checkbox = ctk.CTkCheckBox(self, text='Aging mode', command=self.parent.aging_mode_activator,
+                                                   width=20)
+        self.identical_areas_CheckBox = ctk.CTkCheckBox(self, text='Identical AA',
+                                                        command=self.parent.identical_active_areas_activator)
+        self.identical_areas_CheckBox.select()
+
+        self.read_from_file = ctk.CTkButton(self, text='Read AA from file', command=self.parent.list_files,
+                                            width=10)
 
         self.expand.grid(row=0, column=0, pady=15, padx=0)
         self.collapse.grid(row=0, column=1, pady=0, padx=7)
         self.potentiostat_combox.grid(row=0, column=2, pady=0, padx=10)
         self.aging_mode_checkbox.grid(row=0, column=3, pady=0, padx=7)
-        self.save_after_CheckBox.grid(row=0, column=4, pady=0, padx=7)
+        self.identical_areas_CheckBox.grid(row=0, column=4, pady=0, padx=7)
+        self.read_from_file.grid(row=0, column=5)
 
         self.hovers()
 
@@ -33,14 +41,12 @@ class FirstFrame(ctk.CTkFrame):
         hover_potentiostat_combox = 'Choose potentiostat to work with'
 
         hover_aging_mode_checkbox = 'Activate "Aging mode". Will detect the same devices in the multiple folders'
-        hover_text_sa = 'Optional parameter.\nSave images with areas after completing all images chosen.\n' \
-                        'Thus the annoying saving time will be only at the very end of working.'
+        hover_text_sa = 'Identical active areas'
+        hover_text_read_from = 'Read given active areas from a file'
         Hovertip(self.expand, hover_text_expand_all, hover_delay=hover_delay)
         Hovertip(self.collapse, hover_text_collapse_all, hover_delay=hover_delay)
         Hovertip(self.potentiostat_combox, hover_potentiostat_combox, hover_delay=hover_delay)
 
         Hovertip(self.aging_mode_checkbox, hover_aging_mode_checkbox, hover_delay=hover_delay)
-        Hovertip(self.save_after_CheckBox, hover_text_sa, hover_delay=hover_delay)
-
-    def save_after(self):
-        self.parent.parent.save_after = self.save_after_CheckBox.get()
+        Hovertip(self.identical_areas_CheckBox, hover_text_sa, hover_delay=hover_delay)
+        Hovertip(self.read_from_file, hover_text_read_from, hover_delay=hover_delay)

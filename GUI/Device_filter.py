@@ -29,6 +29,8 @@ class DeviceDetector:
         :param data_dict: Dictionary containing device-related data.
         """
         self.data = data_dict
+        # for key, value in data_dict.items():
+        #     print(key)
         # ic(self.data)
         # print_nested_dict(self.data)
 
@@ -67,7 +69,6 @@ class DeviceDetector:
                 continue
 
             matched_file = self.find_fuzzy_pair(filename, single_sweep_files)
-
             # Pair found and they have complementary sweeps
             if matched_file and single_sweep_files[matched_file] != direction:
                 combined_data = self.combine_data(self.data[filename], self.data[matched_file])
@@ -93,9 +94,23 @@ class DeviceDetector:
                 averaged_data = self.combine_sweeps(details)
                 result_data[filename] = averaged_data
 
-        return result_data
+        return self.adjust_keys(result_data)
 
-    def find_fuzzy_pair(self, filename, single_sweep_files):
+    @staticmethod
+    def adjust_keys(data_dict):
+        """
+        Processes a dictionary to remove file extensions from its keys.
+
+        :param data_dict: Dictionary where keys might have file extensions.
+        :return: Dictionary with keys adjusted (file extensions removed).
+        """
+        # Process keys and construct a new dictionary
+        adjusted_dict = {os.path.splitext(key)[0]: value for key, value in data_dict.items()}
+
+        return adjusted_dict
+
+    @staticmethod
+    def find_fuzzy_pair(filename, single_sweep_files):
         """
         Find a fuzzy-matching filename for the given filename.
 
@@ -118,7 +133,8 @@ class DeviceDetector:
         else:
             return None
 
-    def combine_data(self, data1, data2):
+    @staticmethod
+    def combine_data(data1, data2):
         """
         Combines data from two dictionaries.
 
@@ -143,7 +159,8 @@ class DeviceDetector:
 
         return combined_data
 
-    def combine_sweeps(self, value_data):
+    @staticmethod
+    def combine_sweeps(value_data):
         """
         Combines sweeps data based on their V values.
         Assumes each sweep has a 'V' column, and the values are averaged.
@@ -172,7 +189,8 @@ class DeviceDetector:
         value_data['data'] = combined_data
         return value_data
 
-    def adjust_filename(self, filename, existing_files):
+    @staticmethod
+    def adjust_filename(filename, existing_files):
         stripped_name = os.path.splitext(filename)[0]
 
         for matched_file in existing_files:

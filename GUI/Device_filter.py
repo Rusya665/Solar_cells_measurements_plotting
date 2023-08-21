@@ -26,10 +26,6 @@ class DeviceDetector:
         :param data_dict: Dictionary containing device-related data.
         """
         self.data = data_dict
-        # for key, value in data_dict.items():
-        #     print(key)
-        # ic(self.data)
-        # print_nested_dict(self.data)
 
     def detect_and_filter(self):
         """
@@ -235,6 +231,3 @@ class DeviceDetector:
         common_suffix = find_common_suffix(stripped_name, stripped_matched)
 
         return f"{common_prefix}{common_suffix}"
-
-
-

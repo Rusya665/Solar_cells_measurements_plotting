@@ -45,4 +45,3 @@ class IVDataReader:
             return columns_swap(df)
         else:
             raise ValueError(f"No matching potentiostat found for path: {self.path}")
-

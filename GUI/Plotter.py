@@ -1,7 +1,7 @@
 import xlsxwriter
 from icecream import ic
 import pandas as pd
-from instruments import create_folder
+from instruments import open_file
 import os
 import time
 from datetime import date
@@ -11,22 +11,30 @@ class DevicePlotter:
     def __init__(self, parent, matched_devices: dict):
         self.matched_devices = matched_devices
         self.parent = parent
-        ic(self.matched_devices)
-        # Initializing other attributes required for the class
-
-        # Assuming you want to keep a similar structure for an Excel file as above
-        self.workbook = None  # This will be our xlsx writer workbook
+        self.xlsx_name = ''
+        self.workbook = self.create_workbook()
+        self.center = self.workbook.add_format({'align': 'center'})
+        self.wb_main = self.workbook.add_worksheet('Total')
+        self.wb_table = self.workbook.add_worksheet('Tabel_Total')
+        if self.parent.aging_mode:
+            self.aging_sheet = self.workbook.add_worksheet('Aging')
 
         self.save_data_to_excel()
+        self.workbook.close()
+        if self.parent.open_wb:
+            time.sleep(0.2)
+            open_file(self.xlsx_name)
 
     def create_workbook(self):
         """
         Creating new xlsx doc and/or folder for it
         :return: Workbook
         """
-        xlsx_name = self.parent.file_directory + str(date.today()) + ' ' + os.path.basename(os.path.dirname(self.parent.file_directory)) + ' ' + "JV plots and " \
-                                                                                                "calculations.xlsx"
-        self.workbook = xlsxwriter.Workbook(xlsx_name, {'strings_to_numbers': True})
+        base_dir = os.path.dirname(self.parent.file_directory)
+        base_name = os.path.basename(base_dir)
+        self.xlsx_name = os.path.join(self.parent.file_directory,
+                                      f"{date.today()} {base_name} JV plots and calculations.xlsx")
+        self.workbook = xlsxwriter.Workbook(self.xlsx_name, {'strings_to_numbers': True})
         return self.workbook
 
     def save_data_to_excel(self):

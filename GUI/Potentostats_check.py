@@ -1,8 +1,5 @@
 import os
-from pathlib import Path
 import chardet
-import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from Data_Reader import IVDataReader
 
@@ -147,4 +144,3 @@ class PotentiostatFileChecker:
     #     total_rows_in_segments = sum(segment.shape[0] for segment in sweeps_data)
     #     print(f'For {Path(file).stem} the total length is {df.shape[0]} and the sweeps all together are
     #     {total_rows_in_segments}')
-

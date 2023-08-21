@@ -1,7 +1,6 @@
 from functools import partial
 from tkinter import ttk, END
 import customtkinter as ctk
-from icecream import ic
 
 from tkinter import messagebox
 from GUI.Device_filter import DeviceDetector

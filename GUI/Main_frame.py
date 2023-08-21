@@ -1,43 +1,45 @@
 import os
 import tkinter as tk
 from collections import defaultdict
-from pathlib import Path
-from tkinter import filedialog, messagebox
+from tkinter import messagebox
 
 import customtkinter as ctk
-from Treeviews_frame import TableFrames
-from The_lower_frames import LowestFrame, ProceedFrame
-from Top_frame import FirstFrame
-from icecream import ic
+
 from GUI.Potentostats_check import PotentiostatFileChecker
 from Plotter import DevicePlotter
+from Slide_frame import SlidePanel
+from The_lower_frames import LowestFrame, ProceedFrame
+from Top_frame import FirstFrame
+from Treeviews_frame import TableFrames
+from settings import settings
 
 
 class IVProcessingMainClass(ctk.CTkFrame):
-    def __init__(self, parent, get_data, *args, **kwargs):
+    def __init__(self, parent, *args, **kwargs):
         super().__init__(master=parent, *args, **kwargs)
 
         # Some variables
         self.parent = parent
-        self.table_size = 15
+        self.table_size = settings['Main frame']['table_size']
         self.potentiostat = 'All'
         self.file_directory = '/'
         self.files_selected = []
-        self.get_data = get_data
         self.added_iv = defaultdict(dict)
         self.aging_mode = False
         self.iaa = True
-        # self.cached_active_areas = {}
+        self.open_wb = True
 
         # widgets
         self.pack(fill=ctk.BOTH, expand=True)
+        self.table_frame = TableFrames(parent=self, height=400)
+        self.slide_frame = SlidePanel(parent=self, start_pos=1.0, end_pos=0.75)
+
         self.label_1 = ctk.CTkLabel(self, text='Specify a directory with images to work with')
         self.label_1.pack()
 
         self.button_1 = ctk.CTkButton(self, text='Choose a directory', command=lambda: self.ask_directory())
         self.button_1.pack()
 
-        self.table_frame = TableFrames(parent=self, height=400)
         self.first_frame = FirstFrame(parent=self, width=350, height=70, fg_color='transparent')
         self.first_frame.pack()
 
@@ -49,16 +51,12 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.lowest_frame = LowestFrame(self, fg_color='transparent')
         self.lowest_frame.pack(fill='x')
 
-        self.progress_bar = ctk.CTkProgressBar(master=self, width=300)
-        self.progress_bar.pack()
-        self.progress_bar.set(0)
-
     def aging_mode_activator(self) -> None:
         """
         Activate the "Aging mode"
         :return: None
         """
-        self.aging_mode = bool(self.first_frame.aging_mode_checkbox.get())
+        self.aging_mode = bool(self.slide_frame.aging_mode_checkbox.get())
         self.list_files()
 
     def identical_active_areas_activator(self) -> None:
@@ -66,7 +64,14 @@ class IVProcessingMainClass(ctk.CTkFrame):
         Apply the same active areas for all devices
         :return: None
         """
-        self.iaa = bool(self.first_frame.identical_areas_CheckBox.get())
+        self.iaa = bool(self.slide_frame.identical_areas_CheckBox.get())
+
+    def open_wb_activator(self) -> None:
+        """
+        Open workbook at the end of the code
+        :return: None
+        """
+        self.open_wb = bool(self.slide_frame.open_wb_checkbox.get())
 
     def exit(self) -> None:
         """
@@ -145,7 +150,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :return: String with a path
         """
         # self.file_directory = filedialog.askdirectory(mustexist=True)
-        self.file_directory = r'C:\Users/runiza.TY2206042/OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
+        # self.file_directory = r'C:\Users/runiza.TY2206042/OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
+        self.file_directory = r'D:/OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
         self.list_files()
         self.label_1.configure(text=self.file_directory)
 
@@ -217,29 +223,3 @@ class IVProcessingMainClass(ctk.CTkFrame):
                                                               values=['', '', abspath])
                     self.process_directory(oid, abspath)
         self.table_frame.construct_active_areas_entries(data=self.added_iv, path=self.file_directory)
-
-    def out(self):
-        """
-        Resize images accordingly and generate output dict
-        :return: None
-        """
-        if not self.files_selected:
-            messagebox.showerror('Waring!', "Choose a folder(s) or an image(s) to continue!")
-        else:
-            folder_name = []
-            counter = 0
-            for ind, file in enumerate(self.files_selected):
-                self.progress_bar.set(round((1 - (len(self.files_selected) - ind - 1) /
-                                             len(self.files_selected)), 2))
-                self.update_idletasks()
-                dir_name = os.path.basename(Path(file).parents[0])
-                if 'Processed/' in file:
-                    dir_name = Path(file.split('Processed/')[0]).name
-                folder_name.append(dir_name)
-                if ind != 0 and not folder_name[ind - 1] == folder_name[ind]:
-                    counter = 0
-                counter += 1
-            for widget in self.winfo_children():
-                widget.quit()
-            self.pack_forget()
-            self.get_data(data=self.added_iv, extension=self.potentiostat, first_img=self.aging_mode)

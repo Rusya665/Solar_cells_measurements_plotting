@@ -1,9 +1,6 @@
 import pandas as pd
 from fuzzywuzzy import fuzz
-from icecream import ic
 import os
-from tkinter import messagebox
-from instruments import print_nested_dict
 
 
 class DeviceDetector:
@@ -57,6 +54,7 @@ class DeviceDetector:
             # Directly add files with both sweeps to result
             if fw_sweeps + rv_sweeps == 2 and fw_sweeps == rv_sweeps:
                 result_data[filename] = details
+                result_data[filename]['Used files'] = filename
 
             # Collect single sweep files for later processing
             elif fw_sweeps + rv_sweeps == 1:
@@ -71,11 +69,11 @@ class DeviceDetector:
             matched_file = self.find_fuzzy_pair(filename, single_sweep_files)
             # Pair found and they have complementary sweeps
             if matched_file and single_sweep_files[matched_file] != direction:
-                combined_data = self.combine_data(self.data[filename], self.data[matched_file])
-
+                combined_data, used_files = self.combine_data(self.data[filename], self.data[matched_file])
                 # Adjust the key to represent the common device name with distinguishing suffixes
-                filename_key = self.adjust_filename(filename, result_data.keys())
+                filename_key = self.adjust_filename(filename, matched_file)
                 result_data[filename_key] = combined_data
+                result_data[filename_key]['Used files'] = used_files
 
                 processed_files.add(filename)
                 processed_files.add(matched_file)
@@ -93,6 +91,7 @@ class DeviceDetector:
             if fw_sweeps > 1 or rv_sweeps > 1:
                 averaged_data = self.combine_sweeps(details)
                 result_data[filename] = averaged_data
+                result_data[filename]['Used files'] = filename
 
         return self.adjust_keys(result_data)
 
@@ -140,7 +139,7 @@ class DeviceDetector:
 
         :param data1: The first data dictionary.
         :param data2: The second data dictionary.
-        :return: The combined data dictionary.
+        :return: The combined data dictionary and a list of contributing files.
         """
         combined_data = data1.copy()
         combined_data['Sweeps']['Total Sweeps'] += data2['Sweeps']['Total Sweeps']
@@ -156,8 +155,10 @@ class DeviceDetector:
                     combined_data['data']['1'] = data2['data'][sweep_key]
                 elif 'Rv' in sweep_key:
                     combined_data['data']['2'] = data2['data'][sweep_key]
+        used_files = data1['Used files'], data2['Used files']
+        combined_data['Used files'] = used_files
 
-        return combined_data
+        return combined_data, used_files
 
     @staticmethod
     def combine_sweeps(value_data):
@@ -190,16 +191,50 @@ class DeviceDetector:
         return value_data
 
     @staticmethod
-    def adjust_filename(filename, existing_files):
+    def adjust_filename(filename, matched_file):
+        """
+        Adjusts the given filename based on the common prefix and suffix
+        found between the filename and matched_file.
+
+        :param filename: The original filename to be adjusted.
+        :param matched_file: The reference filename to determine common prefix and suffix.
+        :return: Adjusted filename based on common elements with matched_file.
+        """
+
+        def find_common_prefix(s1, s2):
+            """
+            Finds the common prefix between two strings.
+
+            :param s1: First string.
+            :param s2: Second string.
+            :return: Common prefix string.
+            """
+            i = 0
+            while i < len(s1) and i < len(s2) and s1[i] == s2[i]:
+                i += 1
+            return s1[:i]
+
+        def find_common_suffix(s1, s2):
+            """
+            Finds the common suffix between two strings.
+
+            :param s1: First string.
+            :param s2: Second string.
+            :return: Common suffix string.
+            """
+            i = -1
+            while abs(i) <= len(s1) and abs(i) <= len(s2) and s1[i] == s2[i]:
+                i -= 1
+            return s1[i + 1:] if i != -1 else ''
+
         stripped_name = os.path.splitext(filename)[0]
+        stripped_matched = os.path.splitext(matched_file)[0]
 
-        for matched_file in existing_files:
-            stripped_matched = os.path.splitext(matched_file)[0]
-            common_name = os.path.commonprefix([stripped_name, stripped_matched])
+        # Find common prefix and suffix
+        common_prefix = find_common_prefix(stripped_name, stripped_matched)
+        common_suffix = find_common_suffix(stripped_name, stripped_matched)
 
-            # Extract distinguishing suffix
-            suffix = stripped_name[len(common_name):]
+        return f"{common_prefix}{common_suffix}"
 
-            if suffix:
-                return f"{common_name}{suffix}"
-        return filename
+
+

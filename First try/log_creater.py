@@ -1,5 +1,5 @@
 import time
-import instruments
+from GUI import instruments
 from datetime import datetime
 
 from xlsx_plotter import PlotIV

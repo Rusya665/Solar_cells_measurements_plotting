@@ -1,7 +1,7 @@
 import os
 import time
 import xlsxwriter
-import instruments
+from GUI import instruments
 from datetime import date
 
 from read_iv import ReadData

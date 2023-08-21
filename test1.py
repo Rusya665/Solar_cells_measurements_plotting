@@ -1,57 +1,36 @@
-# class Test1:
-#     test_var = 12
-#     test_str = 12
-#     test_list = []
-#
-#     def __init__(self, some_value=5):
-#         self.some_value = some_value
-#         self.test_var2 = 5
-#         # self.test_var2 = self.var_do()
-#         self.do_stuff()
-#
-#     def do_stuff(self):
-#         self.test_var2 = 6
-#         self.test_var = 1
-#         self.test_str = 1
-#         self.test_list.append(1)
-from instruments import logger
+import os
+from icecream import ic
 
 
-class GrandPa:
-    log_dict = {}
-
-    def __init__(self, string: str):
-        if not string.endswith('/'):
-            string = string + '/'
-        self.string = string
-        self.var1 = 4
-        print('The var1 is', self.var1)
-        self.do_smth()
-
-    @logger(log_dict)
-    def do_smth(self):
-        self.var1 = self.var1 + 1
-        print('GrandPa says', self.var1)
-        return self.var1
+def find_common_prefix(s1, s2):
+    i = 0
+    while i < len(s1) and i < len(s2) and s1[i] == s2[i]:
+        i += 1
+    return s1[:i]
 
 
-class Daddy(GrandPa):
-
-    def __init__(self):
-        self.dad_var1 = 42
-        super().__init__(string=self.string, )
-        # self.string = string
-        for h in range(3):
-            h += 1
-            self.do_like_dad()
-
-    @logger(GrandPa.log_dict)
-    def do_like_dad(self, g=10):
-        self.dad_var1 = self.dad_var1 + 2
-        self.var1 = self.var1 + 1
-        print('Daddy says', self.var1)
-        print(f'Daddy prints {self.string}')
-        return self.dad_var1, self.var1, g
+def find_common_suffix(s1, s2):
+    i = -1
+    while abs(i) <= len(s1) and abs(i) <= len(s2) and s1[i] == s2[i]:
+        i -= 1
+    return s1[i + 1:] if i != -1 else ''
 
 
+def adjust_filename(filename, matched_file):
+    stripped_name = os.path.splitext(filename)[0]
+    stripped_matched = os.path.splitext(matched_file)[0]
 
+    # Find common prefix and suffix
+    common_prefix = find_common_prefix(stripped_name, stripped_matched)
+    common_suffix = find_common_suffix(stripped_name, stripped_matched)
+
+    # Extract distinguishing middle section from the filename
+    middle_section = stripped_name[len(common_prefix):-len(common_suffix) or None]
+    ic(common_prefix, common_suffix)
+    return f"{common_prefix}{middle_section}{common_suffix}.txt"
+
+
+# Test
+filename1 = '13FC2LgFw-slow.txt'
+matched_file1 = '13FC2LgRv-slow.txt'
+print(adjust_filename(filename1, matched_file1))

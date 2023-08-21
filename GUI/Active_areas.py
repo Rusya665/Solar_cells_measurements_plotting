@@ -70,7 +70,6 @@ class ActiveAreaDetector:
         :return: Extracted active area data.
         """
         data_dict = {}
-        print('txt Active area')
         with open(self.filepath, 'r') as f:
             lines = f.readlines()
             for line in lines:

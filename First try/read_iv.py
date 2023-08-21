@@ -1,6 +1,6 @@
 import os.path
 import pandas as pd
-import instruments
+from GUI import instruments
 import time
 
 

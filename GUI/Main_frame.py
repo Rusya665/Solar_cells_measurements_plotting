@@ -8,7 +8,9 @@ import customtkinter as ctk
 from Treeviews_frame import TableFrames
 from The_lower_frames import LowestFrame, ProceedFrame
 from Top_frame import FirstFrame
+from icecream import ic
 from GUI.Potentostats_check import PotentiostatFileChecker
+from Plotter import DevicePlotter
 
 
 class IVProcessingMainClass(ctk.CTkFrame):
@@ -65,7 +67,6 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :return: None
         """
         self.iaa = bool(self.first_frame.identical_areas_CheckBox.get())
-        # self.list_files()
 
     def exit(self) -> None:
         """
@@ -89,19 +90,19 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :param state: Selected some files or all the files
         :return: None
         """
-        self.files_selected = []
+        items = []
         if state == "Selected":
-            for item in self.table_frame.files_table.selection():
-                self.treeview_expand_collapse(item, True, select=True)
-                self.table_frame.files_table.set(item)
-            self.items_select()
-            self.out()
-        if state == 'All':
-            self.table_frame.files_table.selection_add(self.table_frame.files_table.get_children())
-            for item in self.table_frame.files_table.get_children():
-                self.treeview_expand_collapse(item, True, select=True)
-            self.items_select()
-            self.out()
+            # This should fetch selected items and not all top-level items
+            items = list(self.table_frame.files_table.selection())
+        elif state == "All":
+            # This should fetch all items in the tree, including children of top-level items
+            items = list(self.table_frame.files_table.get_children(''))
+            for top_level_item in items:
+                child_items = list(self.table_frame.files_table.get_children(top_level_item))
+                items.extend(child_items)
+
+        matched = self.table_frame.devices_by_folder(items)
+        DevicePlotter(parent=self, matched_devices=matched)
 
     def expand_collapse(self, expand=True) -> None:
         """
@@ -129,14 +130,14 @@ class IVProcessingMainClass(ctk.CTkFrame):
             for item_inner in self.table_frame.files_table.get_children(item):
                 self.treeview_expand_collapse(item_inner, expand_collapse, select)
 
-    def items_select(self) -> None:
-        """
-        Returns selected value/clues from the table
-        :return: None
-        """
-        for i in self.table_frame.files_table.selection():
-            if self.table_frame.files_table.item(i)['tags'] == ['file']:
-                self.files_selected.append(self.table_frame.files_table.item(i)['values'][-1])
+    # def items_select(self) -> None:
+    #     """
+    #     Returns selected value/clues from the table
+    #     :return: None
+    #     """
+    #     for i in self.table_frame.files_table.selection():
+    #         if self.table_frame.files_table.item(i)['tags'] == ['file']:
+    #             self.files_selected.append(self.table_frame.files_table.item(i)['values'][-1])
 
     def ask_directory(self) -> None:
         """
@@ -144,7 +145,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :return: String with a path
         """
         # self.file_directory = filedialog.askdirectory(mustexist=True)
-        self.file_directory = r'D:\OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
+        self.file_directory = r'C:\Users/runiza.TY2206042/OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
         self.list_files()
         self.label_1.configure(text=self.file_directory)
 
@@ -194,7 +195,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
                                                 'measurement device': potentiostat,
                                                 'encoding': checking[1],
                                                 'Sweeps': checking[3]["Counts"],
-                                                'data': checking[3]["Data"]}
+                                                'data': checking[3]["Data"],
+                                                'Used files': file,
+                                                'Active area': None}
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')
             if os.path.isdir(abspath):

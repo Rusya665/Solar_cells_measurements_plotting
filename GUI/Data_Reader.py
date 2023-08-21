@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-from instruments import columns_swap
+from GUI.instruments import columns_swap
 
 
 class IVDataReader:

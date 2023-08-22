@@ -50,9 +50,9 @@ class DevicePlotter:
                 # Create a worksheet for each device with the name "folder device"
                 ws_name = f"{folder_name} {device_name}"
                 ws = self.workbook.add_worksheet(ws_name)
+                col_start = 0
 
                 # Write the headers for I, V, and P
-                col_start = 0
                 ws.write(0, col_start, 'I', self.center)
                 ws.write(0, col_start + 1, 'V', self.center)
                 ws.write(0, col_start + 2, 'P', self.center)

@@ -70,7 +70,7 @@ class SlidePanel(ctk.CTkFrame):
 
     def animate(self):
         target_pos = self.end_pos if self.in_start_pos else self.start_pos
-        step = -0.008 if self.in_start_pos else 0.008
+        step = -0.03 if self.in_start_pos else 0.03
         self.animate_to_target(target_pos, step)
         self.in_start_pos = not self.in_start_pos
 

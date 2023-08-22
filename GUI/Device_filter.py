@@ -1,6 +1,8 @@
+import os
+
 import pandas as pd
 from fuzzywuzzy import fuzz
-import os
+from icecream import ic
 
 
 class DeviceDetector:
@@ -39,55 +41,58 @@ class DeviceDetector:
         """
 
         result_data = {}
-        single_sweep_files = {}
-        processed_files = set()
 
-        # 1. Handle devices with both sweeps
-        for filename, details in self.data.items():
-            fw_sweeps = details['Sweeps']['Forward Sweeps']
-            rv_sweeps = details['Sweeps']['Reverse Sweeps']
+        # Iterate through folders and then files
+        for folder_name, folder_data in self.data.items():
+            single_sweep_files = {}
+            processed_files = set()
+            result_data[folder_name] = {}  # Initialize the folder in the result
 
-            # Directly add files with both sweeps to result
-            if fw_sweeps + rv_sweeps == 2 and fw_sweeps == rv_sweeps:
-                result_data[filename] = details
-                result_data[filename]['Used files'] = filename
+            # Handle devices with both sweeps
+            for filename, details in folder_data.items():
+                fw_sweeps = details['Sweeps']['Forward Sweeps']
+                rv_sweeps = details['Sweeps']['Reverse Sweeps']
 
-            # Collect single sweep files for later processing
-            elif fw_sweeps + rv_sweeps == 1:
-                direction = "Forward" if fw_sweeps == 1 else "Reverse"
-                single_sweep_files[filename] = direction
+                # Directly add files with both sweeps to result
+                if fw_sweeps + rv_sweeps == 2 and fw_sweeps == rv_sweeps:
+                    result_data[folder_name][filename] = details
+                    result_data[folder_name][filename]['Used files'] = filename
 
-        # 2. Pair devices with single sweeps
-        for filename, direction in single_sweep_files.items():
-            if filename in processed_files:
-                continue
+                # Collect single sweep files for later processing
+                elif fw_sweeps + rv_sweeps == 1:
+                    direction = "Forward" if fw_sweeps == 1 else "Reverse"
+                    single_sweep_files[filename] = direction
 
-            matched_file = self.find_fuzzy_pair(filename, single_sweep_files)
-            # Pair found and they have complementary sweeps
-            if matched_file and single_sweep_files[matched_file] != direction:
-                combined_data, used_files = self.combine_data(self.data[filename], self.data[matched_file])
-                # Adjust the key to represent the common device name with distinguishing suffixes
-                filename_key = self.adjust_filename(filename, matched_file)
-                result_data[filename_key] = combined_data
-                result_data[filename_key]['Used files'] = used_files
+            # Pair devices with single sweeps
+            for filename, direction in single_sweep_files.items():
+                if filename in processed_files:
+                    continue
 
-                processed_files.add(filename)
-                processed_files.add(matched_file)
+                matched_file = self.find_fuzzy_pair(filename, single_sweep_files)
+                # Pair found and they have complementary sweeps
+                if matched_file and single_sweep_files[matched_file] != direction:
+                    combined_data, used_files = self.combine_data(folder_data[filename], folder_data[matched_file])
+                    # Adjust the key to represent the common device name with distinguishing suffixes
+                    filename_key = self.adjust_filename(filename, matched_file)
+                    result_data[folder_name][filename_key] = combined_data
+                    result_data[folder_name][filename_key]['Used files'] = used_files
 
-            else:
-                # Remove unmatched single sweep files
-                # messagebox.showerror('Warning!', f'This file {filename} does not have a satisfying pair!')
-                self.data.pop(filename, None)
+                    processed_files.add(filename)
+                    processed_files.add(matched_file)
 
-        # 3. Average out devices with multiple sweeps
-        for filename, details in self.data.items():
-            fw_sweeps = details['Sweeps']['Forward Sweeps']
-            rv_sweeps = details['Sweeps']['Reverse Sweeps']
+                else:
+                    # Remove unmatched single sweep files
+                    folder_data.pop(filename, None)
 
-            if fw_sweeps > 1 or rv_sweeps > 1:
-                averaged_data = self.combine_sweeps(details)
-                result_data[filename] = averaged_data
-                result_data[filename]['Used files'] = filename
+            # Average out devices with multiple sweeps
+            for filename, details in folder_data.items():
+                fw_sweeps = details['Sweeps']['Forward Sweeps']
+                rv_sweeps = details['Sweeps']['Reverse Sweeps']
+
+                if fw_sweeps > 1 or rv_sweeps > 1:
+                    averaged_data = self.combine_sweeps(details)
+                    result_data[folder_name][filename] = averaged_data
+                    result_data[folder_name][filename]['Used files'] = filename
 
         return self.adjust_keys(result_data)
 
@@ -100,8 +105,10 @@ class DeviceDetector:
         :return: Dictionary with keys adjusted (file extensions removed).
         """
         # Process keys and construct a new dictionary
-        adjusted_dict = {os.path.splitext(key)[0]: value for key, value in data_dict.items()}
-
+        adjusted_dict = {}
+        for folder_name, folder_data in data_dict.items():
+            adjusted_folder_data = {os.path.splitext(key)[0]: value for key, value in folder_data.items()}
+            adjusted_dict[folder_name] = adjusted_folder_data
         return adjusted_dict
 
     @staticmethod

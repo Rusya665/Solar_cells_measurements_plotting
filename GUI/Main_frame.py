@@ -1,9 +1,10 @@
 import os
 import tkinter as tk
 from collections import defaultdict
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 
 import customtkinter as ctk
+from icecream import ic
 
 from GUI.Potentostats_check import PotentiostatFileChecker
 from Plotter import DevicePlotter
@@ -95,6 +96,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :param state: Selected some files or all the files
         :return: None
         """
+        if self.file_directory == '/':
+            messagebox.showerror('Warning!', "Choose a folder to continue!")
+            return
         items = []
         if state == "Selected":
             # This should fetch selected items and not all top-level items
@@ -105,9 +109,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
             for top_level_item in items:
                 child_items = list(self.table_frame.files_table.get_children(top_level_item))
                 items.extend(child_items)
-
         matched = self.table_frame.devices_by_folder(items)
         DevicePlotter(parent=self, matched_devices=matched)
+        self.exit()
 
     def expand_collapse(self, expand=True) -> None:
         """
@@ -149,9 +153,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
         Built-in Tkinter function to return a str with a path
         :return: String with a path
         """
-        # self.file_directory = filedialog.askdirectory(mustexist=True)
+        self.file_directory = filedialog.askdirectory(mustexist=True)
         # self.file_directory = r'C:\Users/runiza.TY2206042/OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
-        self.file_directory = r'D:/OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
+        # self.file_directory = r'D:/OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
         self.list_files()
         self.label_1.configure(text=self.file_directory)
 
@@ -197,13 +201,19 @@ class IVProcessingMainClass(ctk.CTkFrame):
                 if checking[0]:  # Insert a file only if it's potentiostats file
                     potentiostat = checking[2]
                     data = [potentiostat, checking[1], abspath]
-                    self.added_iv[f'{file}'] = {"path": abspath,
-                                                'measurement device': potentiostat,
-                                                'encoding': checking[1],
-                                                'Sweeps': checking[3]["Counts"],
-                                                'data': checking[3]["Data"],
-                                                'Used files': file,
-                                                'Active area': None}
+                    folder_name = os.path.basename(path)
+                    if folder_name not in self.added_iv:
+                        self.added_iv[folder_name] = {}
+                    self.added_iv[folder_name][file] = {
+                        "path": abspath,
+                        'measurement device': potentiostat,
+                        'encoding': checking[1],
+                        'Sweeps': checking[3]["Counts"],
+                        'data': checking[3]["Data"],
+                        'Used files': file,
+                        'Active area': None,
+                        'Light Intensity': 0.1,
+                    }
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')
             if os.path.isdir(abspath):

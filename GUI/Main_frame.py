@@ -139,15 +139,6 @@ class IVProcessingMainClass(ctk.CTkFrame):
             for item_inner in self.table_frame.files_table.get_children(item):
                 self.treeview_expand_collapse(item_inner, expand_collapse, select)
 
-    # def items_select(self) -> None:
-    #     """
-    #     Returns selected value/clues from the table
-    #     :return: None
-    #     """
-    #     for i in self.table_frame.files_table.selection():
-    #         if self.table_frame.files_table.item(i)['tags'] == ['file']:
-    #             self.files_selected.append(self.table_frame.files_table.item(i)['values'][-1])
-
     def ask_directory(self) -> None:
         """
         Built-in Tkinter function to return a str with a path
@@ -191,7 +182,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :param depth: depth of the folders path
         :return: None
         """
-        potentiostat_checker = PotentiostatFileChecker(potentiostat_choice=self.potentiostat)
+        potentiostat_checker = PotentiostatFileChecker(parent=self, potentiostat_choice=self.potentiostat)
         self.added_iv.clear()
         for file in os.listdir(path):
             abspath = os.path.join(path, file).replace('\\', '/')

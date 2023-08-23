@@ -9,11 +9,12 @@ class PotentiostatFileChecker:
     Class to check if a file matches one of the specified potentiostat types.
     """
 
-    def __init__(self, potentiostat_choice='All'):
+    def __init__(self, parent, potentiostat_choice='All'):
         """
         Initialize PotentiostatFileChecker with a dictionary mapping file extensions to potentiostat types and their
          identifying characteristics.
         """
+        self.parent = parent
         self.potentiostat_dict = {
             '.DTA': {
                 'Gamry': "CURVE1\tTABLE",
@@ -79,7 +80,7 @@ class PotentiostatFileChecker:
                      - "4_Reverse": Data for the second detected reverse sweep
                      - (and so on...)
         """
-        df = IVDataReader(file, potentiostat, self.encoding).read()
+        df = IVDataReader(self, file, potentiostat, self.encoding).read()
 
         if len(df) < 2:
             return {"Counts": {"Total Sweeps": 0, "Forward Sweeps": 0, "Reverse Sweeps": 0}, "Data": {}}

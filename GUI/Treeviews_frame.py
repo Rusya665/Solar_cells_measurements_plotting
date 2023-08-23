@@ -38,7 +38,7 @@ class TableFrames(ctk.CTkFrame):
                                         yscrollcommand=self.files_table_scrollbar.set)
         self.files_table.heading('#0', text='Name', anchor='w')
         self.files_table.heading(0, text='Device', anchor='w')
-        self.files_table.heading(1, text='Efficiency', anchor='w')
+        self.files_table.heading(1, text='Encoding', anchor='w')
         self.files_table.column('#0', width=300)
         self.files_table.column(0, width=100)
         self.files_table.column(1, width=100)
@@ -215,13 +215,15 @@ class TableFrames(ctk.CTkFrame):
                 for folder, devices in matched_devices.items():
                     if device_name in devices:
                         if not entry_value.strip():
-                            messagebox.showerror('Warning!', f"Missing data for device: {device_name}")
+                            messagebox.showerror('Warning!', f"Missing active area value for the device:"
+                                                             f" {device_name}")
                             return
                         try:
                             entry_value = float(entry_value)
                         except ValueError:
                             messagebox.showerror('Warning!',
-                                                 f"Invalid data for device: {device_name}. Please enter a valid numerical value (e.g., 5 or 5.25).")
+                                                 f"Invalid active area value for the device: {device_name}. "
+                                                 f"Please enter a valid numerical value (e.g., 5 or 5.25).")
                             return
                         matched_devices[folder][device_name]['Active area'] = entry_value
                         break

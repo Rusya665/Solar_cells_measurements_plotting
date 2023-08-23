@@ -73,7 +73,7 @@ class PlotIV(ReadData):
             self.wb_main.insert_chart(20, (row_index - 1) * 8, self.add_iv_plot(self.data[f'{row_index}']['File name'],
                                       len(self.data[f'{row_index}']['IV'].index)))
             for JV_val in range(len(self.data[f'{row_index}']['IV'].index)):  # Write IV data points
-                ws.write_row(JV_val + 1, self.col_start, self.data[f'{row_index}']['IV'].loc[JV_val])
+                ws.write_table_rows(JV_val + 1, self.col_start, self.data[f'{row_index}']['IV'].loc[JV_val])
                 ws.write_formula(JV_val + 1, self.col_start + 2, f'=A{JV_val + 2}*B{JV_val + 2}')
             # If sign change has been found complete following
             if self.data[f'{row_index}']['Axis crossing']['I'] and self.data[f'{row_index}']['Axis crossing']['V']:

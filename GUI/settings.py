@@ -5,5 +5,10 @@ settings = {
     },
     'Main frame': {
         'table_size': 15
+    },
+    'DevicePlotter': {
+        'chart_x_scale': 1,  # 480 pixels
+        'chart_y_scale': 1,  # 288 pixels
+
     }
 }

@@ -46,12 +46,12 @@ class TableFrames(ctk.CTkFrame):
         self.files_table_scrollbar.configure(command=self.files_table.yview)
         # self.files_table.bind('<<TreeviewSelect>>', lambda event: self.parent.items_select())
 
-    def get_selected_devices_from_treeview(self):
-        """
-        Extract and return the names of devices from the selected items in the Treeview.
-        """
-        selected_items = self.files_table.selection()
-        return [self.files_table.item(item)["text"] for item in selected_items]
+    # def get_selected_devices_from_treeview(self):
+    #     """
+    #     Extract and return the names of devices from the selected items in the Treeview.
+    #     """
+    #     selected_items = self.files_table.selection()
+    #     return [self.files_table.item(item)["text"] for item in selected_items]
 
     def construct_active_areas_entries(self, data, path) -> None:
         for child in self.active_areas_scrollable_frame.winfo_children():

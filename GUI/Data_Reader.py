@@ -4,7 +4,7 @@ from tkinter import messagebox
 import pandas as pd
 from icecream import ic
 
-from GUI.instruments import columns_swap
+from GUI.instruments import columns_swap, flip_data_if_necessary
 
 
 class IVDataReader:
@@ -20,11 +20,12 @@ class IVDataReader:
 
     def read(self):
         df = None
-
+        current_unit = None
         match self.potentiostat:
             case "SMU":
                 df = pd.read_csv(self.path, sep='\t', engine='python', header=None, encoding=self.encoding,
                                  names=['V', 'I'], skiprows=2)
+                current_unit = 'I'
                 df = self.convert_current('I', df)
 
             case "Gamry":
@@ -69,7 +70,8 @@ class IVDataReader:
 
         if df is not None:
             df.name = Path(self.path).stem
-            return columns_swap(df)
+            # return columns_swap(df)
+            return flip_data_if_necessary(df), current_unit
         else:
             raise ValueError(f"No matching potentiostat found for path: {self.path}")
 

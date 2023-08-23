@@ -191,7 +191,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
                 checking = potentiostat_checker.check_file(abspath)
                 if checking[0]:  # Insert a file only if it's potentiostats file
                     potentiostat = checking[2]
-                    data = [potentiostat, checking[1], abspath]
+                    # data = [potentiostat, checking[1], abspath]
+                    data = [potentiostat, checking[-1]['Unit'], abspath]
                     folder_name = os.path.basename(path)
                     if folder_name not in self.added_iv:
                         self.added_iv[folder_name] = {}
@@ -201,6 +202,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
                         'encoding': checking[1],
                         'Sweeps': checking[3]["Counts"],
                         'data': checking[3]["Data"],
+                        'unit': checking[3]['Unit'],
                         'Used files': file,
                         'Active area': None,
                         'Light Intensity': 0.1,

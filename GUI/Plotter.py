@@ -2,6 +2,8 @@ import xlsxwriter
 from icecream import ic
 from scipy.stats import linregress
 from instruments import open_file
+from settings import settings
+import math
 import os
 import time
 from datetime import date
@@ -12,6 +14,9 @@ class DevicePlotter:
     def __init__(self, parent, matched_devices: dict):
         self.data = matched_devices
         self.parent = parent
+        self.name = self.__class__.__name__
+        # Assuming the default cells height 20 pixels
+        self.chart_vertical_spacing = math.ceil((288 * settings[self.name]['chart_y_scale']) / 20) + 1
         self.xlsx_name = ''
         self.workbook = self.create_workbook()
         self.center = self.workbook.add_format({'align': 'center'})
@@ -67,6 +72,9 @@ class DevicePlotter:
                 if len(ws_name) > 31:  # In case the alternative naming is also too long
                     ws_name = ws_name[:31]
 
+                if len(self.data) == 1:
+                    ws_name = f'{device_name}'
+
                 # Save the worksheet name to the corresponding device
                 self.data[folder_name][device_name]['sheet_name'] = ws_name
 
@@ -106,9 +114,8 @@ class DevicePlotter:
 
                         ws.write(row, 0, current)
                         ws.write(row, 1, voltage)
-                        # ws.write_formula(row, col_start + 2, f'=A{row}*B{row}')
                         ws.write_formula(row, 2,
-                                         f'=0.0001*{xl_rowcol_to_cell(row, 0)}*{xl_rowcol_to_cell(row, 1)}')
+                                         f'=0.001*{xl_rowcol_to_cell(row, 0)}*{xl_rowcol_to_cell(row, 1)}')
                         row += 1
 
                 self.write_iv(ws, reverse_isc_row, reverse_voc_row, forward_isc_row, forward_voc_row)
@@ -120,6 +127,14 @@ class DevicePlotter:
                 self.write_current_density_at_mpp(ws)
                 self.write_series_resistance(ws, rs_reverse, rs_forward)
                 self.write_shunt_resistance(ws, rsh_reverse, rsh_forward)
+                ws.insert_chart('D16', self.plot_iv(sheet_name=ws_name, data_start=2, data_end=row, name_suffix=None))
+                ws.insert_chart(f"I1",
+                                self.plot_iv(sheet_name=ws_name, data_start=forward_start_row,
+                                             data_end=reverse_start_row,
+                                             name_suffix='Forward'))
+                ws.insert_chart(f"I{self.chart_vertical_spacing}",
+                                self.plot_iv(sheet_name=ws_name, data_start=reverse_start_row, data_end=row,
+                                             name_suffix='Reverse'))
 
     def set_headers(self, ws, device_name, device_data):
         # Write the headers for I, V, and P
@@ -387,3 +402,37 @@ class DevicePlotter:
         ws.write_formula(row_index, 9, f"='{sheet_name}'!{col_letter}11")  # Series resistance
         ws.write_formula(row_index, 10, f"='{sheet_name}'!{col_letter}12")  # Shunt resistance
         ws.write_formula(row_index, 11, f"='{sheet_name}'!E13")  # Active area
+
+    def plot_iv(self, sheet_name, data_start, data_end, name_suffix):
+        name_suffix = ' ' + name_suffix if name_suffix else ''
+        chart_iv = self.workbook.add_chart({'type': 'scatter'})
+        chart_iv.add_series({
+            'categories': f'={sheet_name}!$A${data_start}:$A${data_end}',
+            'values': f'={sheet_name}!$B${data_start}:$B${data_end}',
+            'line': {'width': 1.5, 'color': 'black'}, 'marker': {'type': 'none'},  # No markers
+        })
+        chart_iv.set_title({
+            'name': f"{sheet_name + name_suffix}",
+            'name_font': {'size': 14, 'italic': False, 'bold': False, 'name': 'Calibri (Body)'},
+        })
+        chart_iv.set_x_axis({
+            'name': 'V, V',
+            'name_font': {'size': 12, 'italic': False, 'bold': False},
+            'num_font': {'size': 10},
+            'major_tick_mark': 'cross',
+            'minor_tick_mark': 'outside',
+            'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},
+        })
+        chart_iv.set_legend({'none': True})
+        chart_iv.set_y_axis({
+            'name': 'I, mA',
+            'name_font': {'size': 12, 'italic': False, 'bold': False},
+            'num_font': {'size': 10},
+            'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},
+            'major_tick_mark': 'outside',
+        })
+        chart_iv.set_chartarea({'border': {'none': True}})
+        chart_iv.set_size({'x_scale': settings[self.name]['chart_x_scale'],
+                           'y_scale': settings[self.name]['chart_y_scale']})
+
+        return chart_iv

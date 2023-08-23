@@ -110,3 +110,25 @@ def print_nested_dict(d, indent=0):
             print_nested_dict(value, indent + 1)
         else:
             print('  ' * (indent + 1) + str(value))
+
+
+def flip_data_if_necessary(df):
+    """
+    Flip the data if necessary so that the Maximum Power Point (MPP) is on positive I and V.
+
+    :param df: The DataFrame containing the IV data with columns 'I' and 'V'
+    :return: The DataFrame with data flipped if necessary
+    """
+    df['I'] = df['I'].astype(float)
+    df['V'] = df['V'].astype(float)
+    ind_voc = abs(df['I']).idxmin()
+    v_oc_test = df['V'][ind_voc]
+    ind_isc = abs(df['V']).idxmin()
+    i_sc_test = df['I'][ind_isc]
+
+    # Check if flipping is necessary, and flip if required
+    if v_oc_test < 0 and i_sc_test < 0:
+        df['I'] = -df['I']
+        df['V'] = -df['V']
+
+    return df

@@ -80,7 +80,7 @@ class PotentiostatFileChecker:
                      - "4_Reverse": Data for the second detected reverse sweep
                      - (and so on...)
         """
-        df = IVDataReader(self, file, potentiostat, self.encoding).read()
+        df, unit = IVDataReader(self, file, potentiostat, self.encoding).read()
 
         if len(df) < 2:
             return {"Counts": {"Total Sweeps": 0, "Forward Sweeps": 0, "Reverse Sweeps": 0}, "Data": {}}
@@ -131,7 +131,7 @@ class PotentiostatFileChecker:
                 reverse_counter += 2
         # data = {str(idx): segment for idx, segment in enumerate(sweeps_data, start=1)}
         # self.check_data_integrity(df, {"Counts": counts, "Data": data}, file)
-        return {"Counts": counts, "Data": data}
+        return {"Counts": counts, "Data": data, 'Unit': unit}
 
     # def check_data_integrity(self, df, result,  file):
     #     """

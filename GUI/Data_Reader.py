@@ -109,7 +109,8 @@ class IVDataReader:
 
                 # Creating a DataFrame with the I, V, and time values
                 df = pd.DataFrame({'I': i_values, 'V': v_values, 'Time': time_values})
-                # Creating a mask that checks if the 'Time' value is higher than the first 'Time' value plus preconditioning_time
+                # Creating a mask that checks if the 'Time' value is higher than the first 'Time'
+                # value plus preconditioning_time
                 mask = df['Time'] > preconditioning_time + df['Time'].iloc[0]
                 # Use the mask to filter the DataFrame
                 df = df[mask].drop(columns=['Time']).reset_index(drop=True)

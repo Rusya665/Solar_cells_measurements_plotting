@@ -4,7 +4,10 @@ import time
 from datetime import date
 
 import xlsxwriter
+import numpy as np
 from icecream import ic
+from matplotlib import pyplot as plt
+from numpy.linalg import lstsq
 from scipy.stats import linregress
 from xlsxwriter.utility import xl_rowcol_to_cell
 
@@ -230,11 +233,17 @@ class DevicePlotter:
         :param current_data: Array-like, current data points corresponding to the voltage data.
         :return: Tuple containing the approximated Voc and the index where the current is minimized.
         """
-        voc_index = abs(current_data).idxmin()
+        # voc_index = abs(current_data).idxmin()
+        voc_index = np.argmin(np.abs(current_data))
         return voltage_data[voc_index], voc_index
 
     @staticmethod
-    def calculate_isc_and_rsh(voltage_data, current_data, voc_approx):
+    def linfit_ls(Xdata, Ydata):
+        A = np.vstack([np.ones(Xdata.shape), Xdata]).T
+        x, _, _, _ = lstsq(A, Ydata, rcond=None)
+        return x
+
+    def calculate_isc_and_rsh(self, voltage_data, current_data, voc_approx):
         """
         Calculates the short-circuit current (Isc) and shunt resistance (Rsh) by performing a linear regression
         on a subset of the voltage and current data.
@@ -244,10 +253,22 @@ class DevicePlotter:
         :param voc_approx: Float, approximated open-circuit voltage.
         :return: Tuple containing the calculated Isc and Rsh values.
         """
-        isc_indices_fit = abs(voltage_data) / voc_approx < 0.3
-        slope_isc, intercept_isc, _, _, _ = linregress(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
-        isc = intercept_isc
-        rsh = -1 / slope_isc
+        isc_indices_fit = np.where(abs(voltage_data) / voc_approx < 0.3)[0]
+        # slope_isc, intercept_isc, _, _, _ = linregress(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
+        # slope_isc, intercept_isc = np.polyfit(voltage_data[isc_indices_fit], current_data[isc_indices_fit], 1)
+        # isc = intercept_isc
+        # rsh = -1 / slope_isc
+        b, a = self.linfit_ls(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
+        isc = b
+        rsh = -1 / a
+        # Plotting the data and the fit for debugging
+        # plt.scatter(voltage_data[isc_indices_fit], current_data[isc_indices_fit], label='Selected Data')
+        # plt.plot(voltage_data[isc_indices_fit], slope_isc * voltage_data[isc_indices_fit] + intercept_isc, label='Linear Fit')
+        # plt.xlabel('Voltage (V)')
+        # plt.ylabel('Current (I)')
+        # plt.legend()
+        # plt.show()
+
         return isc, rsh
 
     @staticmethod
@@ -449,8 +470,8 @@ class DevicePlotter:
         name_suffix = ' ' + name_suffix if name_suffix else ''
         chart_iv = self.workbook.add_chart({'type': 'scatter'})
         chart_iv.add_series({
-            'categories': f"='{sheet_name}'!$A${data_start}:$A${data_end}",
-            'values': f"='{sheet_name}'!$B${data_start}:$B${data_end}",
+            'categories': f"='{sheet_name}'!$B${data_start}:$B${data_end}",
+            'values': f"='{sheet_name}'!$A${data_start}:$A${data_end}",
             'line': {'width': 1.5, 'color': 'black'}, 'marker': {'type': 'none'},  # No markers
         })
         chart_iv.set_title({
@@ -489,8 +510,8 @@ class DevicePlotter:
                 data_start = self.data[folder_name][device_name]['sweep_indexes_data'][start_key]
                 data_end = self.data[folder_name][device_name]['sweep_indexes_data'][end_key]
                 chart_all_sweeps.add_series({
-                    'categories': f"='{ws_name}'!$A${data_start}:$A${data_end}",
-                    'values': f"='{ws_name}'!$B${data_start}:$B${data_end}",
+                    'categories': f"='{ws_name}'!$B${data_start}:$B${data_end}",
+                    'values': f"='{ws_name}'!$A${data_start}:$A${data_end}",
                     'line': {'width': 1.5}, 'marker': {'type': 'none'},  # No markers
                     'name': f"{ws_name}",
                 })

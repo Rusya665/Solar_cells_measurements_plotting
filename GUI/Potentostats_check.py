@@ -23,6 +23,7 @@ class PotentiostatFileChecker:
             },
             '.csv': {'PalmSens4': "Cyclic Voltammetry: CV i vs E"},
             '.txt': {'SMU': "[0, 0, 0]"},
+            '.mpt': {'SP-150e': 'EC-Lab ASCII FILE'},
             # To add a new file extension, add a new entry like this:
             # '.new_extension': {'new_potentiostat': "new text to find"},
         }
@@ -51,6 +52,7 @@ class PotentiostatFileChecker:
         with open(file, 'rb') as f:
             result = chardet.detect(f.read(4096))  # Check encoding of the first 4096  bytes
         self.encoding = result['encoding']
+
         for potentiostat, target_text in self.potentiostat_dict[file_extension].items():
             with open(file, 'r', encoding=self.encoding) as f:
                 for i, line in enumerate(f):
@@ -109,6 +111,7 @@ class PotentiostatFileChecker:
         sweeps_data.append(pd.DataFrame(current_sweep_data))
 
         forward_count = sum(1 for df in sweeps_data if df['V'].iloc[1] > df['V'].iloc[0])
+
         reverse_count = len(sweeps_data) - forward_count
 
         counts = {

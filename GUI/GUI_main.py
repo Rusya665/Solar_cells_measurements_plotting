@@ -23,8 +23,8 @@ class RGBMainRoot(ctk.CTk):
 
 
 if __name__ == "__main__":
-    start_time = time.time()
     ctk.set_appearance_mode("dark")
     app_1 = RGBMainRoot()
+    start_time = time.time()
     app_1.mainloop()
     print("\n", "--- %s seconds ---" % (time.time() - start_time))

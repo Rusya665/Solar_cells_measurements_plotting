@@ -220,10 +220,17 @@ class TableFrames(ctk.CTkFrame):
                             return
                         try:
                             entry_value = float(entry_value)
+                            if entry_value <= 0:
+                                messagebox.showerror('Warning!',
+                                                     f"Invalid active area value for the device: {device_name}. "
+                                                     f"Please enter a positive numerical value greater"
+                                                     f" than 0 (e.g., 5 or 5.25).")
+                                return
                         except ValueError:
                             messagebox.showerror('Warning!',
                                                  f"Invalid active area value for the device: {device_name}. "
-                                                 f"Please enter a valid numerical value (e.g., 5 or 5.25).")
+                                                 f"Please enter a positive numerical value greater than 0"
+                                                 f" (e.g., 5 or 5.25).")
                             return
                         matched_devices[folder][device_name]['Active area'] = entry_value
                         break

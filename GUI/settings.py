@@ -9,6 +9,7 @@ settings = {
     'DevicePlotter': {
         'chart_x_scale': 1,  # 480 pixels
         'chart_y_scale': 1,  # 288 pixels
-
+        'all_in_one_chart_x_scale': 2,
+        'all_in_one_chart_y_scale': 2,
     }
 }

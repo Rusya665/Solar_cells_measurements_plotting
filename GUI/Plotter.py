@@ -1,13 +1,15 @@
-import xlsxwriter
-from icecream import ic
-from scipy.stats import linregress
-from instruments import open_file
-from settings import settings
 import math
 import os
 import time
 from datetime import date
+
+import xlsxwriter
+from icecream import ic
+from scipy.stats import linregress
 from xlsxwriter.utility import xl_rowcol_to_cell
+
+from instruments import open_file
+from settings import settings
 
 
 class DevicePlotter:
@@ -15,8 +17,11 @@ class DevicePlotter:
         self.data = matched_devices
         self.parent = parent
         self.name = self.__class__.__name__
-        # Assuming the default cells height 20 pixels
+        # Assuming the default cells height 20 pixels and width 64
+        self.chart_horizontal_spacing = math.ceil((480 * settings[self.name]['chart_x_scale']) / 64) + 1
         self.chart_vertical_spacing = math.ceil((288 * settings[self.name]['chart_y_scale']) / 20) + 1
+        self.chart_huge_horizontal_spacing = math.ceil((480 * settings[self.name]['all_in_one_chart_x_scale']) / 64) + 1
+        self.chart_huge_vertical_spacing = math.ceil((288 * settings[self.name]['all_in_one_chart_y_scale']) / 20) + 1
         self.xlsx_name = ''
         self.workbook = self.create_workbook()
         self.center = self.workbook.add_format({'align': 'center'})
@@ -49,7 +54,7 @@ class DevicePlotter:
         return self.workbook
 
     def set_worksheets(self):
-        folder_counter = 0
+        folder_counter, device_counter = 0, -1
 
         # Check if any name is too long
         long_name_found = any(
@@ -63,6 +68,7 @@ class DevicePlotter:
             folder_counter += 1
             # Iterate through the devices in each folder
             for device_name, device_data in devices.items():
+                device_counter += 1
                 # Decide the worksheet name based on whether a long name was found
                 ws_name = (
                     f"{folder_counter} {device_name}" if long_name_found
@@ -117,6 +123,11 @@ class DevicePlotter:
                         ws.write_formula(row, 2,
                                          f'=0.001*{xl_rowcol_to_cell(row, 0)}*{xl_rowcol_to_cell(row, 1)}')
                         row += 1
+                self.data[folder_name][device_name]['sweep_indexes_data'] = {
+                    'all_data_length': row,
+                    'reverse_start_row': reverse_start_row,
+                    'forward_start_row': forward_start_row
+                }
 
                 self.write_iv(ws, reverse_isc_row, reverse_voc_row, forward_isc_row, forward_voc_row)
                 self.write_max_power(ws, reverse_start_row, forward_start_row, row)
@@ -127,6 +138,8 @@ class DevicePlotter:
                 self.write_current_density_at_mpp(ws)
                 self.write_series_resistance(ws, rs_reverse, rs_forward)
                 self.write_shunt_resistance(ws, rsh_reverse, rsh_forward)
+
+                # Insert IV charts into devices' sheets
                 ws.insert_chart('D16', self.plot_iv(sheet_name=ws_name, data_start=2, data_end=row, name_suffix=None))
                 ws.insert_chart(f"I1",
                                 self.plot_iv(sheet_name=ws_name, data_start=forward_start_row,
@@ -135,6 +148,35 @@ class DevicePlotter:
                 ws.insert_chart(f"I{self.chart_vertical_spacing}",
                                 self.plot_iv(sheet_name=ws_name, data_start=reverse_start_row, data_end=row,
                                              name_suffix='Reverse'))
+
+                # Insert each devise plot separately into the main sheet
+                self.wb_main.insert_chart(self.chart_huge_vertical_spacing,
+                                          self.chart_horizontal_spacing * device_counter,
+                                          self.plot_iv(sheet_name=ws_name,
+                                                       data_start=forward_start_row,
+                                                       data_end=row,
+                                                       name_suffix=None))
+                self.wb_main.insert_chart(self.chart_huge_vertical_spacing + self.chart_vertical_spacing,
+                                          self.chart_horizontal_spacing * device_counter,
+                                          self.plot_iv(sheet_name=ws_name,
+                                                       data_start=forward_start_row,
+                                                       data_end=reverse_start_row,
+                                                       name_suffix='Forward'))
+                self.wb_main.insert_chart(self.chart_huge_vertical_spacing + self.chart_vertical_spacing * 2,
+                                          self.chart_horizontal_spacing * device_counter,
+                                          self.plot_iv(sheet_name=ws_name,
+                                                       data_start=reverse_start_row,
+                                                       data_end=row,
+                                                       name_suffix='Reverse'))
+        # insert huge IV plots into the main sheet
+        self.wb_main.insert_chart('A1', self.plot_all_sweeps(start_key='forward_start_row',
+                                                             end_key='all_data_length', name_suffix=''))
+        self.wb_main.insert_chart(0, self.chart_huge_horizontal_spacing,
+                                  self.plot_all_sweeps(start_key='forward_start_row',
+                                                       end_key='reverse_start_row', name_suffix='Forward'))
+        self.wb_main.insert_chart(0, self.chart_huge_horizontal_spacing * 2,
+                                  self.plot_all_sweeps(start_key='reverse_start_row',
+                                                       end_key='all_data_length', name_suffix='Reverse'))
 
     def set_headers(self, ws, device_name, device_data):
         # Write the headers for I, V, and P
@@ -407,8 +449,8 @@ class DevicePlotter:
         name_suffix = ' ' + name_suffix if name_suffix else ''
         chart_iv = self.workbook.add_chart({'type': 'scatter'})
         chart_iv.add_series({
-            'categories': f'={sheet_name}!$A${data_start}:$A${data_end}',
-            'values': f'={sheet_name}!$B${data_start}:$B${data_end}',
+            'categories': f"='{sheet_name}'!$A${data_start}:$A${data_end}",
+            'values': f"='{sheet_name}'!$B${data_start}:$B${data_end}",
             'line': {'width': 1.5, 'color': 'black'}, 'marker': {'type': 'none'},  # No markers
         })
         chart_iv.set_title({
@@ -436,3 +478,45 @@ class DevicePlotter:
                            'y_scale': settings[self.name]['chart_y_scale']})
 
         return chart_iv
+
+    def plot_all_sweeps(self, start_key, end_key, name_suffix):
+        name_suffix = ' ' + name_suffix if name_suffix else ''
+        chart_all_sweeps = self.workbook.add_chart({'type': 'scatter'})
+
+        for folder_name, devices in self.data.items():
+            for device_name, device_data in devices.items():
+                ws_name = self.data[folder_name][device_name]['sheet_name']
+                data_start = self.data[folder_name][device_name]['sweep_indexes_data'][start_key]
+                data_end = self.data[folder_name][device_name]['sweep_indexes_data'][end_key]
+                chart_all_sweeps.add_series({
+                    'categories': f"='{ws_name}'!$A${data_start}:$A${data_end}",
+                    'values': f"='{ws_name}'!$B${data_start}:$B${data_end}",
+                    'line': {'width': 1.5}, 'marker': {'type': 'none'},  # No markers
+                    'name': f"{ws_name}",
+                })
+
+        # Set other chart properties as needed
+        chart_all_sweeps.set_title(
+            {'name': f"IV plot{name_suffix}", 'name_font': {'size': 14, 'italic': False,
+                                                            'bold': False, 'name': 'Calibri (Body)'}})
+        chart_all_sweeps.set_x_axis({
+            'name': 'V, V',
+            'name_font': {'size': 12, 'italic': False, 'bold': False},
+            'num_font': {'size': 10},
+            'major_tick_mark': 'cross',
+            'minor_tick_mark': 'outside',
+            'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},
+        })
+        chart_all_sweeps.set_legend({'none': False})
+        chart_all_sweeps.set_y_axis({
+            'name': 'I, mA',
+            'name_font': {'size': 12, 'italic': False, 'bold': False},
+            'num_font': {'size': 10},
+            'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},
+            'major_tick_mark': 'outside',
+        })
+        chart_all_sweeps.set_chartarea({'border': {'none': True}})
+        chart_all_sweeps.set_size({'x_scale': settings[self.name]['all_in_one_chart_x_scale'],
+                                   'y_scale': settings[self.name]['all_in_one_chart_y_scale']})
+
+        return chart_all_sweeps

@@ -2,6 +2,7 @@ from pathlib import Path
 from tkinter import messagebox
 
 import pandas as pd
+from datetime import timedelta
 from icecream import ic
 
 from GUI.instruments import columns_swap, flip_data_if_necessary
@@ -66,6 +67,54 @@ class IVDataReader:
                 df = pd.read_csv(self.path, engine='python', header=None, encoding=self.encoding,
                                  skiprows=6, keep_default_na=True, na_filter=False, names=['V', 'I'])
                 df = df[df['I'].notna()]  # Picking only the data which is not "Nan" <- dropping the last raw
+                df = self.convert_current(current_unit, df)
+
+            case "SP-150e":
+                i_values, v_values, time_values = [], [], []
+                num_header_lines, i_index, v_index, time_index, current_unit = None, None, None, None, None
+                preconditioning_time = None
+
+                with open(self.path, 'r', encoding=self.encoding) as file:
+                    for line_number, line in enumerate(file, start=1):
+                        line = line.strip()
+
+                        if "Nb header lines" in line:
+                            num_header_lines = int(line.split(":")[1].strip())
+                            continue
+
+                        if line.startswith("ti (h:m:s)"):
+                            time_str = line.split("ti (h:m:s)")[1]
+                            hours, minutes, seconds = map(float, time_str.split(':'))
+                            preconditioning_time = timedelta(hours=hours, minutes=minutes,
+                                                             seconds=seconds).total_seconds()
+                            continue
+
+                        if num_header_lines is None:
+                            continue
+
+                        values = line.split("\t")
+                        if line_number == num_header_lines:
+                            i_index, v_index = values.index(next(h for h in values if "<I>" in h)), values.index(
+                                next(h for h in values if "Ewe" in h))
+                            # Check if the time column exists
+                            time_index = next((i for i, h in enumerate(values) if "time" in h), None)
+                            current_unit = values[i_index].split("/")[-1]  # Extracting the current unit
+                        elif line_number > num_header_lines and time_index is not None:
+                            time_str = values[time_index].split(' ')[1]
+                            hours, minutes, seconds = map(float, time_str.split(':'))
+                            total_seconds = timedelta(hours=hours, minutes=minutes, seconds=seconds).total_seconds()
+                            time_values.append(float(total_seconds))
+                            i_values.append(float(values[i_index]))
+                            v_values.append(float(values[v_index]))
+
+                # Creating a DataFrame with the I, V, and time values
+                df = pd.DataFrame({'I': i_values, 'V': v_values, 'Time': time_values})
+                # Creating a mask that checks if the 'Time' value is higher than the first 'Time' value plus preconditioning_time
+                mask = df['Time'] > preconditioning_time + df['Time'].iloc[0]
+                # Use the mask to filter the DataFrame
+                df = df[mask].drop(columns=['Time']).reset_index(drop=True)
+
+                # Convert current to appropriate unit
                 df = self.convert_current(current_unit, df)
 
         if df is not None:

@@ -1,36 +1,65 @@
-import os
+from datetime import timedelta
+
+import pandas as pd
 from icecream import ic
 
 
-def find_common_prefix(s1, s2):
-    i = 0
-    while i < len(s1) and i < len(s2) and s1[i] == s2[i]:
-        i += 1
-    return s1[:i]
+def read_IV_data_with_print(path: str, encoding: str = 'ISO-8859-1') -> pd.DataFrame:
+    i_values, v_values, time_values = [], [], []
+    num_header_lines, i_index, v_index, time_index, current_unit = None, None, None, None, None
+    preconditioning_time = None
+
+    with open(path, 'r', encoding=encoding) as file:
+        for line_number, line in enumerate(file, start=1):
+            line = line.strip()
+
+            if "Nb header lines" in line:
+                num_header_lines = int(line.split(":")[1].strip())
+                continue
+
+            if line.startswith("ti (h:m:s)"):
+                time_str = line.split("ti (h:m:s)")[1]
+                hours, minutes, seconds = map(float, time_str.split(':'))
+                preconditioning_time = timedelta(hours=hours, minutes=minutes,
+                                                 seconds=seconds).total_seconds()
+                continue
+
+            if num_header_lines is None:
+                continue
+
+            values = line.split("\t")
+            if line_number == num_header_lines:
+                i_index, v_index = values.index(next(h for h in values if "<I>" in h)), values.index(
+                    next(h for h in values if "Ewe" in h))
+                # Check if the time column exists
+                time_index = next((i for i, h in enumerate(values) if "time" in h), None)
+                current_unit = values[i_index].split("/")[-1]  # Extracting the current unit
+                ic(i_index, v_index, time_index, current_unit)
+            elif line_number > num_header_lines and time_index is not None:
+                time_str = values[time_index].split(' ')[1]
+                hours, minutes, seconds = map(float, time_str.split(':'))
+                total_seconds = timedelta(hours=hours, minutes=minutes, seconds=seconds).total_seconds()
+                time_values.append(float(total_seconds))
+                i_values.append(float(values[i_index]))
+                v_values.append(float(values[v_index]))
+
+    # Creating a DataFrame with the I, V, and time values
+    df = pd.DataFrame({'I': i_values, 'V': v_values, 'Time': time_values})
+    # Creating a mask that checks if the 'Time' value is higher than the first 'Time' value plus preconditioning_time
+    mask = df['Time'] > preconditioning_time + df['Time'].iloc[0]
+    # Use the mask to filter the DataFrame
+    df = df[mask].drop(columns=['Time']).reset_index(drop=True)
+    return df
 
 
-def find_common_suffix(s1, s2):
-    i = -1
-    while abs(i) <= len(s1) and abs(i) <= len(s2) and s1[i] == s2[i]:
-        i -= 1
-    return s1[i + 1:] if i != -1 else ''
+# Set pandas' console output width
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
 
+# Running the function with the first .mpt file
+path = r'C:/Users/runiza.TY2206042/OneDrive - O365 Turun yliopisto/IV_plotting_project/Input/2.mpt'
+# Testing the function with the given file
+test_current_unit = read_IV_data_with_print(path)
 
-def adjust_filename(filename, matched_file):
-    stripped_name = os.path.splitext(filename)[0]
-    stripped_matched = os.path.splitext(matched_file)[0]
-
-    # Find common prefix and suffix
-    common_prefix = find_common_prefix(stripped_name, stripped_matched)
-    common_suffix = find_common_suffix(stripped_name, stripped_matched)
-
-    # Extract distinguishing middle section from the filename
-    middle_section = stripped_name[len(common_prefix):-len(common_suffix) or None]
-    ic(common_prefix, common_suffix)
-    return f"{common_prefix}{middle_section}{common_suffix}.txt"
-
-
-# Test
-filename1 = '13FC2LgFw-slow.txt'
-matched_file1 = '13FC2LgRv-slow.txt'
-print(adjust_filename(filename1, matched_file1))
+# print(test_current_unit)

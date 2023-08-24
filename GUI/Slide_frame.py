@@ -21,7 +21,9 @@ class SlidePanel(ctk.CTkFrame):
 
         self.slide_panel_label = ctk.CTkLabel(self, text="Settings")
         self.slide_panel_label.cget("font").configure(size=20)
-        self.potentiostat_combox = ctk.CTkComboBox(self, values=['All', 'Gamry', 'PalmSens4', 'SMU'], width=110,
+        self.potentiostat_combox_label = ctk.CTkLabel(self, text="Choose potentiostat")
+        self.potentiostat_combox = ctk.CTkComboBox(self, values=['All', 'Gamry', 'PalmSens4', 'SMU', 'SP-150e'],
+                                                   width=110,
                                                    command=self.parent.set_potentiostat)
 
         self.aging_mode_checkbox = ctk.CTkCheckBox(self, text='Aging mode', command=self.parent.aging_mode_activator,
@@ -38,6 +40,7 @@ class SlidePanel(ctk.CTkFrame):
 
         widgets = [
             self.slide_panel_label,
+            self.potentiostat_combox_label,
             self.potentiostat_combox,
             self.aging_mode_checkbox,
             self.identical_areas_CheckBox,

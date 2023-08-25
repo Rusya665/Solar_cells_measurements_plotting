@@ -33,12 +33,12 @@ class TableFrames(ctk.CTkFrame):
     def files_table_insert(self):
         self.files_table_scrollbar = ctk.CTkScrollbar(master=self.files_table_frame)
         self.files_table_scrollbar.pack(side='right', fill='y')
-        self.files_table = ttk.Treeview(master=self.files_table_frame, columns=('Device', 'Efficiency'),
+        self.files_table = ttk.Treeview(master=self.files_table_frame, columns=('Device', 'I unit'),
                                         selectmode='extended', height=self.parent.table_size,
                                         yscrollcommand=self.files_table_scrollbar.set)
         self.files_table.heading('#0', text='Name', anchor='w')
         self.files_table.heading(0, text='Device', anchor='w')
-        self.files_table.heading(1, text='Encoding', anchor='w')
+        self.files_table.heading(1, text='I unit', anchor='w')
         self.files_table.column('#0', width=300)
         self.files_table.column(0, width=100)
         self.files_table.column(1, width=100)
@@ -62,7 +62,7 @@ class TableFrames(ctk.CTkFrame):
         label1 = ctk.CTkLabel(master=self.active_areas_scrollable_frame,
                               text="Device", fg_color="transparent")
         label2 = ctk.CTkLabel(master=self.active_areas_scrollable_frame,
-                              text="Active area", fg_color="transparent")
+                              text="Active area, mm²", fg_color="transparent")
         label0.grid(row=0, column=0, sticky='nsew', padx=5)
         label1.grid(row=0, column=1, sticky='nsew', padx=5)
         label2.grid(row=0, column=2, sticky='nsew')
@@ -232,7 +232,7 @@ class TableFrames(ctk.CTkFrame):
                                                  f"Please enter a positive numerical value greater than 0"
                                                  f" (e.g., 5 or 5.25).")
                             return
-                        matched_devices[folder][device_name]['Active area'] = entry_value
+                        matched_devices[folder][device_name]['Active area'] = entry_value / 100
                         break
 
         return matched_devices

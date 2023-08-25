@@ -5,10 +5,6 @@ from datetime import date
 
 import xlsxwriter
 import numpy as np
-from icecream import ic
-from matplotlib import pyplot as plt
-from numpy.linalg import lstsq
-from scipy.stats import linregress
 from xlsxwriter.utility import xl_rowcol_to_cell
 
 from instruments import open_file
@@ -40,6 +36,10 @@ class DevicePlotter:
 
         self.set_worksheets()
         self.fill_tables()
+        self.wb_table.autofit()
+        self.wb_table_forward.autofit()
+        self.wb_table_reverse.autofit()
+        self.wb_table_average.autofit()
         self.workbook.close()
         if self.parent.open_wb:
             time.sleep(0.2)
@@ -96,14 +96,22 @@ class DevicePlotter:
                  rsh_forward, rsh_reverse) = None, None, None, None, None, None, None, None, None, None
                 # Iterate through the sweeps (Forward and Reverse) for each device
                 row = 1
+                print(ws_name)
                 for sweep_name, sweep_data in device_data['data'].items():
                     voltage_data = sweep_data['V']
                     current_data = sweep_data['I']
 
                     voc_approx, voc_index = self.calculate_voc_approx(voltage_data, current_data)
-                    isc, rsh = self.calculate_isc_and_rsh(voltage_data, current_data, voc_approx)
-                    voc, rs = self.calculate_voc_and_rs(voltage_data, current_data, voc_index)
-
+                    isc, rsh, b = self.calculate_isc_and_rsh(voltage_data, current_data, voc_approx)
+                    voc, rs, b1 = self.calculate_voc_and_rs(voltage_data, current_data, voc_index)
+                    print(' ')
+                    print('Value of b for ISC:')
+                    print(b[0])
+                    print(b[1])
+                    print(' ')
+                    print("Value of b for Voc")
+                    print(b1[0])
+                    print(b1[1])
                     if sweep_name == '1_Forward':
                         forward_isc_row, forward_voc_row = isc, voc
                         forward_start_row = row + 1
@@ -200,7 +208,7 @@ class DevicePlotter:
         ws.write(9, 3, 'Current density at MPP (mA/cm²)', self.center)
         ws.write(10, 3, 'Series resistance, Rs (ohm)', self.center)
         ws.write(11, 3, 'Shunt resistance, Rsh (ohm)', self.center)
-        ws.write(12, 3, 'Active area, mm²', self.center)
+        ws.write(12, 3, 'Active area, cm²', self.center)
         ws.write(13, 3, 'Light Intensity, W/cm²', self.center)
 
         ws.set_column(3, 3, 35)
@@ -233,15 +241,16 @@ class DevicePlotter:
         :param current_data: Array-like, current data points corresponding to the voltage data.
         :return: Tuple containing the approximated Voc and the index where the current is minimized.
         """
-        # voc_index = abs(current_data).idxmin()
         voc_index = np.argmin(np.abs(current_data))
         return voltage_data[voc_index], voc_index
 
     @staticmethod
-    def linfit_ls(Xdata, Ydata):
-        A = np.vstack([np.ones(Xdata.shape), Xdata]).T
-        x, _, _, _ = lstsq(A, Ydata, rcond=None)
-        return x
+    def linfit_ls(xdata, ydata):
+        # a = np.vstack([np.ones(xdata.shape), xdata]).T
+        # return np.linalg.lstsq(a.T @ a, a.T @ ydata, rcond=None)[0]
+        A = np.vstack([np.ones(xdata.shape[0]), xdata]).T
+        # return np.linalg.solve(A.T @ A, A.T @ ydata)
+        return np.linalg.solve(A.T @ A, A.T @ ydata)[::-1]  # Reverse the order to match MATLAB
 
     def calculate_isc_and_rsh(self, voltage_data, current_data, voc_approx):
         """
@@ -253,26 +262,18 @@ class DevicePlotter:
         :param voc_approx: Float, approximated open-circuit voltage.
         :return: Tuple containing the calculated Isc and Rsh values.
         """
-        isc_indices_fit = np.where(abs(voltage_data) / voc_approx < 0.3)[0]
-        # slope_isc, intercept_isc, _, _, _ = linregress(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
-        # slope_isc, intercept_isc = np.polyfit(voltage_data[isc_indices_fit], current_data[isc_indices_fit], 1)
-        # isc = intercept_isc
-        # rsh = -1 / slope_isc
-        b, a = self.linfit_ls(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
-        isc = b
-        rsh = -1 / a
-        # Plotting the data and the fit for debugging
-        # plt.scatter(voltage_data[isc_indices_fit], current_data[isc_indices_fit], label='Selected Data')
-        # plt.plot(voltage_data[isc_indices_fit], slope_isc * voltage_data[isc_indices_fit] + intercept_isc, label='Linear Fit')
-        # plt.xlabel('Voltage (V)')
-        # plt.ylabel('Current (I)')
-        # plt.legend()
-        # plt.show()
+        isc_indices_fit = np.abs(voltage_data) / voc_approx < 0.3
+        intercept, slope = self.linfit_ls(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
+        isc = slope
+        rsh = -1 / intercept
+        return isc, rsh * 1000, (slope, intercept)
+        # isc_indices_fit = np.abs(voltage_data) / voc_approx < 0.3
+        # intercept, slope = self.linfit_ls(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
+        # isc = intercept
+        # rsh = -1 / slope
+        # return isc, rsh * 1000
 
-        return isc, rsh
-
-    @staticmethod
-    def calculate_voc_and_rs(voltage_data, current_data, voc_index):
+    def calculate_voc_and_rs(self, voltage_data, current_data, voc_index):
         """
         Calculates the open-circuit voltage (Voc) and series resistance (Rs) by performing a linear regression
         on the data near the Voc index.
@@ -282,11 +283,15 @@ class DevicePlotter:
         :param voc_index: Integer, index where the current is minimized.
         :return: Tuple containing the calculated Voc and Rs values.
         """
-        voc_indices_fit = [voc_index - 1, voc_index] if current_data[voc_index] < 0 else [voc_index, voc_index + 1]
-        slope_voc, intercept_voc, _, _, _ = linregress(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
-        voc = -intercept_voc / slope_voc
-        rs = -1 / slope_voc
-        return voc, rs
+        voc_indices_fit = [voc_index - 1, voc_index - 0] if current_data[voc_index] < 0 else [voc_index - 1, voc_index]
+        intercept, slope = self.linfit_ls(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
+        voc = -slope / intercept
+        rs = -1 / intercept
+        # voc_indices_fit = [voc_index - 1, voc_index] if current_data[voc_index] < 0 else [voc_index - 1, voc_index + 1]
+        # intercept_voc, slope_voc = self.linfit_ls(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
+        # voc = -intercept_voc / slope_voc
+        # rs = -1 / slope_voc
+        return voc, rs * 1000, (slope, intercept)
 
     @staticmethod
     def write_max_power(ws, reverse_start_row, forward_start_row, row):
@@ -323,8 +328,8 @@ class DevicePlotter:
         :param ws: Excel Worksheet object.
         :return: None.
         """
-        ws.write_formula(5, 4, '=E7/(E3*E4)')  # Reverse Fill Factor
-        ws.write_formula(5, 5, '=F7/(F3*F4)')  # Forward Fill Factor
+        ws.write_formula(5, 4, '=1000 * E7/(E3*E4)')  # Reverse Fill Factor
+        ws.write_formula(5, 5, '=1000 * F7/(F3*F4)')  # Forward Fill Factor
         ws.write_formula(5, 6, '=(E6+F6)/2')  # Average Fill Factor
 
     @staticmethod
@@ -437,18 +442,23 @@ class DevicePlotter:
 
     @staticmethod
     def write_table_headers(ws):
-        ws.write(0, 0, 'Label')
-        ws.write(0, 1, 'Scan direction')
-        ws.write(0, 2, 'Efficiency (%)')
-        ws.write(0, 3, 'Short-circuit current density (mA/cm²)')
-        ws.write(0, 4, 'Open circuit voltage (V)')
-        ws.write(0, 5, 'Fill factor')
-        ws.write(0, 6, 'Maximum power (W)')
-        ws.write(0, 7, 'Voltage at MPP (V)')
-        ws.write(0, 8, 'Current density at MPP (mA/cm²)')
-        ws.write(0, 9, 'Series resistance, Rs (ohm)')
-        ws.write(0, 10, 'Shunt resistance, Rsh (ohm)')
-        ws.write(0, 11, 'Active area, (mm²)')
+        headers = [
+            'Label',
+            'Scan direction',
+            'Efficiency (%)',
+            'Short-circuit current density (mA/cm²)',
+            'Open circuit voltage (V)',
+            'Fill factor',
+            'Maximum power (W)',
+            'Voltage at MPP (V)',
+            'Current density at MPP (mA/cm²)',
+            'Series resistance, Rs (ohm)',
+            'Shunt resistance, Rsh (ohm)',
+            'Active area, (cm²)'
+        ]
+        for i, header in enumerate(headers):
+            ws.write(0, i, header)
+            # ws.set_column(i, i, max(len(header) * 1.2, 10))
 
     @staticmethod
     def write_table_rows(ws, row_index, sheet_name, sweep_direction):

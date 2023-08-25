@@ -127,8 +127,9 @@ def flip_data_if_necessary(df):
     i_sc_test = df['I'][ind_isc]
 
     # Check if flipping is necessary, and flip if required
-    if v_oc_test < 0 and i_sc_test < 0:
-        df['I'] = -df['I']
+    if v_oc_test < 0:
         df['V'] = -df['V']
+    if i_sc_test < 0:
+        df['I'] = -df['I']
 
     return df

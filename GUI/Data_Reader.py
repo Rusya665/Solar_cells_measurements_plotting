@@ -52,6 +52,8 @@ class IVDataReader:
                 df = self.convert_current(current_unit, df)
 
             case "PalmSens4":
+                #  Encoding UTF-16
+                print(self.encoding)
                 # Open the file and read the line containing the units
                 with open(self.path, 'r', encoding=self.encoding) as file:
                     # Skip the lines until reaching the line containing units
@@ -70,6 +72,8 @@ class IVDataReader:
                 df = self.convert_current(current_unit, df)
 
             case "SP-150e":
+                #  Encoding ISO-8859-1
+                print(self.encoding)
                 i_values, v_values, time_values = [], [], []
                 num_header_lines, i_index, v_index, time_index, current_unit = None, None, None, None, None
                 preconditioning_time = None
@@ -115,6 +119,7 @@ class IVDataReader:
                 # Use the mask to filter the DataFrame
                 df = df[mask].drop(columns=['Time']).reset_index(drop=True)
                 # Convert current to appropriate unit
+                df.fillna(0)
                 df = self.convert_current(current_unit, df)
 
         if df is not None:

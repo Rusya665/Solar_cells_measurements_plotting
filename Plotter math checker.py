@@ -1,5 +1,6 @@
 import pandas as pd
 from icecream import ic
+
 from GUI.instruments import open_file
 
 
@@ -8,6 +9,7 @@ def percentage_difference(value1, value2):
     if value1 == 0 and value2 == 0:
         return 0
     return 100 * abs(value1 - value2) / abs(value1)
+
 
 # Function to compare excel sheets
 def compare_excel_sheets(file1_path, sheet1_name, file2_path, sheet2_name):
@@ -50,11 +52,10 @@ def compare_excel_sheets(file1_path, sheet1_name, file2_path, sheet2_name):
 pd.set_option('display.max_rows', None)
 
 # Example usage:
-file1_path = (r'D:/OneDrive - O365 Turun yliopisto/'
-              r'Documents/Aging tests/2023 Carbon revival\2. Round\IV results/IVparameters.xlsx')
+file1_path = r'D:/OneDrive - O365 Turun yliopisto/IV_plotting_project/test second infiltration/IVparameters.xlsx'
 sheet1_name = 'All'
-file2_path = (r'D:/OneDrive - O365 Turun yliopisto/'
-              r'Documents/Aging tests/2023 Carbon revival/2. Round/IV results/2023-08-26 IV results JV plots and calculations.xlsx')
+file2_path = (r'D:/OneDrive - O365 Turun yliopisto/IV_plotting_project/'
+              r'Test for Maryam/Second infiltration/2023-08-27 Second infiltration JV plots and calculations.xlsx')
 sheet2_name = 'Tabel_Total'
 # sheet2_name = 'Sheet1'
 differences = compare_excel_sheets(file1_path, sheet1_name, file2_path, sheet2_name)
@@ -62,7 +63,6 @@ differences = compare_excel_sheets(file1_path, sheet1_name, file2_path, sheet2_n
 # Set any percentage difference less than 1% to 0 for numeric columns only
 for column in differences.select_dtypes(include=['number']).columns:
     differences[column] = differences[column].apply(lambda x: 0 if x < 1 else x)
-
 
 # Define the path for the output text file
 output_xlsx_path = r'D:/OneDrive - O365 Turun yliopisto/Desktop/differences7.xlsx'

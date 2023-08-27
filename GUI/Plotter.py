@@ -122,6 +122,7 @@ class DevicePlotter:
                     isc, rsh, b = self.calculate_isc_and_rsh(sweep_data['V'], sweep_data['I'], voc_approx)
                     voc, rs, b1 = self.calculate_voc_and_rs(sweep_data['V'], sweep_data['I'], voc_index)
                     ff = max_power / (isc * voc)  # Fill Factor
+                    print(ff)
                     if sweep_name == '1_Forward':
                         self.i_sc_forward, self.v_oc_forward = isc, voc
                         self.rs_forward, self.rsh_forward = rs, rsh

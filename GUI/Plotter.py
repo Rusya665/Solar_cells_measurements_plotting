@@ -3,15 +3,18 @@ import os
 import time
 from datetime import date
 
-import xlsxwriter
 import numpy as np
-from xlsxwriter.utility import xl_rowcol_to_cell
+import xlsxwriter
+from icecream import ic
 
 from instruments import open_file
 from settings import settings
 
 
 class DevicePlotter:
+    """
+        This class is designed for plotting and analyzing device measurements, specifically for photovoltaic devices.
+    """
     def __init__(self, parent, matched_devices: dict):
         self.data = matched_devices
         self.parent = parent
@@ -22,6 +25,17 @@ class DevicePlotter:
         self.chart_huge_horizontal_spacing = math.ceil((480 * settings[self.name]['all_in_one_chart_x_scale']) / 64) + 1
         self.chart_huge_vertical_spacing = math.ceil((288 * settings[self.name]['all_in_one_chart_y_scale']) / 20) + 1
         self.xlsx_name = ''
+        self.efficiency_forward, self.efficiency_reverse = None, None
+        self.i_sc_forward, self.i_sc_reverse = None, None
+        self.v_oc_forward, self.v_oc_reverse = None, None
+        self.fill_factor_forward, self.fill_factor_reverse = None, None
+        self.max_power_forward, self.max_power_reverse = None, None
+        self.v_mpp_forward, self.v_mpp_reverse = None, None
+        self.j_mpp_forward, self.j_mpp_reverse = None, None
+        self.rs_forward, self.rs_reverse = None, None
+        self.rsh_forward, self.rsh_reverse = None, None
+        self.active_area, self.light_intensity = None, None
+
         self.workbook = self.create_workbook()
         self.center = self.workbook.add_format({'align': 'center'})
         self.across_selection = self.workbook.add_format()
@@ -36,6 +50,7 @@ class DevicePlotter:
 
         self.set_worksheets()
         self.fill_tables()
+
         self.wb_table.autofit()
         self.wb_table_forward.autofit()
         self.wb_table_reverse.autofit()
@@ -77,106 +92,85 @@ class DevicePlotter:
                     f"{folder_counter} {device_name}" if long_name_found
                     else f"{folder_name} {device_name}"
                 )
-
-                if len(ws_name) > 31:  # In case the alternative naming is also too long
-                    ws_name = ws_name[:31]
-
-                if len(self.data) == 1:
-                    ws_name = f'{device_name}'
-
-                # Save the worksheet name to the corresponding device
-                self.data[folder_name][device_name]['sheet_name'] = ws_name
-
+                ws_name = ws_name[:31] if len(ws_name) > 31 else ws_name
+                ws_name = f'{device_name}' if len(self.data) == 1 else ws_name
+                data = self.data[folder_name][device_name]['data']
+                self.data[folder_name][device_name].update({
+                    'sheet_name': ws_name,
+                    'sweep_indexes_data': {
+                        'all_data_length': len(data['1_Forward']) + len(data['2_Reverse']) + 2,
+                        'reverse_start_row': len(data['1_Forward']) + 2,
+                        'forward_start_row': 2
+                    }
+                })
                 ws = self.workbook.add_worksheet(ws_name)
 
-                self.set_headers(ws=ws, device_name=device_name, device_data=device_data)
-
-                (reverse_isc_row, reverse_voc_row, forward_isc_row,
-                 forward_voc_row, reverse_start_row, forward_start_row, rs_forward, rs_reverse,
-                 rsh_forward, rsh_reverse) = None, None, None, None, None, None, None, None, None, None
+                self.set_headers(ws=ws, device_name=device_name)
+                self.active_area = device_data["Active area"]
+                self.light_intensity = device_data['Light Intensity']
                 # Iterate through the sweeps (Forward and Reverse) for each device
                 row = 1
-                print(ws_name)
                 for sweep_name, sweep_data in device_data['data'].items():
-                    voltage_data = sweep_data['V']
-                    current_data = sweep_data['I']
+                    power = sweep_data['I'] * sweep_data['V']
+                    ind_mpp = np.argmax(power)
+                    max_power = power[ind_mpp]
+                    v_mpp = sweep_data['V'][ind_mpp]
+                    j_mpp = sweep_data['I'][ind_mpp] / self.active_area
+                    eff = 100 * max_power / (self.light_intensity * self.active_area)  # Efficiency in percentage
 
-                    voc_approx, voc_index = self.calculate_voc_approx(voltage_data, current_data)
-                    isc, rsh, b = self.calculate_isc_and_rsh(voltage_data, current_data, voc_approx)
-                    voc, rs, b1 = self.calculate_voc_and_rs(voltage_data, current_data, voc_index)
-                    print(' ')
-                    print('Value of b for ISC:')
-                    print(b[0])
-                    print(b[1])
-                    print(' ')
-                    print("Value of b for Voc")
-                    print(b1[0])
-                    print(b1[1])
+                    voc_approx, voc_index = self.calculate_voc_approx(sweep_data['V'], sweep_data['I'])
+                    isc, rsh, b = self.calculate_isc_and_rsh(sweep_data['V'], sweep_data['I'], voc_approx)
+                    voc, rs, b1 = self.calculate_voc_and_rs(sweep_data['V'], sweep_data['I'], voc_index)
+                    ff = max_power / (isc * voc)  # Fill Factor
                     if sweep_name == '1_Forward':
-                        forward_isc_row, forward_voc_row = isc, voc
-                        forward_start_row = row + 1
-                        rs_forward = rs
-                        rsh_forward = rsh
+                        self.i_sc_forward, self.v_oc_forward = isc, voc
+                        self.rs_forward, self.rsh_forward = rs, rsh
+                        self.max_power_forward, self.j_mpp_forward, self.v_mpp_forward = max_power, j_mpp, v_mpp
+                        self.efficiency_forward, self.fill_factor_forward = eff, ff
                     elif sweep_name == '2_Reverse':
-                        reverse_isc_row, reverse_voc_row = isc, voc
-                        reverse_start_row = row + 1
-                        rs_reverse = rs
-                        rsh_reverse = rsh
+                        self.i_sc_reverse, self.v_oc_reverse = isc, voc
+                        self.rs_reverse, self.rsh_reverse = rs, rsh
+                        self.max_power_reverse, self.j_mpp_reverse, self.v_mpp_reverse = max_power, j_mpp, v_mpp
+                        self.efficiency_reverse, self.fill_factor_reverse = eff, ff
 
                     # Write the data to the worksheet
-                    for index, row_data in sweep_data.iterrows():
-                        current = row_data['I']
-                        voltage = row_data['V']
-                        # power = current * voltage
-
-                        ws.write(row, 0, current)
-                        ws.write(row, 1, voltage)
-                        ws.write_formula(row, 2,
-                                         f'=0.001*{xl_rowcol_to_cell(row, 0)}*{xl_rowcol_to_cell(row, 1)}')
+                    for _, row_data in sweep_data.iterrows():
+                        # ws.write(row, 0, row_data['I'])
+                        ws.write(row, 1, row_data['V'])
+                        power = row_data['I'] * row_data['V']
+                        current_density = 1000 * row_data['I'] / self.active_area
+                        ws.write(row, 2, power)
+                        ws.write(row, 0, current_density)
                         row += 1
-                self.data[folder_name][device_name]['sweep_indexes_data'] = {
-                    'all_data_length': row,
-                    'reverse_start_row': reverse_start_row,
-                    'forward_start_row': forward_start_row
-                }
 
-                self.write_iv(ws, reverse_isc_row, reverse_voc_row, forward_isc_row, forward_voc_row)
-                self.write_max_power(ws, reverse_start_row, forward_start_row, row)
-                self.write_efficiency(ws)
-                self.write_fill_factor(ws)
-                self.write_short_circuit_current_density(ws)
-                self.write_voltage_at_mpp(ws)
-                self.write_current_density_at_mpp(ws)
-                self.write_series_resistance(ws, rs_reverse, rs_forward)
-                self.write_shunt_resistance(ws, rsh_reverse, rsh_forward)
+                self.write_parameters(ws)
 
                 # Insert IV charts into devices' sheets
-                ws.insert_chart('D16', self.plot_iv(sheet_name=ws_name, data_start=2, data_end=row, name_suffix=None))
-                ws.insert_chart(f"I1",
-                                self.plot_iv(sheet_name=ws_name, data_start=forward_start_row,
-                                             data_end=reverse_start_row,
-                                             name_suffix='Forward'))
-                ws.insert_chart(f"I{self.chart_vertical_spacing}",
-                                self.plot_iv(sheet_name=ws_name, data_start=reverse_start_row, data_end=row,
-                                             name_suffix='Reverse'))
+                ws.insert_chart('E16', self.plot_iv(sheet_name=ws_name, data_start=2,
+                                                    data_end=row, name_suffix=None))
+                ws.insert_chart(f"J1", self.plot_iv(sheet_name=ws_name, data_start=2,
+                                                    data_end=row,
+                                                    name_suffix='Forward'))
+                ws.insert_chart(f"J{self.chart_vertical_spacing}", self.plot_iv(sheet_name=ws_name,
+                                                                                data_start=len(data['1_Forward']) + 2,
+                                                                                data_end=row, name_suffix='Reverse'))
 
                 # Insert each devise plot separately into the main sheet
                 self.wb_main.insert_chart(self.chart_huge_vertical_spacing,
                                           self.chart_horizontal_spacing * device_counter,
                                           self.plot_iv(sheet_name=ws_name,
-                                                       data_start=forward_start_row,
-                                                       data_end=row,
-                                                       name_suffix=None))
+                                                       data_start=len(data['1_Forward']) + 2,
+                                                       data_end=row, name_suffix=None))
                 self.wb_main.insert_chart(self.chart_huge_vertical_spacing + self.chart_vertical_spacing,
                                           self.chart_horizontal_spacing * device_counter,
                                           self.plot_iv(sheet_name=ws_name,
-                                                       data_start=forward_start_row,
-                                                       data_end=reverse_start_row,
+                                                       data_start=2,
+                                                       data_end=len(data['1_Forward']) + 2,
                                                        name_suffix='Forward'))
                 self.wb_main.insert_chart(self.chart_huge_vertical_spacing + self.chart_vertical_spacing * 2,
                                           self.chart_horizontal_spacing * device_counter,
                                           self.plot_iv(sheet_name=ws_name,
-                                                       data_start=reverse_start_row,
+                                                       data_start=len(data['1_Forward']) + 2,
                                                        data_end=row,
                                                        name_suffix='Reverse'))
         # insert huge IV plots into the main sheet
@@ -189,42 +183,37 @@ class DevicePlotter:
                                   self.plot_all_sweeps(start_key='reverse_start_row',
                                                        end_key='all_data_length', name_suffix='Reverse'))
 
-    def set_headers(self, ws, device_name, device_data):
+    def set_headers(self, ws, device_name):
         # Write the headers for I, V, and P
-        ws.write(0, 0, 'I', self.center)
-        ws.write(0, 1, 'V', self.center)
-        ws.write(0, 2, 'P', self.center)
+        ws.write(0, 0, 'J, mA/cm²', self.center)
+        # ws.write(0, 0, 'I, mA', self.center)
+        ws.write(0, 1, 'V, V', self.center)
+        ws.write(0, 2, 'P, W', self.center)
 
         # Write the device name and parameters in column D
-        ws.write(0, 3, device_name, self.center)
-        ws.write(1, 3, 'Parameters', self.center)
-        ws.write(2, 3, 'Isc, mA', self.center)
-        ws.write(3, 3, 'Voc, V', self.center)
-        ws.write(4, 3, 'Ƞ', self.center)
-        ws.write(5, 3, 'FF', self.center)
-        ws.write(6, 3, 'Max power, W', self.center)
-        ws.write(7, 3, 'Short-circuit current density, mA/cm²)', self.center)
-        ws.write(8, 3, 'Voltage at MPP (V)', self.center)
-        ws.write(9, 3, 'Current density at MPP (mA/cm²)', self.center)
-        ws.write(10, 3, 'Series resistance, Rs (ohm)', self.center)
-        ws.write(11, 3, 'Shunt resistance, Rsh (ohm)', self.center)
-        ws.write(12, 3, 'Active area, cm²', self.center)
-        ws.write(13, 3, 'Light Intensity, W/cm²', self.center)
+        ws.write(0, 4, device_name, self.center)
+        ws.write(1, 4, 'Parameters', self.center)
+        ws.write(2, 4, 'Isc, mA', self.center)
+        ws.write(3, 4, 'Voc, V', self.center)
+        ws.write(4, 4, 'Ƞ', self.center)
+        ws.write(5, 4, 'FF', self.center)
+        ws.write(6, 4, 'Max power, W', self.center)
+        ws.write(7, 4, 'Short-circuit current density, mA/cm²)', self.center)
+        ws.write(8, 4, 'Voltage at MPP (V)', self.center)
+        ws.write(9, 4, 'Current density at MPP (mA/cm²)', self.center)
+        ws.write(10, 4, 'Series resistance, Rs (ohm)', self.center)
+        ws.write(11, 4, 'Shunt resistance, Rsh (ohm)', self.center)
+        ws.write(12, 4, 'Active area, cm²', self.center)
+        ws.write(13, 4, 'Light Intensity, W/cm²', self.center)
 
-        ws.set_column(3, 3, 35)
+        ws.set_column(4, 4, 35)
         # Write the "Values" header in column E
-        self.write_center_across_selection(ws, (0, 4), 'Values', 3)
+        self.write_center_across_selection(ws, (0, 5), 'Values', 3)
 
         # Write the "Reverse" and "Forward" headers in columns E and F
-        ws.write(1, 4, 'Reverse', self.center)
-        ws.write(1, 5, 'Forward', self.center)
-        ws.write(1, 6, 'Average', self.center)
-
-        # Write the active area value
-        self.write_center_across_selection(ws, (12, 4), device_data['Active area'], 3)
-
-        # Write the light intensity value
-        self.write_center_across_selection(ws, (13, 4), device_data['Light Intensity'], 3)
+        ws.write(1, 5, 'Reverse', self.center)
+        ws.write(1, 6, 'Forward', self.center)
+        ws.write(1, 7, 'Average', self.center)
 
     def write_center_across_selection(self, ws, position, text, number_of_cells):
         row, col = position
@@ -234,197 +223,124 @@ class DevicePlotter:
 
     @staticmethod
     def calculate_voc_approx(voltage_data, current_data):
-        """
-        Approximates the open-circuit voltage (Voc) by finding the voltage where the current is minimized.
-
-        :param voltage_data: Array-like, voltage data points.
-        :param current_data: Array-like, current data points corresponding to the voltage data.
-        :return: Tuple containing the approximated Voc and the index where the current is minimized.
-        """
         voc_index = np.argmin(np.abs(current_data))
         return voltage_data[voc_index], voc_index
 
     @staticmethod
-    def linfit_ls(xdata, ydata):
-        # a = np.vstack([np.ones(xdata.shape), xdata]).T
-        # return np.linalg.lstsq(a.T @ a, a.T @ ydata, rcond=None)[0]
-        A = np.vstack([np.ones(xdata.shape[0]), xdata]).T
-        # return np.linalg.solve(A.T @ A, A.T @ ydata)
-        return np.linalg.solve(A.T @ A, A.T @ ydata)[::-1]  # Reverse the order to match MATLAB
+    def linfit_golden(x_data, y_data):
+        """
+        Linear fit using various methods.
+        Uncomment the desired method.
+
+        :param x_data: np.ndarray
+            The x-values of the data points.
+        :param y_data: np.ndarray
+            The y-values of the data points.
+        :return: tuple
+            The slope and intercept of the best-fit line in the form (intercept, slope).
+
+        Speed (Based on 1000 iterations):
+        - The Least Squares Method: ~0.080 seconds
+        - Direct Solve Method: ~0.020 seconds
+        - Inverse Method: ~0.040 seconds
+        """
+        # Create design matrix
+        design_matrix = np.vstack([np.ones(x_data.shape[0]), x_data]).T
+
+        # Method 1: The Least Squares Method
+        # Recommended as the golden choice.
+        # More robust and can handle cases where the system of equations doesn't have a direct solution.
+        # Slower but generally more reliable (~0.080 seconds).
+        slope, intercept = np.linalg.lstsq(design_matrix, y_data, rcond=None)[0]
+
+        # Method 2: Direct Solve Method (Uncomment to use)
+        # Fastest method (~0.020 seconds).
+        # May be less stable for ill-conditioned matrices.
+        # slope, intercept = np.linalg.solve(design_matrix.T @ design_matrix, design_matrix.T @ y_data)
+
+        # Method 3: Inverse Method (Uncomment to use)
+        # Moderate speed (~0.040 seconds).
+        # Involves direct matrix inversion, can be numerically unstable for ill-conditioned matrices.
+        # slope, intercept = np.linalg.inv(design_matrix.T @ design_matrix) @ design_matrix.T @ y_data
+
+        return intercept, slope
 
     def calculate_isc_and_rsh(self, voltage_data, current_data, voc_approx):
-        """
-        Calculates the short-circuit current (Isc) and shunt resistance (Rsh) by performing a linear regression
-        on a subset of the voltage and current data.
-
-        :param voltage_data: Array-like, voltage data points.
-        :param current_data: Array-like, current data points.
-        :param voc_approx: Float, approximated open-circuit voltage.
-        :return: Tuple containing the calculated Isc and Rsh values.
-        """
         isc_indices_fit = np.abs(voltage_data) / voc_approx < 0.3
-        intercept, slope = self.linfit_ls(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
+        intercept, slope = self.linfit_golden(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
         isc = slope
         rsh = -1 / intercept
-        return isc, rsh * 1000, (slope, intercept)
-        # isc_indices_fit = np.abs(voltage_data) / voc_approx < 0.3
-        # intercept, slope = self.linfit_ls(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
-        # isc = intercept
-        # rsh = -1 / slope
-        # return isc, rsh * 1000
+        return isc, rsh, (slope, intercept)
 
     def calculate_voc_and_rs(self, voltage_data, current_data, voc_index):
-        """
-        Calculates the open-circuit voltage (Voc) and series resistance (Rs) by performing a linear regression
-        on the data near the Voc index.
-
-        :param voltage_data: Array-like, voltage data points.
-        :param current_data: Array-like, current data points.
-        :param voc_index: Integer, index where the current is minimized.
-        :return: Tuple containing the calculated Voc and Rs values.
-        """
         voc_indices_fit = [voc_index - 1, voc_index - 0] if current_data[voc_index] < 0 else [voc_index - 1, voc_index]
-        intercept, slope = self.linfit_ls(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
+        intercept, slope = self.linfit_golden(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
         voc = -slope / intercept
         rs = -1 / intercept
-        # voc_indices_fit = [voc_index - 1, voc_index] if current_data[voc_index] < 0 else [voc_index - 1, voc_index + 1]
-        # intercept_voc, slope_voc = self.linfit_ls(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
-        # voc = -intercept_voc / slope_voc
-        # rs = -1 / slope_voc
-        return voc, rs * 1000, (slope, intercept)
+        return voc, rs, (slope, intercept)
 
-    @staticmethod
-    def write_max_power(ws, reverse_start_row, forward_start_row, row):
-        """
-        Writes Excel formulas to calculate the maximum power for Reverse and Forward sweeps and their average.
+    def write_parameters(self, ws):
+        # Write the active area value
+        self.write_center_across_selection(ws, (12, 5), self.active_area, 3)
+        # Write the light intensity value
+        self.write_center_across_selection(ws, (13, 5), self.light_intensity, 3)
 
-        :param ws: Excel Worksheet object.
-        :param reverse_start_row: Integer, start row for the Reverse sweep data.
-        :param forward_start_row: Integer, start row for the Forward sweep data.
-        :param row: Integer, end row for the data.
-        :return: None.
-        """
-        ws.write_formula(6, 4, f'=MAX(C{reverse_start_row}:C{row})')  # Reverse Max Power
-        ws.write_formula(6, 5, f'=MAX(C{forward_start_row}:C{row})')  # Forward Max Power
-        ws.write_formula(6, 6, '=(E7+F7)/2')  # Average Max Power
+        max_power_average = (self.max_power_reverse + self.max_power_forward) / 2
+        ws.write(6, 5, self.max_power_reverse)  # Reverse Max Power
+        ws.write(6, 6, self.max_power_forward)  # Forward Max Power
+        ws.write(6, 7, max_power_average)  # Average Max Power
 
-    @staticmethod
-    def write_efficiency(ws):
-        """
-        Writes Excel formulas to calculate the efficiency for Reverse, Forward, and Average sweeps.
+        eff_avr = (self.efficiency_reverse + self.efficiency_forward) / 2
+        ws.write(4, 5, self.efficiency_reverse)  # Reverse Efficiency
+        ws.write(4, 6, self.efficiency_forward)  # Forward Efficiency
+        ws.write(4, 7, eff_avr)  # Average Efficiency
 
-        :param ws: Excel Worksheet object.
-        :return: None.
-        """
-        ws.write_formula(4, 4, '=100*E7/(E14*E13)')  # Reverse Efficiency
-        ws.write_formula(4, 5, '=100*F7/(E14*E13)')  # Forward Efficiency
-        ws.write_formula(4, 6, '=(E5+F5)/2')  # Average Efficiency
+        ff = (self.fill_factor_reverse + self.fill_factor_forward) / 2
+        ws.write(5, 5, self.fill_factor_reverse)  # Reverse Fill Factor
+        ws.write(5, 6, self.fill_factor_forward)  # Forward Fill Factor
+        ws.write(5, 7, ff)  # Average Fill Factor
 
-    @staticmethod
-    def write_fill_factor(ws):
-        """
-        Writes Excel formulas to calculate the fill factor for Reverse, Forward, and Average sweeps.
+        j = 1000 * (self.i_sc_forward + self.i_sc_reverse) / self.active_area
+        ws.write(7, 5, 1000 * self.i_sc_reverse / self.active_area)  # Reverse short circuit current density
+        ws.write(7, 6, 1000 * self.i_sc_forward / self.active_area)  # Forward short circuit current density
+        ws.write(7, 7, j)  # Average short circuit current density
 
-        :param ws: Excel Worksheet object.
-        :return: None.
-        """
-        ws.write_formula(5, 4, '=1000 * E7/(E3*E4)')  # Reverse Fill Factor
-        ws.write_formula(5, 5, '=1000 * F7/(F3*F4)')  # Forward Fill Factor
-        ws.write_formula(5, 6, '=(E6+F6)/2')  # Average Fill Factor
+        v_mpp = (self.v_mpp_reverse + self.v_mpp_forward) / 2
+        ws.write(8, 5, self.v_mpp_reverse)  # Reverse Voltage at MPP
+        ws.write(8, 6, self.v_mpp_forward)  # Forward Voltage at MPP
+        ws.write(8, 7, v_mpp)  # Average Voltage at MPP
 
-    @staticmethod
-    def write_short_circuit_current_density(ws):
-        """
-        Writes Excel formulas to calculate the short-circuit current density for Reverse, Forward, and Average sweeps.
+        j_mpp = 1000 * (self.j_mpp_reverse + self.j_mpp_forward) / 2
+        ws.write(9, 5, 1000 * self.j_mpp_reverse)  # Reverse Current density at MPP
+        ws.write(9, 6, 1000 * self.j_mpp_forward)  # Forward Current density at MPP
+        ws.write(9, 7, j_mpp)  # Average Current density at MPP
 
-        :param ws: Excel Worksheet object.
-        :return: None.
-        """
-        ws.write_formula(7, 4, '=E3/E13')  # Reverse short circuit current density
-        ws.write_formula(7, 5, '=F3/E13')  # Forward short circuit current density
-        ws.write_formula(7, 6, '=G3/E13')  # Average short circuit current density
+        rs = (self.rs_forward + self.rs_reverse) / 2
+        ws.write(10, 5, self.rs_reverse)  # Reverse series resistance, Rs (ohm)
+        ws.write(10, 6, self.rs_forward)  # Forward series resistance, Rs (ohm)
+        ws.write(10, 7, rs)  # Average series resistance, Rs (ohm)
 
-    @staticmethod
-    def write_voltage_at_mpp(ws):
-        """
-         Writes Excel formulas to calculate the voltage at MPP for Reverse, Forward, and Average sweeps.
+        rsh = (self.rsh_reverse + self.rsh_forward) / 2
+        ws.write(11, 5, self.rsh_reverse)  # Reverse shunt resistance, Rsh (ohm)
+        ws.write(11, 6, self.rsh_forward)  # Forward shunt resistance, Rsh (ohm)
+        ws.write(11, 7, rsh)  # Average shunt resistance, Rsh (ohm)
 
-        :param ws: Excel Worksheet object.
-        :return: None.
-        """
-        ws.write_formula(8, 4, '=INDEX(B:B,MATCH(E7,C:C,0))')  # Reverse Voltage at MPP
-        ws.write_formula(8, 5, '=INDEX(B:B,MATCH(F7,C:C,0))')  # Forward Voltage at MPP
-        ws.write_formula(8, 6, '=(E9+F9)/2')  # Average Voltage at MPP
-
-    @staticmethod
-    def write_current_density_at_mpp(ws):
-        """
-        Writes Excel formulas to calculate the current density at MPP for Reverse, Forward, and Average sweeps.
-
-        :param ws: Excel Worksheet object.
-        :return: None.
-        """
-        ws.write_formula(9, 4, '=INDEX(A:A,MATCH(E7,C:C,0))/E13')  # Reverse Current density at MPP
-        ws.write_formula(9, 5, '=INDEX(A:A,MATCH(F7,C:C,0))/E13')  # Forward Current density at MPP
-        ws.write_formula(9, 6, '=(E10+F10)/2')  # Average Current density at MPP
-
-    @staticmethod
-    def write_series_resistance(ws, rs_reverse, rs_forward):
-        """
-        Writes the series resistance (Rs) in the worksheet for Reverse, Forward, and Average cases.
-
-        :param ws: Excel Worksheet object.
-        :param rs_reverse: Series resistance in ohm for Reverse case.
-        :param rs_forward: Series resistance in ohm for Forward case.
-        :return: None.
-        """
-        ws.write(10, 4, rs_reverse)  # Reverse series resistance, Rs (ohm)
-        ws.write(10, 5, rs_forward)  # Forward series resistance, Rs (ohm)
-        ws.write_formula(10, 6, '=(E11+F11)/2')  # Average series resistance, Rs (ohm)
-
-    @staticmethod
-    def write_shunt_resistance(ws, rsh_reverse, rsh_forward):
-        """
-        Writes the shunt resistance (Rsh) in the worksheet for Reverse, Forward, and Average cases.
-
-        :param ws: Excel Worksheet object.
-        :param rsh_reverse: Shunt resistance in ohm for Reverse case.
-        :param rsh_forward: Shunt resistance in ohm for Forward case.
-        :return: None.
-        """
-        ws.write(11, 4, rsh_reverse)  # Reverse shunt resistance, Rsh (ohm)
-        ws.write(11, 5, rsh_forward)  # Forward shunt resistance, Rsh (ohm)
-        ws.write_formula(11, 6, '=(E12+F12)/2')  # Average shunt resistance, Rsh (ohm)
-
-    @staticmethod
-    def write_iv(ws, reverse_isc_row, reverse_voc_row, forward_isc_row, forward_voc_row):
-        """
-        Writes the values for the short-circuit current (Isc) and open-circuit voltage (Voc) for the
-        Reverse and Forward sweeps, as well as calculates the Average Isc and Voc using Excel formulas.
-
-        This method specifically targets the writing of Isc and Voc parameters to a given Excel worksheet.
-
-        :param ws: Excel Worksheet object where the data will be written.
-        :param reverse_isc_row: Short-circuit current (Isc) in amps for the Reverse sweep.
-        :param reverse_voc_row: Open-circuit voltage (Voc) in volts for the Reverse sweep.
-        :param forward_isc_row: Short-circuit current (Isc) in amps for the Forward sweep.
-        :param forward_voc_row: Open-circuit voltage (Voc) in volts for the Forward sweep.
-        :return: None.
-        """
         # Write the Reverse and Forward values for Isc and Voc
-        ws.write(2, 4, reverse_isc_row)
-        ws.write(3, 4, reverse_voc_row)
-        ws.write(2, 5, forward_isc_row)
-        ws.write(3, 5, forward_voc_row)
-        # Write the Reverse and Forward values for Isc and Voc as Excel formulas
-        ws.write_formula(2, 6, f'=(E3+F3)/2')  # Average Isc
-        ws.write_formula(3, 6, f'=(E4+F4)/2')  # Average Voc
+        ws.write(2, 5, self.i_sc_reverse)
+        ws.write(3, 5, self.v_oc_reverse)
+        ws.write(2, 6, self.i_sc_forward)
+        ws.write(3, 6, self.v_oc_forward)
+        # Calculate the Reverse and Forward values for Isc and Voc and write into Excel
+        i_sc_average = (self.i_sc_forward + self.i_sc_reverse) / 2
+        v_oc_average = (self.v_oc_reverse + self.v_oc_forward) / 2
+        ws.write(2, 7, i_sc_average)  # Average Isc
+        ws.write(3, 7, v_oc_average)  # Average Voc
 
     def fill_tables(self):
-        table_type = {self.wb_table: ['F', 'E'],
-                      self.wb_table_forward: ['F'],
-                      self.wb_table_reverse: ['E'],
-                      self.wb_table_average: ['G'],
+        table_type = {self.wb_table: ['G', 'F'],
+                      self.wb_table_forward: ['G'],
+                      self.wb_table_reverse: ['F'],
+                      self.wb_table_average: ['H'],
                       }
         for table, sweeps in table_type.items():
             self.write_table_headers(table)
@@ -435,10 +351,10 @@ class DevicePlotter:
                 for device_name, device_data in devices.items():
                     sheet_name = device_data['sheet_name']
                     for sweep in sweeps:
+                        # ic("fill tables", sweep)
                         self.write_table_rows(table, row_index, sheet_name, sweep)
                         row_index += 1
-
-            table.autofilter(0, 0, row_index, 11)  # Apply autofilter to the table
+            table.autofilter(0, 0, row_index, 12)  # Apply auto filter to the table
 
     @staticmethod
     def write_table_headers(ws):
@@ -454,15 +370,15 @@ class DevicePlotter:
             'Current density at MPP (mA/cm²)',
             'Series resistance, Rs (ohm)',
             'Shunt resistance, Rsh (ohm)',
-            'Active area, (cm²)'
+            'Active area, (cm²)',
+            'Device order'
         ]
         for i, header in enumerate(headers):
             ws.write(0, i, header)
-            # ws.set_column(i, i, max(len(header) * 1.2, 10))
 
     @staticmethod
     def write_table_rows(ws, row_index, sheet_name, sweep_direction):
-        col_letter = sweep_direction  # First letter of sweep direction (E, F, or G)
+        col_letter = sweep_direction  # First letter of the sweep direction (F, G, or H)
         ws.write(row_index, 0, sheet_name)  # Label
         ws.write_formula(row_index, 1, f"='{sheet_name}'!{col_letter}2")  # Scan direction
         ws.write_formula(row_index, 2, f"='{sheet_name}'!{col_letter}5")  # Efficiency
@@ -474,7 +390,8 @@ class DevicePlotter:
         ws.write_formula(row_index, 8, f"='{sheet_name}'!{col_letter}10")  # Current density at MPP
         ws.write_formula(row_index, 9, f"='{sheet_name}'!{col_letter}11")  # Series resistance
         ws.write_formula(row_index, 10, f"='{sheet_name}'!{col_letter}12")  # Shunt resistance
-        ws.write_formula(row_index, 11, f"='{sheet_name}'!E13")  # Active area
+        ws.write_formula(row_index, 11, f"='{sheet_name}'!F13")  # Active area
+        ws.write(row_index, 12, row_index)  # Track the device order
 
     def plot_iv(self, sheet_name, data_start, data_end, name_suffix):
         name_suffix = ' ' + name_suffix if name_suffix else ''
@@ -498,7 +415,7 @@ class DevicePlotter:
         })
         chart_iv.set_legend({'none': True})
         chart_iv.set_y_axis({
-            'name': 'I, mA',
+            'name': 'J, mA/cm²',
             'name_font': {'size': 12, 'italic': False, 'bold': False},
             'num_font': {'size': 10},
             'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},
@@ -540,7 +457,7 @@ class DevicePlotter:
         })
         chart_all_sweeps.set_legend({'none': False})
         chart_all_sweeps.set_y_axis({
-            'name': 'I, mA',
+            'name': 'J, mA/cm²',
             'name_font': {'size': 12, 'italic': False, 'bold': False},
             'num_font': {'size': 10},
             'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},

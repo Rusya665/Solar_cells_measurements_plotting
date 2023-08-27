@@ -50,13 +50,13 @@ class PotentiostatFileChecker:
 
         # Detect encoding using chardet
         with open(file, 'rb') as f:
-            result = chardet.detect(f.read(4096))  # Check encoding of the first 4096  bytes
+            result = chardet.detect(f.read(4096))  # Check encoding of the first 4096 bytes
         self.encoding = result['encoding']
 
         for potentiostat, target_text in self.potentiostat_dict[file_extension].items():
             with open(file, 'r', encoding=self.encoding) as f:
                 for i, line in enumerate(f):
-                    if i >= 100:  # limit number of lines read to 100
+                    if i >= 100:  # limit the number of lines read to 100
                         break
                     if target_text in line:
                         sweeps_data = self.detect_iv_sweeps(file, potentiostat)
@@ -90,7 +90,7 @@ class PotentiostatFileChecker:
         sweeps_data = []
         current_sweep_data = [{'V': df['V'].iloc[0], 'I': df['I'].iloc[0]}]
 
-        # Determine the initial direction based on first two data points
+        # Determine the initial direction based on the first two data points
         current_direction = "increasing" if df['V'].iloc[1] > df['V'].iloc[0] else "decreasing"
 
         for idx in range(1, len(df)):

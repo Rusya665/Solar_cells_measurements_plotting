@@ -37,11 +37,10 @@ class SlidePanel(ctk.CTkFrame):
                                                   command=self.parent.table_frame.update_entries_from_cache)
         self.open_wb_checkbox = ctk.CTkCheckBox(self, text='Open WB', command=self.parent.open_wb_activator)
         self.open_wb_checkbox.select()
-
+        self.slide_panel_label.pack(pady=10)
+        self.potentiostat_combox_label.pack(pady=5)
+        self.potentiostat_combox.pack(pady=5)
         widgets = [
-            self.slide_panel_label,
-            self.potentiostat_combox_label,
-            self.potentiostat_combox,
             self.aging_mode_checkbox,
             self.identical_areas_CheckBox,
             self.read_from_file,

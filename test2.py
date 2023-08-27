@@ -1,5 +1,6 @@
 import pandas as pd
 from icecream import ic
+from GUI.instruments import open_file
 
 
 # Function to calculate percentage difference
@@ -21,6 +22,7 @@ def compare_excel_sheets(file1_path, sheet1_name, file2_path, sheet2_name):
     # Applying the transformation to the "Sample" column in data2
     data2['Sample'] = data2['Sample'].apply(lambda input_string: input_string.replace("-", "_").replace(" ", ""))
     data2 = data2.drop('Active area, (cm²)', axis=1)
+    # data2 = data2.drop('Device order', axis=1)
     ic(data1.head(), data2.head())
     # Converting the "Scan direction" column to string in both datasets
     data1['Scan direction'] = data1['Scan direction'].astype(str)
@@ -30,7 +32,7 @@ def compare_excel_sheets(file1_path, sheet1_name, file2_path, sheet2_name):
 
     # Iterate through the rows of data1 and data2, calculate the percentage differences
     for index, row in data1.iterrows():
-        ic(row)
+        # ic(row)
         corresponding_row_data2 = data2[
             (data2['Sample'] == row['Sample']) & (data2['Scan direction'] == row['Scan direction'])]
         if corresponding_row_data2.shape[0] > 0:
@@ -45,14 +47,14 @@ def compare_excel_sheets(file1_path, sheet1_name, file2_path, sheet2_name):
     return difference_df
 
 
+pd.set_option('display.max_rows', None)
+
 # Example usage:
-file1_path = (r'C:/Users/runiza.TY2206042/OneDrive - O365 Turun yliopisto/'
-              r'Documents/Aging tests/2023 Carbon revival/'
-              r'1. Testing/IV results/IVparameters.xlsx')
+file1_path = (r'D:/OneDrive - O365 Turun yliopisto/'
+              r'Documents/Aging tests/2023 Carbon revival\2. Round\IV results/IVparameters.xlsx')
 sheet1_name = 'All'
-file2_path = (r'C:/Users/runiza.TY2206042/OneDrive - O365 Turun yliopisto/'
-              r'Documents/Aging tests/2023 Carbon revival/'
-              r'1. Testing/IV results/2023-08-25 IV results JV plots and calculations.xlsx')
+file2_path = (r'D:/OneDrive - O365 Turun yliopisto/'
+              r'Documents/Aging tests/2023 Carbon revival/2. Round/IV results/2023-08-26 IV results JV plots and calculations.xlsx')
 sheet2_name = 'Tabel_Total'
 # sheet2_name = 'Sheet1'
 differences = compare_excel_sheets(file1_path, sheet1_name, file2_path, sheet2_name)
@@ -63,7 +65,8 @@ for column in differences.select_dtypes(include=['number']).columns:
 
 
 # Define the path for the output text file
-output_xlsx_path = r'C:/Users/runiza.TY2206042/OneDrive - O365 Turun yliopisto/Desktop/differences6.xlsx'
+output_xlsx_path = r'D:/OneDrive - O365 Turun yliopisto/Desktop/differences7.xlsx'
 
 # Save the differences dataframe to an Excel file
 differences.to_excel(output_xlsx_path, index=False)
+open_file(output_xlsx_path)

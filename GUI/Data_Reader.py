@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import timedelta
 from icecream import ic
 
-from GUI.instruments import columns_swap, flip_data_if_necessary
+from GUI.instruments import flip_data_if_necessary
 
 
 class IVDataReader:
@@ -114,7 +114,6 @@ class IVDataReader:
                 mask = df['Time'] > preconditioning_time + df['Time'].iloc[0]
                 # Use the mask to filter the DataFrame
                 df = df[mask].drop(columns=['Time']).reset_index(drop=True)
-
                 # Convert current to appropriate unit
                 df = self.convert_current(current_unit, df)
 
@@ -129,12 +128,13 @@ class IVDataReader:
         """
         Convert the current to milli-amps (mA) based on the detected unit
         """
+        df['I'] = df['I'].astype(float)
         if current_unit in ['A', 'I']:
-            df['I'] = df['I'].multiply(10 ** 3)  # Converting from A to mA
+            pass  # Current is already in A, so no conversion needed
         elif current_unit in ['mA', 'Im']:
-            pass  # Current is already in mA, so no conversion needed
+            df['I'] = df['I'].divide(10 ** 3)  # Current from mA to A
         elif current_unit in ['µA', 'Iµ']:
-            df['I'] = df['I'].divide(10 ** 3)  # Converting from µA to mA
+            df['I'] = df['I'].divide(10 ** 6)  # Converting from µA to A
         else:
             messagebox.showerror(title=f"Unexpected current unit!",
                                  message=f"This current unit {current_unit} for {self.path} was detected.\n"

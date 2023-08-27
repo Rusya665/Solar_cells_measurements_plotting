@@ -145,8 +145,6 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :return: String with a path
         """
         self.file_directory = filedialog.askdirectory(mustexist=True)
-        # self.file_directory = r'C:\Users/runiza.TY2206042/OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
-        # self.file_directory = r'D:/OneDrive - O365 Turun yliopisto\IV_plotting_project\Input'
         self.list_files()
         self.label_1.configure(text=self.file_directory)
 
@@ -179,7 +177,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         Will show folders only if it contains required file.
         :param parent: parent folder
         :param path: path to work with
-        :param depth: depth of the folders path
+        :param depth: depth of the folders' path
         :return: None
         """
         potentiostat_checker = PotentiostatFileChecker(parent=self, potentiostat_choice=self.potentiostat)

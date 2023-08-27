@@ -121,14 +121,33 @@ class DevicePlotter:
                     voc_approx, voc_index = self.calculate_voc_approx(sweep_data['V'], sweep_data['I'])
                     isc, rsh, b = self.calculate_isc_and_rsh(sweep_data['V'], sweep_data['I'], voc_approx)
                     voc, rs, b1 = self.calculate_voc_and_rs(sweep_data['V'], sweep_data['I'], voc_index)
-                    ff = max_power / (isc * voc)  # Fill Factor
-                    print(ff)
+                    ff = 0.0 if isc * voc == 0 else max_power / (isc * voc)  # Fill Factor
                     if sweep_name == '1_Forward':
+                        # print(f"{ws} 1_Forward Sweep:")
+                        # print(f"  Short circuit current (Isc) = {isc}")
+                        # print(f"  Open circuit voltage (Voc) = {voc}")
+                        # print(f"  Series resistance (Rs) = {rs}")
+                        # print(f"  Shunt resistance (Rsh) = {rsh}")
+                        # print(f"  Max power = {max_power}")
+                        # print(f"  Current at MPP (J_MPP) = {j_mpp}")
+                        # print(f"  Voltage at MPP (V_MPP) = {v_mpp}")
+                        # print(f"  Efficiency = {eff}")
+                        # print(f"  Fill Factor = {ff}")
                         self.i_sc_forward, self.v_oc_forward = isc, voc
                         self.rs_forward, self.rsh_forward = rs, rsh
                         self.max_power_forward, self.j_mpp_forward, self.v_mpp_forward = max_power, j_mpp, v_mpp
                         self.efficiency_forward, self.fill_factor_forward = eff, ff
                     elif sweep_name == '2_Reverse':
+                        # print(f"{ws} 2_Reverse Sweep:")
+                        # print(f"  Short circuit current (Isc) = {isc}")
+                        # print(f"  Open circuit voltage (Voc) = {voc}")
+                        # print(f"  Series resistance (Rs) = {rs}")
+                        # print(f"  Shunt resistance (Rsh) = {rsh}")
+                        # print(f"  Max power = {max_power}")
+                        # print(f"  Current at MPP (J_MPP) = {j_mpp}")
+                        # print(f"  Voltage at MPP (V_MPP) = {v_mpp}")
+                        # print(f"  Efficiency = {eff}")
+                        # print(f"  Fill Factor = {ff}")
                         self.i_sc_reverse, self.v_oc_reverse = isc, voc
                         self.rs_reverse, self.rsh_reverse = rs, rsh
                         self.max_power_reverse, self.j_mpp_reverse, self.v_mpp_reverse = max_power, j_mpp, v_mpp
@@ -270,14 +289,14 @@ class DevicePlotter:
         isc_indices_fit = np.abs(voltage_data) / voc_approx < 0.3
         intercept, slope = self.linfit_golden(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
         isc = slope
-        rsh = -1 / intercept
+        rsh = 0.0 if intercept == 0 else -1 / intercept
         return isc, rsh, (slope, intercept)
 
     def calculate_voc_and_rs(self, voltage_data, current_data, voc_index):
         voc_indices_fit = [voc_index - 1, voc_index - 0] if current_data[voc_index] < 0 else [voc_index - 1, voc_index]
         intercept, slope = self.linfit_golden(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
         voc = -slope / intercept
-        rs = -1 / intercept
+        rs = 0.0 if intercept == 0 else -1 / intercept
         return voc, rs, (slope, intercept)
 
     def write_parameters(self, ws):

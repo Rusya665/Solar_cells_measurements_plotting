@@ -46,7 +46,7 @@ def convert_mpt_to_csv(mpt_path):
     mask = df['Time'] > preconditioning_time + df['Time'].iloc[0]
     df_filtered = df[mask].drop(columns=['Time']).reset_index(drop=True)
 
-    output_csv_path = mpt_path.replace('.mpt', '_converted.csv')
+    output_csv_path = mpt_path.replace('.mpt', '.csv')
     with open(output_csv_path, 'w', newline='', encoding='utf-16') as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(['Date and time:,' + current_datetime])
@@ -68,5 +68,5 @@ def convert_folder_mpt_to_csv(folder_path):
             convert_mpt_to_csv(mpt_path)
 
 
-path = r'D:/OneDrive - O365 Turun yliopisto/IV_plotting_project/Test for Maryam/Second infiltration'
+path = r'D:/OneDrive - O365 Turun yliopisto/IV_plotting_project/Test for Maryam/Washed out'
 convert_folder_mpt_to_csv(path)

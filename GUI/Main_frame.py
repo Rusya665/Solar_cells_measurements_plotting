@@ -175,11 +175,12 @@ class IVProcessingMainClass(ctk.CTkFrame):
         """
         Insert to a table and into the file_list filtered by extension type of files, including nested folders.
         Will show folders only if it contains required file.
-        :param parent: parent folder
+        :param parent: Parent folder
         :param path: path to work with
         :param depth: depth of the folders' path
         :return: None
         """
+        depth = 1 if self.aging_mode else 0
         potentiostat_checker = PotentiostatFileChecker(parent=self, potentiostat_choice=self.potentiostat)
         self.added_iv.clear()
         for file in os.listdir(path):
@@ -216,7 +217,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
                         if checking[0]:
                             device_detected = True
                 if device_detected:
-                    if b == depth:  # Nested folders with the deep of 1 only
+                    if b == depth:  # Nested folders with the deep of one only
                         # allowed for the Processed folders
                         return messagebox.showerror('Waring!', f"Too many sub folders in"
                                                                f" a folder {abspath}")

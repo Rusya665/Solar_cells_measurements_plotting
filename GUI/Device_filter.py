@@ -29,6 +29,8 @@ class DeviceDetector:
         :param data_dict: Dictionary containing device-related data.
         """
         self.data = data_dict
+        for key, _ in data_dict.items():
+            print('key', key)
 
     def detect_and_filter(self):
         """
@@ -45,6 +47,7 @@ class DeviceDetector:
 
         # Iterate through folders and then files
         for folder_name, folder_data in self.data.items():
+            print('folder name', folder_name)
             single_sweep_files = {}
             processed_files = set()
             result_data[folder_name] = {}  # Initialize the folder in the result

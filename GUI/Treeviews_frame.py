@@ -162,32 +162,46 @@ class TableFrames(ctk.CTkFrame):
 
     def devices_by_folder(self, items):
         folder_file_dict = {}
+        topmost_folder = None
+
         for item in items:
             parent = self.files_table.parent(item)
-            if not parent:  # This is a top-level node, i.e., a folder
+
+            if not parent:
                 folder_name = self.files_table.item(item)["text"]
-                if folder_name not in folder_file_dict:
-                    folder_file_dict[folder_name] = []
+
+                if self.parent.aging_mode:
+                    topmost_folder = folder_name
+                    continue
+                else:
+                    if folder_name not in folder_file_dict:
+                        folder_file_dict[folder_name] = []
             else:
                 folder_name = self.files_table.item(parent)["text"]
+                if folder_name == topmost_folder:
+                    continue
+
                 file_name = self.files_table.item(item)["text"]
                 if folder_name not in folder_file_dict:
                     folder_file_dict[folder_name] = []
-                folder_file_dict[folder_name].append(file_name)
 
+                folder_file_dict[folder_name].append(file_name)
+        ic(folder_file_dict)
+        ic(self.devices)
         matched_devices = {}
         for folder, selected_files in folder_file_dict.items():
-            for device, subkeys in self.devices[folder].items():
-                if isinstance(subkeys['Used files'], tuple):
-                    if any(file in selected_files for file in subkeys['Used files']):
+            ic(folder)
+            for device, sub_keys in self.devices[folder].items():
+                if isinstance(sub_keys['Used files'], tuple):
+                    if any(file in selected_files for file in sub_keys['Used files']):
                         if folder not in matched_devices:
                             matched_devices[folder] = {}
-                        matched_devices[folder][device] = subkeys
+                        matched_devices[folder][device] = sub_keys
                 else:
-                    if subkeys['Used files'] in selected_files:
+                    if sub_keys['Used files'] in selected_files:
                         if folder not in matched_devices:
                             matched_devices[folder] = {}
-                        matched_devices[folder][device] = subkeys
+                        matched_devices[folder][device] = sub_keys
 
         return self.update_matched_devices_from_entries(matched_devices)
 

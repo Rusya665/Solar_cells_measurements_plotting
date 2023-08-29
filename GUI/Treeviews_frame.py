@@ -214,9 +214,9 @@ class TableFrames(ctk.CTkFrame):
                 device_label = self.active_areas_scrollable_frame.grid_slaves(row=child.grid_info()['row'], column=1)[0]
                 device_name = device_label.cget('text')
                 entry_value = child.get()
-
                 for folder, devices in matched_devices.items():
                     if device_name in devices:
+                        print("yes", device_name)
                         if not entry_value.strip():
                             messagebox.showerror('Warning!', f"Missing active area value for the device:"
                                                              f" {device_name}")

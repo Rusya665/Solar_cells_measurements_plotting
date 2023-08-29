@@ -144,7 +144,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
         Built-in Tkinter function to return a str with a path
         :return: String with a path
         """
-        self.file_directory = filedialog.askdirectory(mustexist=True)
+        # self.file_directory = filedialog.askdirectory(mustexist=True)
+        self.file_directory = r"D:\OneDrive - O365 Turun yliopisto\Documents\Aging tests\2023 Carbon revival\3. New thing, dark storage\Measurememnts separated\test"
         self.list_files()
         self.label_1.configure(text=self.file_directory)
 
@@ -172,12 +173,14 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.added_iv.clear()
         self.process_directory(root_node, abspath)
 
-    def process_directory(self, parent, path):
+    def process_directory(self, parent, path, is_root_call=True):
         """
         Insert to a table and into the file_list filtered by extension type of files, including nested folders.
         Will show folders only if it contains required file.
         :param parent: Parent folder
         :param path: path to work with
+        :param is_root_call: A boolean flag,
+        that checks whether the current call to process_directory is the initial (root-level) call.
         :return: None
         """
         depth = 1 if self.aging_mode else 0
@@ -223,6 +226,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
                                                                f" a folder {abspath}")
                     oid = self.table_frame.files_table.insert(parent, 'end', text=file, open=False, tags='folder',
                                                               values=['', '', abspath])
-                    self.process_directory(oid, abspath)
-        # ic(self.added_iv)
-        self.table_frame.construct_active_areas_entries(data=self.added_iv, path=self.file_directory)
+                    self.process_directory(oid, abspath, is_root_call=False)
+        # Only run the following lines if it's the root call
+        if is_root_call:
+            self.table_frame.construct_active_areas_entries(data=self.added_iv, path=self.file_directory)

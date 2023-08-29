@@ -169,20 +169,20 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.table_frame.files_table.delete(i)
         abspath = os.path.abspath(self.file_directory).replace('\\', '/')
         root_node = self.table_frame.files_table.insert('', 'end', text=os.path.basename(abspath), open=True)
+        self.added_iv.clear()
         self.process_directory(root_node, abspath)
 
-    def process_directory(self, parent, path, depth=1):
+    def process_directory(self, parent, path):
         """
         Insert to a table and into the file_list filtered by extension type of files, including nested folders.
         Will show folders only if it contains required file.
         :param parent: Parent folder
         :param path: path to work with
-        :param depth: depth of the folders' path
         :return: None
         """
         depth = 1 if self.aging_mode else 0
         potentiostat_checker = PotentiostatFileChecker(parent=self, potentiostat_choice=self.potentiostat)
-        self.added_iv.clear()
+
         for file in os.listdir(path):
             abspath = os.path.join(path, file).replace('\\', '/')
             b = path.replace(self.file_directory, '').count('/')
@@ -224,4 +224,5 @@ class IVProcessingMainClass(ctk.CTkFrame):
                     oid = self.table_frame.files_table.insert(parent, 'end', text=file, open=False, tags='folder',
                                                               values=['', '', abspath])
                     self.process_directory(oid, abspath)
+        # ic(self.added_iv)
         self.table_frame.construct_active_areas_entries(data=self.added_iv, path=self.file_directory)

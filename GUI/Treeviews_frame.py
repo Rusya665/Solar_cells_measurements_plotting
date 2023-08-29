@@ -186,11 +186,8 @@ class TableFrames(ctk.CTkFrame):
                     folder_file_dict[folder_name] = []
 
                 folder_file_dict[folder_name].append(file_name)
-        ic(folder_file_dict)
-        ic(self.devices)
         matched_devices = {}
         for folder, selected_files in folder_file_dict.items():
-            ic(folder)
             for device, sub_keys in self.devices[folder].items():
                 if isinstance(sub_keys['Used files'], tuple):
                     if any(file in selected_files for file in sub_keys['Used files']):

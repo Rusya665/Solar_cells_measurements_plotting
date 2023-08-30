@@ -24,7 +24,7 @@ class DeviceDetector:
 
     def __init__(self, data_dict):
         """
-        Initializes the DeviceDetector class with a data dictionary and GUI object.
+        Initializes the DeviceDetector class with a data dictionary and JV_plotter_GUI object.
 
         :param data_dict: Dictionary containing device-related data.
         """

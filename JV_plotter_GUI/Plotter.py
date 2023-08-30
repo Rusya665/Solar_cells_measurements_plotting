@@ -7,7 +7,7 @@ import numpy as np
 import xlsxwriter
 from icecream import ic
 
-from instruments import open_file
+from instruments import open_file, row_to_excel_col
 from settings import settings
 
 
@@ -15,6 +15,7 @@ class DevicePlotter:
     """
         This class is designed for plotting and analyzing device measurements, specifically for photovoltaic devices.
     """
+
     def __init__(self, parent, matched_devices: dict):
         self.data = matched_devices
         self.parent = parent
@@ -35,26 +36,53 @@ class DevicePlotter:
         self.rs_forward, self.rs_reverse = None, None
         self.rsh_forward, self.rsh_reverse = None, None
         self.active_area, self.light_intensity = None, None
+        self.parameter_dict = {
+            3: 'Efficiency (%)',
+            4: 'Short-circuit current density (mA/cm²)',
+            5: 'Open circuit voltage (V)',
+            6: 'Fill factor',
+            7: 'Maximum power (W)',
+            8: 'Voltage at MPP (V)',
+            9: 'Current density at MPP (mA/cm²)',
+            10: 'Series resistance, Rs (ohm)',
+            11: 'Shunt resistance, Rsh (ohm)',
+        }
 
         self.workbook = self.create_workbook()
         self.center = self.workbook.add_format({'align': 'center'})
         self.across_selection = self.workbook.add_format()
         self.across_selection.set_center_across()
         self.wb_main = self.workbook.add_worksheet('Total')
-        self.wb_table = self.workbook.add_worksheet('Tabel_Total')
-        self.wb_table_forward = self.workbook.add_worksheet('Tabel_Forward')
-        self.wb_table_reverse = self.workbook.add_worksheet('Tabel_Reverse')
-        self.wb_table_average = self.workbook.add_worksheet('Tabel_Average')
+
         if self.parent.aging_mode:
             self.aging_sheet = self.workbook.add_worksheet('Aging')
 
+        self.wb_table = self.workbook.add_worksheet('Tabel_Total')
+
+        if self.parent.aging_mode:
+            self.timeline_df = self.parent.timeline_df
+            self.aging_plots_forward_absolute = self.workbook.add_worksheet('Aging_plots_forward_absolute')
+            self.aging_plots_reverse_absolute = self.workbook.add_worksheet('Aging_plots_reverse_absolute')
+            self.aging_plots_avg_absolute = self.workbook.add_worksheet('Aging_plots_avg_absolute')
+            self.aging_plots_forward_relative = self.workbook.add_worksheet('Aging_plots_forward_relative')
+            self.aging_plots_reverse_relative = self.workbook.add_worksheet('Aging_plots_reverse_relative')
+            self.aging_plots_avg_relative = self.workbook.add_worksheet('Aging_plots_avg_relative')
+
+        self.wb_table_forward = self.workbook.add_worksheet('Tabel_Forward')
+        self.wb_table_reverse = self.workbook.add_worksheet('Tabel_Reverse')
+        self.wb_table_average = self.workbook.add_worksheet('Tabel_Average')
+
         self.set_worksheets()
         self.fill_tables()
+        self.aging()
 
         self.wb_table.autofit()
         self.wb_table_forward.autofit()
         self.wb_table_reverse.autofit()
         self.wb_table_average.autofit()
+        if self.parent.aging_mode:
+            self.aging_sheet.autofit()
+
         self.workbook.close()
         if self.parent.open_wb:
             time.sleep(0.2)
@@ -120,39 +148,19 @@ class DevicePlotter:
 
                     voc_approx, voc_index = self.calculate_voc_approx(sweep_data['V'], sweep_data['I'])
                     isc, rsh, b = self.calculate_isc_and_rsh(sweep_data['V'], sweep_data['I'], voc_approx)
-                    voc, rs, b1 = self.calculate_voc_and_rs(sweep_data['V'], sweep_data['I'], voc_index)
+                    voc, rs, b1 = self.calculate_voc_and_rs(sweep_data['V'], sweep_data['I'], voc_index,
+                                                            device_name, folder_name)
                     ff = 0.0 if isc * voc == 0 else max_power / (isc * voc)  # Fill Factor
                     if sweep_name == '1_Forward':
-                        # print(f"{ws} 1_Forward Sweep:")
-                        # print(f"  Short circuit current (Isc) = {isc}")
-                        # print(f"  Open circuit voltage (Voc) = {voc}")
-                        # print(f"  Series resistance (Rs) = {rs}")
-                        # print(f"  Shunt resistance (Rsh) = {rsh}")
-                        # print(f"  Max power = {max_power}")
-                        # print(f"  Current at MPP (J_MPP) = {j_mpp}")
-                        # print(f"  Voltage at MPP (V_MPP) = {v_mpp}")
-                        # print(f"  Efficiency = {eff}")
-                        # print(f"  Fill Factor = {ff}")
                         self.i_sc_forward, self.v_oc_forward = isc, voc
                         self.rs_forward, self.rsh_forward = rs, rsh
                         self.max_power_forward, self.j_mpp_forward, self.v_mpp_forward = max_power, j_mpp, v_mpp
                         self.efficiency_forward, self.fill_factor_forward = eff, ff
                     elif sweep_name == '2_Reverse':
-                        # print(f"{ws} 2_Reverse Sweep:")
-                        # print(f"  Short circuit current (Isc) = {isc}")
-                        # print(f"  Open circuit voltage (Voc) = {voc}")
-                        # print(f"  Series resistance (Rs) = {rs}")
-                        # print(f"  Shunt resistance (Rsh) = {rsh}")
-                        # print(f"  Max power = {max_power}")
-                        # print(f"  Current at MPP (J_MPP) = {j_mpp}")
-                        # print(f"  Voltage at MPP (V_MPP) = {v_mpp}")
-                        # print(f"  Efficiency = {eff}")
-                        # print(f"  Fill Factor = {ff}")
                         self.i_sc_reverse, self.v_oc_reverse = isc, voc
                         self.rs_reverse, self.rsh_reverse = rs, rsh
                         self.max_power_reverse, self.j_mpp_reverse, self.v_mpp_reverse = max_power, j_mpp, v_mpp
                         self.efficiency_reverse, self.fill_factor_reverse = eff, ff
-
                     # Write the data to the worksheet
                     for _, row_data in sweep_data.iterrows():
                         # ws.write(row, 0, row_data['I'])
@@ -163,7 +171,7 @@ class DevicePlotter:
                         ws.write(row, 0, current_density)
                         row += 1
 
-                self.write_parameters(ws)
+                self.write_parameters(ws, device_data)
 
                 # Insert IV charts into devices' sheets
                 ws.insert_chart('E16', self.plot_iv(sheet_name=ws_name, data_start=2,
@@ -179,7 +187,7 @@ class DevicePlotter:
                 self.wb_main.insert_chart(self.chart_huge_vertical_spacing,
                                           self.chart_horizontal_spacing * device_counter,
                                           self.plot_iv(sheet_name=ws_name,
-                                                       data_start=len(data['1_Forward']) + 2,
+                                                       data_start=2,
                                                        data_end=row, name_suffix=None))
                 self.wb_main.insert_chart(self.chart_huge_vertical_spacing + self.chart_vertical_spacing,
                                           self.chart_horizontal_spacing * device_counter,
@@ -193,6 +201,9 @@ class DevicePlotter:
                                                        data_start=len(data['1_Forward']) + 2,
                                                        data_end=row,
                                                        name_suffix='Reverse'))
+                # if self.parent.aging_mode:
+                #     self.aging_plots_forward_absolute(1, self.chart_horizontal_spacing * device_counter,
+                #                              self.plot_aging)
         # insert huge IV plots into the main sheet
         self.wb_main.insert_chart('A1', self.plot_all_sweeps(start_key='forward_start_row',
                                                              end_key='all_data_length', name_suffix=''))
@@ -213,16 +224,16 @@ class DevicePlotter:
         # Write the device name and parameters in column D
         ws.write(0, 4, device_name, self.center)
         ws.write(1, 4, 'Parameters', self.center)
-        ws.write(2, 4, 'Isc, mA', self.center)
-        ws.write(3, 4, 'Voc, V', self.center)
-        ws.write(4, 4, 'Ƞ', self.center)
+        ws.write(2, 4, 'Ƞ', self.center)
+        ws.write(3, 4, 'Short-circuit current density, mA/cm²)', self.center)
+        ws.write(4, 4, 'Voc, V', self.center)
         ws.write(5, 4, 'FF', self.center)
         ws.write(6, 4, 'Max power, W', self.center)
-        ws.write(7, 4, 'Short-circuit current density, mA/cm²)', self.center)
-        ws.write(8, 4, 'Voltage at MPP (V)', self.center)
-        ws.write(9, 4, 'Current density at MPP (mA/cm²)', self.center)
-        ws.write(10, 4, 'Series resistance, Rs (ohm)', self.center)
-        ws.write(11, 4, 'Shunt resistance, Rsh (ohm)', self.center)
+        ws.write(7, 4, 'Voltage at MPP (V)', self.center)
+        ws.write(8, 4, 'Current density at MPP (mA/cm²)', self.center)
+        ws.write(9, 4, 'Series resistance, Rs (ohm)', self.center)
+        ws.write(10, 4, 'Shunt resistance, Rsh (ohm)', self.center)
+        ws.write(11, 4, 'Isc, mA', self.center)
         ws.write(12, 4, 'Active area, cm²', self.center)
         ws.write(13, 4, 'Light Intensity, W/cm²', self.center)
 
@@ -292,69 +303,108 @@ class DevicePlotter:
         rsh = 0.0 if intercept == 0 else -1 / intercept
         return isc, rsh, (slope, intercept)
 
-    def calculate_voc_and_rs(self, voltage_data, current_data, voc_index):
+    def calculate_voc_and_rs(self, voltage_data, current_data, voc_index, device_name, folder):
         voc_indices_fit = [voc_index - 1, voc_index - 0] if current_data[voc_index] < 0 else [voc_index - 1, voc_index]
-        intercept, slope = self.linfit_golden(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
-        voc = -slope / intercept
+        try:
+            intercept, slope = self.linfit_golden(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
+        except KeyError:
+            print(f"Warning: Invalid index encountered for {device_name} in {folder}. "
+                  f"This is likely due to bad IV data from a dead cell.")
+            # Handle the error as you see fit, perhaps setting intercept and slope to some default values
+            intercept, slope = 0, 1e-9  # Setting to some default values
+        voc = -slope / intercept if intercept != 0 else 0
         rs = 0.0 if intercept == 0 else -1 / intercept
         return voc, rs, (slope, intercept)
 
-    def write_parameters(self, ws):
+    def write_parameters(self, ws, device_data):
         # Write the active area value
         self.write_center_across_selection(ws, (12, 5), self.active_area, 3)
         # Write the light intensity value
         self.write_center_across_selection(ws, (13, 5), self.light_intensity, 3)
 
-        max_power_average = (self.max_power_reverse + self.max_power_forward) / 2
-        ws.write(6, 5, self.max_power_reverse)  # Reverse Max Power
-        ws.write(6, 6, self.max_power_forward)  # Forward Max Power
-        ws.write(6, 7, max_power_average)  # Average Max Power
-
         eff_avr = (self.efficiency_reverse + self.efficiency_forward) / 2
-        ws.write(4, 5, self.efficiency_reverse)  # Reverse Efficiency
-        ws.write(4, 6, self.efficiency_forward)  # Forward Efficiency
-        ws.write(4, 7, eff_avr)  # Average Efficiency
+        ws.write(2, 5, self.efficiency_reverse)  # Reverse Efficiency
+        ws.write(2, 6, self.efficiency_forward)  # Forward Efficiency
+        ws.write(2, 7, eff_avr)  # Average Efficiency
+
+        j = 1000 * (self.i_sc_forward + self.i_sc_reverse) / self.active_area
+        ws.write(3, 5, 1000 * self.i_sc_reverse / self.active_area)  # Reverse short circuit current density
+        ws.write(3, 6, 1000 * self.i_sc_forward / self.active_area)  # Forward short circuit current density
+        ws.write(3, 7, j)  # Average short circuit current density
+
+        v_oc_average = (self.v_oc_reverse + self.v_oc_forward) / 2
+        ws.write(4, 5, self.v_oc_reverse)
+        ws.write(4, 6, self.v_oc_forward)
+        ws.write(4, 7, v_oc_average)
 
         ff = (self.fill_factor_reverse + self.fill_factor_forward) / 2
         ws.write(5, 5, self.fill_factor_reverse)  # Reverse Fill Factor
         ws.write(5, 6, self.fill_factor_forward)  # Forward Fill Factor
         ws.write(5, 7, ff)  # Average Fill Factor
 
-        j = 1000 * (self.i_sc_forward + self.i_sc_reverse) / self.active_area
-        ws.write(7, 5, 1000 * self.i_sc_reverse / self.active_area)  # Reverse short circuit current density
-        ws.write(7, 6, 1000 * self.i_sc_forward / self.active_area)  # Forward short circuit current density
-        ws.write(7, 7, j)  # Average short circuit current density
+        max_power_average = (self.max_power_reverse + self.max_power_forward) / 2
+        ws.write(6, 5, self.max_power_reverse)  # Reverse Max Power
+        ws.write(6, 6, self.max_power_forward)  # Forward Max Power
+        ws.write(6, 7, max_power_average)  # Average Max Power
 
         v_mpp = (self.v_mpp_reverse + self.v_mpp_forward) / 2
-        ws.write(8, 5, self.v_mpp_reverse)  # Reverse Voltage at MPP
-        ws.write(8, 6, self.v_mpp_forward)  # Forward Voltage at MPP
-        ws.write(8, 7, v_mpp)  # Average Voltage at MPP
+        ws.write(7, 5, self.v_mpp_reverse)  # Reverse Voltage at MPP
+        ws.write(7, 6, self.v_mpp_forward)  # Forward Voltage at MPP
+        ws.write(7, 7, v_mpp)  # Average Voltage at MPP
 
         j_mpp = 1000 * (self.j_mpp_reverse + self.j_mpp_forward) / 2
-        ws.write(9, 5, 1000 * self.j_mpp_reverse)  # Reverse Current density at MPP
-        ws.write(9, 6, 1000 * self.j_mpp_forward)  # Forward Current density at MPP
-        ws.write(9, 7, j_mpp)  # Average Current density at MPP
+        ws.write(8, 5, 1000 * self.j_mpp_reverse)  # Reverse Current density at MPP
+        ws.write(8, 6, 1000 * self.j_mpp_forward)  # Forward Current density at MPP
+        ws.write(8, 7, j_mpp)  # Average Current density at MPP
 
         rs = (self.rs_forward + self.rs_reverse) / 2
-        ws.write(10, 5, self.rs_reverse)  # Reverse series resistance, Rs (ohm)
-        ws.write(10, 6, self.rs_forward)  # Forward series resistance, Rs (ohm)
-        ws.write(10, 7, rs)  # Average series resistance, Rs (ohm)
+        ws.write(9, 5, self.rs_reverse)  # Reverse series resistance, Rs (ohm)
+        ws.write(9, 6, self.rs_forward)  # Forward series resistance, Rs (ohm)
+        ws.write(9, 7, rs)  # Average series resistance, Rs (ohm)
 
         rsh = (self.rsh_reverse + self.rsh_forward) / 2
-        ws.write(11, 5, self.rsh_reverse)  # Reverse shunt resistance, Rsh (ohm)
-        ws.write(11, 6, self.rsh_forward)  # Forward shunt resistance, Rsh (ohm)
-        ws.write(11, 7, rsh)  # Average shunt resistance, Rsh (ohm)
+        ws.write(10, 5, self.rsh_reverse)  # Reverse shunt resistance, Rsh (ohm)
+        ws.write(10, 6, self.rsh_forward)  # Forward shunt resistance, Rsh (ohm)
+        ws.write(10, 7, rsh)  # Average shunt resistance, Rsh (ohm)
 
-        # Write the Reverse and Forward values for Isc and Voc
-        ws.write(2, 5, self.i_sc_reverse)
-        ws.write(3, 5, self.v_oc_reverse)
-        ws.write(2, 6, self.i_sc_forward)
-        ws.write(3, 6, self.v_oc_forward)
-        # Calculate the Reverse and Forward values for Isc and Voc and write into Excel
         i_sc_average = (self.i_sc_forward + self.i_sc_reverse) / 2
-        v_oc_average = (self.v_oc_reverse + self.v_oc_forward) / 2
-        ws.write(2, 7, i_sc_average)  # Average Isc
-        ws.write(3, 7, v_oc_average)  # Average Voc
+        ws.write(11, 5, self.i_sc_reverse)
+        ws.write(11, 6, self.i_sc_forward)
+        ws.write(11, 7, i_sc_average)
+        device_data['Parameters'] = {}
+        device_data['Parameters']['Forward'] = {
+            self.parameter_dict[3]: self.efficiency_forward,
+            self.parameter_dict[4]: self.i_sc_forward / self.active_area,
+            self.parameter_dict[5]: self.v_oc_forward,
+            self.parameter_dict[6]: self.fill_factor_forward,
+            self.parameter_dict[7]: self.max_power_forward,
+            self.parameter_dict[8]: self.v_mpp_forward,
+            self.parameter_dict[9]: self.j_mpp_forward,
+            self.parameter_dict[10]: self.rs_forward,
+            self.parameter_dict[11]: self.rsh_forward,
+        }
+        device_data['Parameters']['Reverse'] = {
+            self.parameter_dict[3]: self.efficiency_reverse,
+            self.parameter_dict[4]: self.i_sc_reverse / self.active_area,
+            self.parameter_dict[5]: self.v_oc_reverse,
+            self.parameter_dict[6]: self.fill_factor_reverse,
+            self.parameter_dict[7]: self.max_power_reverse,
+            self.parameter_dict[8]: self.v_mpp_reverse,
+            self.parameter_dict[9]: self.j_mpp_reverse,
+            self.parameter_dict[10]: self.rs_reverse,
+            self.parameter_dict[11]: self.rsh_reverse,
+        }
+        device_data['Parameters']['Average'] = {
+            self.parameter_dict[3]: eff_avr,
+            self.parameter_dict[4]: j,
+            self.parameter_dict[5]: v_oc_average,
+            self.parameter_dict[6]: ff,
+            self.parameter_dict[7]: max_power_average,
+            self.parameter_dict[8]: v_mpp,
+            self.parameter_dict[9]: j_mpp,
+            self.parameter_dict[10]: rs,
+            self.parameter_dict[11]: rsh,
+        }
 
     def fill_tables(self):
         table_type = {self.wb_table: ['G', 'F'],
@@ -376,8 +426,7 @@ class DevicePlotter:
                         row_index += 1
             table.autofilter(0, 0, row_index, 12)  # Apply auto filter to the table
 
-    @staticmethod
-    def write_table_headers(ws):
+    def write_table_headers(self, ws):
         headers = [
             'Label',
             'Scan direction',
@@ -394,22 +443,22 @@ class DevicePlotter:
             'Device order'
         ]
         for i, header in enumerate(headers):
-            ws.write(0, i, header)
+            ws.write(0, i, header, self.center)
 
     @staticmethod
     def write_table_rows(ws, row_index, sheet_name, sweep_direction):
         col_letter = sweep_direction  # First letter of the sweep direction (F, G, or H)
         ws.write(row_index, 0, sheet_name)  # Label
         ws.write_formula(row_index, 1, f"='{sheet_name}'!{col_letter}2")  # Scan direction
-        ws.write_formula(row_index, 2, f"='{sheet_name}'!{col_letter}5")  # Efficiency
-        ws.write_formula(row_index, 3, f"='{sheet_name}'!{col_letter}8")  # Short-circuit current density
-        ws.write_formula(row_index, 4, f"='{sheet_name}'!{col_letter}4")  # Open circuit voltage
+        ws.write_formula(row_index, 2, f"='{sheet_name}'!{col_letter}3")  # Efficiency
+        ws.write_formula(row_index, 3, f"='{sheet_name}'!{col_letter}4")  # Short-circuit current density
+        ws.write_formula(row_index, 4, f"='{sheet_name}'!{col_letter}5")  # Open circuit voltage
         ws.write_formula(row_index, 5, f"='{sheet_name}'!{col_letter}6")  # Fill factor
         ws.write_formula(row_index, 6, f"='{sheet_name}'!{col_letter}7")  # Maximum power
-        ws.write_formula(row_index, 7, f"='{sheet_name}'!{col_letter}9")  # Voltage at MPP
-        ws.write_formula(row_index, 8, f"='{sheet_name}'!{col_letter}10")  # Current density at MPP
-        ws.write_formula(row_index, 9, f"='{sheet_name}'!{col_letter}11")  # Series resistance
-        ws.write_formula(row_index, 10, f"='{sheet_name}'!{col_letter}12")  # Shunt resistance
+        ws.write_formula(row_index, 7, f"='{sheet_name}'!{col_letter}8")  # Voltage at MPP
+        ws.write_formula(row_index, 8, f"='{sheet_name}'!{col_letter}9")  # Current density at MPP
+        ws.write_formula(row_index, 9, f"='{sheet_name}'!{col_letter}10")  # Series resistance
+        ws.write_formula(row_index, 10, f"='{sheet_name}'!{col_letter}11")  # Shunt resistance
         ws.write_formula(row_index, 11, f"='{sheet_name}'!F13")  # Active area
         ws.write(row_index, 12, row_index)  # Track the device order
 
@@ -488,3 +537,152 @@ class DevicePlotter:
                                    'y_scale': settings[self.name]['all_in_one_chart_y_scale']})
 
         return chart_all_sweeps
+
+    def aging(self):
+        if not self.parent.aging_mode:
+            return
+        # Write header to the Aging sheet
+        self.aging_sheet.write(0, 0, 'TimeLine, h', self.center)  # Writing the header
+
+        # Write the DataFrame values to the Aging sheet
+        for row_num, value in enumerate(self.timeline_df[self.timeline_df.columns[0]]):
+            self.aging_sheet.write(row_num + 1, 0, value)  # +1 to skip the header
+
+        headers = [
+            'Label',
+            'Scan direction',
+            'Efficiency (%)',
+            'Short-circuit current density (mA/cm²)',
+            'Open circuit voltage (V)',
+            'Fill factor',
+            'Maximum power (W)',
+            'Voltage at MPP (V)',
+            'Current density at MPP (mA/cm²)',
+            'Series resistance, Rs (ohm)',
+            'Shunt resistance, Rsh (ohm)',
+        ]
+        headers.extend(
+            [f"{header}_relative" for header in headers[2:]])  # Assuming the first two headers are not parameters
+
+        for i, header in enumerate(headers, 2):
+            self.aging_sheet.write(0, i, header, self.center)
+
+        sweeps = ['Forward', 'Reverse', 'Average']
+
+        unique_devices_folders = {}
+        for folder_name, devices in self.data.items():
+            for device_name, device_data in devices.items():
+                if device_name not in unique_devices_folders:
+                    unique_devices_folders[device_name] = []
+
+                unique_devices_folders[device_name].append({
+                    'folder_name': folder_name,
+                })
+
+        first_values = {}  # To store the first value of each device-parameter combination
+        current_row = 1  # starting row
+
+        counter_counter = 0
+        # Loop through each sweep
+        for sweep in sweeps:
+            if sweep == 'Forward':
+                target_sheet_absolute = self.aging_plots_forward_absolute
+                target_sheet_relative = self.aging_plots_forward_relative
+            elif sweep == 'Reverse':
+                target_sheet_absolute = self.aging_plots_reverse_absolute
+                target_sheet_relative = self.aging_plots_reverse_relative
+            else:
+                target_sheet_absolute = self.aging_plots_avg_absolute
+                target_sheet_relative = self.aging_plots_avg_relative
+            # Loop through each device
+            for device_counter, (device, folder_info_list) in enumerate(unique_devices_folders.items()):
+                first_values[device] = {}  # Initialize for this device
+                # Loop through each folder for the device
+                for folder_info in folder_info_list:
+                    folder_name = folder_info['folder_name']
+
+                    self.aging_sheet.write(current_row, 2, device)
+                    self.aging_sheet.write(current_row, 3, sweep)
+
+                    # Loop through each parameter
+                    for row, parameter in self.parameter_dict.items():
+                        # Retrieve parameter value from self.data
+                        value = self.data[folder_name][device]['Parameters'][sweep][parameter]
+
+                        # Check if it's the first value for this parameter-device combination
+                        if parameter not in first_values[device]:
+                            first_values[device][parameter] = value
+
+                        relative_value = value / first_values[device][parameter]
+
+                        # Write the value into the Excel sheet
+                        self.aging_sheet.write(current_row, row + 1, value)
+                        self.aging_sheet.write(current_row, row + 1 + len(self.parameter_dict),
+                                               relative_value)
+
+                    # Increment row index for the next iteration
+                    current_row += 1
+
+                data_end = current_row  # Track where data for this device ends
+                data_start = data_end - len(folder_info_list) + 1
+
+                # Plot charts here, outside the folder loop
+                for row, parameter in self.parameter_dict.items():
+                    excel_col_abs = row_to_excel_col(
+                        row + 2)  # 2 to adjust for initial columns (TimeLine, Label, Scan Direction)
+                    excel_col_rel = row_to_excel_col(row + 2 + len(self.parameter_dict))  # for relative values
+                    chart_iv_absolute = self.plot_aging(device_name=device, sweep=sweep,
+                                                        param=parameter,
+                                                        param_column=excel_col_abs,
+                                                        data_start=data_start,
+                                                        data_end=data_end)
+                    chart_iv_relative = self.plot_aging(device_name=device, sweep=sweep,
+                                                        param=parameter,
+                                                        param_column=excel_col_rel,
+                                                        data_start=data_start,
+                                                        data_end=data_end)
+                    counter_counter += 1
+                    # Insert the chart
+                    target_sheet_absolute.insert_chart(device_counter * self.chart_vertical_spacing,
+                                                       (row - 3) * self.chart_horizontal_spacing,
+                                                       chart_iv_absolute)
+                    target_sheet_relative.insert_chart(device_counter * self.chart_vertical_spacing,
+                                                       (row - 3) * self.chart_horizontal_spacing,
+                                                       chart_iv_relative)
+
+    def plot_aging(self, device_name, sweep, param, param_column, data_start, data_end):
+        max_value = self.timeline_df.iloc[:, 0].max()
+        next_rounded_value = math.ceil(max_value / 10) * 10  # Round up to the next multiple of 10
+        name_suffix = f"{device_name} {param} {sweep}"
+        chart_iv = self.workbook.add_chart({'type': 'scatter'})
+        chart_iv.add_series({
+            'categories': f"='Aging'!$A$2:$A${self.timeline_df.shape[0] + 1}",
+            'values': f"='Aging'!${param_column}${data_start}:${param_column}${data_end}",
+            'line': {'width': 1.5, 'color': 'black'}, 'marker': {'type': 'none'},  # No markers
+        })
+        chart_iv.set_title({
+            'name': name_suffix,
+            'name_font': {'size': 14, 'italic': False, 'bold': False, 'name': 'Calibri (Body)'},
+        })
+        chart_iv.set_x_axis({
+            'name': 'Time, h',
+            'max': next_rounded_value,
+            'name_font': {'size': 12, 'italic': False, 'bold': False},
+            'num_font': {'size': 10},
+            'major_tick_mark': 'cross',
+            'minor_tick_mark': 'outside',
+            'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},
+        })
+        chart_iv.set_legend({'none': True})
+        chart_iv.set_y_axis({
+            'name': param,
+            'name_font': {'size': 12, 'italic': False, 'bold': False},
+            'num_font': {'size': 10},
+            'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},
+            'major_tick_mark': 'outside',
+        })
+        chart_iv.set_chartarea({'border': {'none': True}})
+        chart_iv.set_size({'x_scale': settings[self.name]['chart_x_scale'],
+                           'y_scale': settings[self.name]['chart_y_scale']})
+
+        return chart_iv

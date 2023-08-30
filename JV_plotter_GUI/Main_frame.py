@@ -4,12 +4,12 @@ from collections import defaultdict
 from tkinter import messagebox, filedialog
 
 import customtkinter as ctk
-from icecream import ic
 
-from GUI.Potentostats_check import PotentiostatFileChecker
+from JV_plotter_GUI.Potentostats_check import PotentiostatFileChecker
 from Plotter import DevicePlotter
 from Slide_frame import SlidePanel
 from The_lower_frames import LowestFrame, ProceedFrame
+from TimeLine_detector import TimeLineProcessor
 from Top_frame import FirstFrame
 from Treeviews_frame import TableFrames
 from settings import settings
@@ -23,7 +23,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.parent = parent
         self.table_size = settings['Main frame']['table_size']
         self.potentiostat = 'All'
-        self.file_directory = '/'
+        self.file_directory = ""
+        self.timeline_df = None
         self.files_selected = []
         self.added_iv = defaultdict(dict)
         self.aging_mode = False
@@ -58,6 +59,10 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :return: None
         """
         self.aging_mode = bool(self.slide_frame.aging_mode_checkbox.get())
+        self.slide_frame.timeline_detector_button.configure(
+            state='normal' if self.slide_frame.aging_mode_checkbox.get() else 'disabled')
+        self.frame.button_selected.configure(
+            state='disabled' if self.slide_frame.aging_mode_checkbox.get() else 'normal')
         self.list_files()
 
     def identical_active_areas_activator(self) -> None:
@@ -96,7 +101,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :param state: Selected some files or all the files
         :return: None
         """
-        if self.file_directory == '/':
+        if self.file_directory is None:
             messagebox.showerror('Warning!', "Choose a folder to continue!")
             return
         items = []
@@ -144,10 +149,18 @@ class IVProcessingMainClass(ctk.CTkFrame):
         Built-in Tkinter function to return a str with a path
         :return: String with a path
         """
-        # self.file_directory = filedialog.askdirectory(mustexist=True)
-        self.file_directory = r"D:\OneDrive - O365 Turun yliopisto\Documents\Aging tests\2023 Carbon revival\3. New thing, dark storage\Measurememnts separated\test"
+        self.file_directory = filedialog.askdirectory(mustexist=True)
+        if self.file_directory == "":
+            return
+        # self.file_directory = r"C:\Users/runiza.TY2206042/OneDrive - O365 Turun yliopisto\Documents\Aging tests\2023 Carbon revival\3. New thing, dark storage\Measurememnts separated\test"
         self.list_files()
         self.label_1.configure(text=self.file_directory)
+
+    def specify_timeline(self):
+        path_to_timeline = filedialog.askopenfilename()
+        if path_to_timeline == "":
+            return
+        self.timeline_df = TimeLineProcessor(path_to_check=path_to_timeline).check_the_path()
 
     def set_potentiostat(self, event):
         """
@@ -155,15 +168,13 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :param event: Chose potentiostat through the ComboBox or choose All
         """
         self.potentiostat = event
-        if self.file_directory == '/':
-            return
         self.list_files()
 
     def list_files(self):
         """
         Update and fill the file table with filtered files
         """
-        if self.file_directory == '/':
+        if self.file_directory == "":
             return
         # Check if there are any items in the treeview
         for i in self.table_frame.files_table.get_children():

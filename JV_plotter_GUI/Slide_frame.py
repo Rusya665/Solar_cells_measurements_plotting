@@ -1,3 +1,5 @@
+from tkinter import filedialog
+
 import customtkinter as ctk
 from idlelib.tooltip import Hovertip
 
@@ -28,6 +30,11 @@ class SlidePanel(ctk.CTkFrame):
 
         self.aging_mode_checkbox = ctk.CTkCheckBox(self, text='Aging mode', command=self.parent.aging_mode_activator,
                                                    width=20)
+        self.aging_mode_label = ctk.CTkLabel(self, text='Aging mode region')
+        self.aging_mode_label.cget("font").configure(size=20)
+        self.time_label = ctk.CTkLabel(self, text='Aging time: undefined.\n Specify the path')
+        self.timeline_detector_button = ctk.CTkButton(self, text='Choose the TimeLine', state='disabled',
+                                                      command=lambda: self.parent.specify_timeline())
         self.identical_areas_CheckBox = ctk.CTkCheckBox(self, text='Identical AA',
                                                         command=self.parent.identical_active_areas_activator)
         self.identical_areas_CheckBox.select()
@@ -41,11 +48,14 @@ class SlidePanel(ctk.CTkFrame):
         self.potentiostat_combox_label.pack(pady=5)
         self.potentiostat_combox.pack(pady=5)
         widgets = [
-            self.aging_mode_checkbox,
             self.identical_areas_CheckBox,
             self.read_from_file,
             self.restore_cache_values,
-            self.open_wb_checkbox
+            self.open_wb_checkbox,
+            self.aging_mode_label,
+            self.aging_mode_checkbox,
+            self.time_label,
+            self.timeline_detector_button
         ]
         for widget in widgets:
             widget.pack(pady=10)
@@ -82,3 +92,4 @@ class SlidePanel(ctk.CTkFrame):
             self.place(relx=self.pos, rely=self.rely, relwidth=self.width, relheight=self.relative_height)
             self.lift()  # Bring the frame to the top
             self.after(10, lambda: self.animate_to_target(target_pos, step))
+

@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import timedelta
 from icecream import ic
 
-from GUI.instruments import flip_data_if_necessary
+from JV_plotter_GUI.instruments import flip_data_if_necessary
 
 
 class IVDataReader:

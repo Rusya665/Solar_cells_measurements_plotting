@@ -1,7 +1,7 @@
 import pandas as pd
 from icecream import ic
 
-from GUI.instruments import open_file
+from JV_plotter_GUI.instruments import open_file
 
 
 # Function to calculate percentage difference
@@ -52,9 +52,9 @@ def compare_excel_sheets(file1_path, sheet1_name, file2_path, sheet2_name):
 pd.set_option('display.max_rows', None)
 
 # Example usage:
-file1_path = r'D:/OneDrive - O365 Turun yliopisto/IV_plotting_project/test washed/IVparameters.xlsx'
+file1_path = r'IVparameters.xlsx'
 sheet1_name = 'All'
-file2_path = r'D:/OneDrive - O365 Turun yliopisto/IV_plotting_project/Test for Maryam/Washed out/2023-08-27 Washed out JV plots and calculations.xlsx'
+file2_path = r'2023-08-27 Washed out JV plots and calculations.xlsx'
 sheet2_name = 'Tabel_Total'
 # sheet2_name = 'Sheet1'
 differences = compare_excel_sheets(file1_path, sheet1_name, file2_path, sheet2_name)
@@ -64,7 +64,7 @@ for column in differences.select_dtypes(include=['number']).columns:
     differences[column] = differences[column].apply(lambda x: 0 if x < 1 else x)
 
 # Define the path for the output text file
-output_xlsx_path = r'D:/OneDrive - O365 Turun yliopisto/Desktop/washed_checking.xlsx'
+output_xlsx_path = r'Desktop/washed_checking.xlsx'
 
 # Save the differences dataframe to an Excel file
 differences.to_excel(output_xlsx_path, index=False)

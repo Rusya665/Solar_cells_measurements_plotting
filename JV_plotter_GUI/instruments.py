@@ -133,3 +133,13 @@ def flip_data_if_necessary(df):
         df['I'] = -df['I']
 
     return df
+
+
+def row_to_excel_col(row_num):
+    col = ''
+    while row_num:
+        remainder = (row_num - 1) % 26
+        col = chr(65 + remainder) + col
+        row_num = (row_num - 1) // 26
+    return col
+

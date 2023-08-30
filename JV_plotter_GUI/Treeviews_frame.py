@@ -3,7 +3,7 @@ from tkinter import ttk, END
 import customtkinter as ctk
 
 from tkinter import messagebox
-from GUI.Device_filter import DeviceDetector
+from JV_plotter_GUI.Device_filter import DeviceDetector
 from icecream import ic
 from Active_areas import ActiveAreaDetector
 
@@ -208,7 +208,6 @@ class TableFrames(ctk.CTkFrame):
 
         :param matched_devices: Dictionary containing the matched devices.
         """
-        # Loop through the children of the active_areas_scrollable_frame
         for child in self.active_areas_scrollable_frame.winfo_children():
             if isinstance(child, ctk.CTkEntry):
                 device_label = self.active_areas_scrollable_frame.grid_slaves(row=child.grid_info()['row'], column=1)[0]
@@ -216,8 +215,7 @@ class TableFrames(ctk.CTkFrame):
                 entry_value = child.get()
                 for folder, devices in matched_devices.items():
                     if device_name in devices:
-                        print("yes", device_name)
-                        if not entry_value.strip():
+                        if not entry_value:
                             messagebox.showerror('Warning!', f"Missing active area value for the device:"
                                                              f" {device_name}")
                             return
@@ -236,6 +234,4 @@ class TableFrames(ctk.CTkFrame):
                                                  f" (e.g., 5 or 5.25).")
                             return
                         matched_devices[folder][device_name]['Active area'] = entry_value / 100
-                        break
-
         return matched_devices

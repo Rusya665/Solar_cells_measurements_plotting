@@ -1,7 +1,6 @@
-from tkinter import filedialog
+from idlelib.tooltip import Hovertip
 
 import customtkinter as ctk
-from idlelib.tooltip import Hovertip
 
 
 class SlidePanel(ctk.CTkFrame):
@@ -59,28 +58,42 @@ class SlidePanel(ctk.CTkFrame):
         ]
         for widget in widgets:
             widget.pack(pady=10)
-
         self.hovers()
 
     def hovers(self):
         hover_delay = 400
-        hover_potentiostat_combox = 'Choose potentiostat to work with'
+        hover_potentiostat_combox = "  Pick your potentiostat!  \n  Your magical device! 🎛️  "
+        hover_text_sa = "  Twinsies! Identical  \n  active areas! 👯  "
+        hover_text_read_from = "  Grab active areas  \n  from a secret file! 📁  "
+        hover_text_cached = "  Cache me if you can!  \n  Restore NOT in \"Identical\"! 🔄  "
+        hover_text_open_wb = "  Workbook reveal!  \n  Open when done! 🎉  "
+        hover_aging_mode_region = ("  Welcome, Adventurer!  🌟  \n"
+                                   "  You\'re stepping into the aging  \n"
+                                   "  Rollercoaster ride ahead!  🎢  \n"
+                                   "  Unlock aging mysteries!  🔍  \n"
+                                   "  Accelerated aging tests!  🕒  \n"
+                                   "  See ever-changing colors!  🌈  \n"
+                                   "  Good luck, daring friend!  🍀  \n"
+                                   "  Your next click: big discovery?  🚀  ")
+        hover_aging_mode_checkbox = "  Activate \"Aging Mode\"!  \n  Time-travel in folders! ⏳  "
+        hover_aging_timeline = "  Max timeline time! 🕒  \n  Shows if readable! 🤓  "
+        hover_choose_the_timeline = "  Point to your timeline! 🗺️  \n  Specify the path! 🛣️  "
 
-        hover_aging_mode_checkbox = 'Activate "Aging mode". Will detect the same devices in the multiple folders'
-        hover_text_sa = 'Identical active areas'
-        hover_text_read_from = 'Read given active areas from a file'
-        hover_text_cached = ('Restore active are values from the previously typed cache in NOT\n'
-                             ' the "Identical active areas" mode')
-        hover_text_open_wb = 'Open resulting workbook after the code is complete'
         Hovertip(self.potentiostat_combox, hover_potentiostat_combox, hover_delay=hover_delay)
-
-        Hovertip(self.aging_mode_checkbox, hover_aging_mode_checkbox, hover_delay=hover_delay)
         Hovertip(self.identical_areas_CheckBox, hover_text_sa, hover_delay=hover_delay)
         Hovertip(self.read_from_file, hover_text_read_from, hover_delay=hover_delay)
         Hovertip(self.restore_cache_values, hover_text_cached, hover_delay=hover_delay)
         Hovertip(self.open_wb_checkbox, hover_text_open_wb, hover_delay=hover_delay)
+        Hovertip(self.aging_mode_label, hover_aging_mode_region, hover_delay=hover_delay)
+        Hovertip(self.aging_mode_checkbox, hover_aging_mode_checkbox, hover_delay=hover_delay)
+        Hovertip(self.time_label, hover_aging_timeline, hover_delay=hover_delay)
+        Hovertip(self.timeline_detector_button, hover_choose_the_timeline, hover_delay=hover_delay)
 
     def animate(self):
+        if self.in_start_pos:  # If the frame is about to be shown
+            self.parent.bind("<Button-1>", self.hide_if_clicked_outside)  # Bind the event
+            self.parent.table_frame.files_table.bind("<Button-1>", self.hide_if_clicked_outside)
+            self.parent.table_frame.active_areas_scrollable_frame.bind("<Button-1>", self.hide_if_clicked_outside)
         target_pos = self.end_pos if self.in_start_pos else self.start_pos
         step = -0.03 if self.in_start_pos else 0.03
         self.animate_to_target(target_pos, step)
@@ -92,4 +105,13 @@ class SlidePanel(ctk.CTkFrame):
             self.place(relx=self.pos, rely=self.rely, relwidth=self.width, relheight=self.relative_height)
             self.lift()  # Bring the frame to the top
             self.after(10, lambda: self.animate_to_target(target_pos, step))
+        else:
+            if self.in_start_pos:  # If the frame is fully hidden
+                self.parent.unbind("<Button-1>")  # Unbind the event
+                self.parent.table_frame.files_table.unbind("<Button-1>")  # Unbind the event
+                self.parent.table_frame.active_areas_scrollable_frame.unbind("<Button-1>")  # Unbind the event
 
+    def hide_if_clicked_outside(self, event):
+        x, y, _, _ = self.bbox("insert")
+        if event.x < x or event.x > x + self.winfo_width() or event.y < y or event.y > y + self.winfo_height():
+            self.animate()  # Assuming you have a method to hide the slide frame

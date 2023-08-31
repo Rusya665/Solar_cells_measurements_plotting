@@ -4,6 +4,7 @@ from collections import defaultdict
 from tkinter import messagebox, filedialog
 
 import customtkinter as ctk
+from icecream import ic
 
 from JV_plotter_GUI.Potentostats_check import PotentiostatFileChecker
 from Plotter import DevicePlotter
@@ -151,16 +152,22 @@ class IVProcessingMainClass(ctk.CTkFrame):
         """
         self.file_directory = filedialog.askdirectory(mustexist=True)
         if self.file_directory == "":
+            self.label_1.configure(text='Specify a directory with images to work with')
             return
-        # self.file_directory = r"C:\Users/runiza.TY2206042/OneDrive - O365 Turun yliopisto\Documents\Aging tests\2023 Carbon revival\3. New thing, dark storage\Measurememnts separated\test"
         self.list_files()
         self.label_1.configure(text=self.file_directory)
 
     def specify_timeline(self):
         path_to_timeline = filedialog.askopenfilename()
         if path_to_timeline == "":
+            self.slide_frame.time_label.configure(text='Aging time: undefined.\n Specify the path')
             return
         self.timeline_df = TimeLineProcessor(path_to_check=path_to_timeline).check_the_path()
+        if self.timeline_df is None:
+            self.slide_frame.time_label.configure(text='Aging time: failed to read.\n Specify the path')
+        else:
+            max_time = round(self.timeline_df.max().values[0])
+            self.slide_frame.time_label.configure(text=f'Aging time: {max_time} h')
 
     def set_potentiostat(self, event):
         """

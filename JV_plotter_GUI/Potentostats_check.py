@@ -16,11 +16,7 @@ class PotentiostatFileChecker:
         """
         self.parent = parent
         self.potentiostat_dict = {
-            '.DTA': {
-                'Gamry': "CURVE1\tTABLE",
-                # To add a new potentiostat with '.dta' extension:
-                # 'new_potentiostat': "new text to find",
-            },
+            '.DTA': {'Gamry': "CV for solar cell characterization"},
             '.csv': {'PalmSens4': "Cyclic Voltammetry: CV i vs E"},
             '.txt': {'SMU': "[0, 0, 0]"},
             '.mpt': {'SP-150e': 'EC-Lab ASCII FILE'},
@@ -110,7 +106,7 @@ class PotentiostatFileChecker:
         # Append the final sweep
         sweeps_data.append(pd.DataFrame(current_sweep_data))
 
-        forward_count = sum(1 for df in sweeps_data if df['V'].iloc[1] > df['V'].iloc[0])
+        forward_count = sum(1 for df in sweeps_data if len(df) > 1 and df['V'].iloc[1] > df['V'].iloc[0])
 
         reverse_count = len(sweeps_data) - forward_count
 
@@ -124,7 +120,7 @@ class PotentiostatFileChecker:
         reverse_counter = 2
 
         for segment in sweeps_data:
-            if segment['V'].iloc[1] > segment['V'].iloc[0]:  # Current sweep is forward
+            if len(segment) > 1 and segment['V'].iloc[1] > segment['V'].iloc[0]:
                 key = f"{forward_counter}_Forward"
                 data[key] = segment
                 forward_counter += 2

@@ -7,7 +7,7 @@ import numpy as np
 import xlsxwriter
 from icecream import ic
 
-from instruments import open_file, row_to_excel_col
+from instruments import open_file, row_to_excel_col, custom_round
 from settings import settings
 
 
@@ -652,13 +652,18 @@ class DevicePlotter:
 
     def plot_aging(self, device_name, sweep, param, param_column, data_start, data_end):
         max_value = self.timeline_df.iloc[:, 0].max()
-        next_rounded_value = math.ceil(max_value / 10) * 10  # Round up to the next multiple of 10
+        next_rounded_value = custom_round(max_value)
         name_suffix = f"{device_name} {param} {sweep}"
         chart_iv = self.workbook.add_chart({'type': 'scatter'})
         chart_iv.add_series({
             'categories': f"='Aging'!$A$2:$A${self.timeline_df.shape[0] + 1}",
             'values': f"='Aging'!${param_column}${data_start}:${param_column}${data_end}",
-            'line': {'width': 1.5, 'color': 'black'}, 'marker': {'type': 'none'},  # No markers
+            'line': {'width': 1.5, 'color': 'black'},
+            'marker': {
+                'type': 'circle',
+                'size': 5,
+                'border': {'color': 'black'},
+                'fill': {'color': 'white'}}
         })
         chart_iv.set_title({
             'name': name_suffix,
@@ -666,19 +671,24 @@ class DevicePlotter:
         })
         chart_iv.set_x_axis({
             'name': 'Time, h',
+            'min': 0,
             'max': next_rounded_value,
             'name_font': {'size': 12, 'italic': False, 'bold': False},
             'num_font': {'size': 10},
             'major_tick_mark': 'cross',
             'minor_tick_mark': 'outside',
-            'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},
+            'major_gridlines': {'visible': False},
+            'minor_gridlines': {'visible': False},
+            # 'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},
         })
         chart_iv.set_legend({'none': True})
         chart_iv.set_y_axis({
             'name': param,
             'name_font': {'size': 12, 'italic': False, 'bold': False},
             'num_font': {'size': 10},
-            'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},
+            # 'major_gridlines': {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}},
+            'major_gridlines': {'visible': False},
+            'minor_gridlines': {'visible': False},
             'major_tick_mark': 'outside',
         })
         chart_iv.set_chartarea({'border': {'none': True}})

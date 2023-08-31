@@ -3,7 +3,6 @@ from tkinter import messagebox
 
 import pandas as pd
 from datetime import timedelta
-from icecream import ic
 
 from JV_plotter_GUI.instruments import flip_data_if_necessary
 
@@ -33,22 +32,23 @@ class IVDataReader:
                 # Open the file and read the line containing the units
                 with open(self.path, 'r', encoding=self.encoding) as file:
                     lines = file.readlines()
-                    curve1_index = lines.index("CURVE1\tTABLE\n")
-                    units_line = lines[curve1_index + 1].strip()
+                    try:
+                        start_of_data_index = next(i for i, line in enumerate(lines) if
+                                                   line.strip() == "Pt\tT\tVf\tIm\tVu\tSig\tAch\tIERange\tOver\tTemp")
+                    except StopIteration:
+                        print(f"The file {self.path} does not contain the expected start marker.")
+                        return None
+                    units_line = lines[start_of_data_index + 1].strip()
                     units = units_line.split('\t')
                     current_unit = units[3]  # Assuming the current unit is in the 4th column (0-indexed)
-                df = pd.read_csv(self.path, engine='python', header=None, skiprows=65, encoding=self.encoding, sep='\t')
-                """
-                A special note for future me. If the skiprows=65 is not gonna work anymore, add a method to actually 
-                check the .DTA file before parsing. Love you. You are the best.
-                """
+                df = pd.read_csv(self.path, engine='python',
+                                 header=None, skiprows=start_of_data_index + 2, encoding=self.encoding, sep='\t')
                 df.drop(df.columns[[0, 2, 5, 6, 7, 8, 9, 10]], axis=1,
-                        inplace=True)  # Drop unnecessary columns. Check the
-                # Q3 from scratch.txt
+                        inplace=True)  # Drop unnecessary columns.
                 df.columns = ['Pt', 'V', 'I']  # Keep the "Pt" column for further filtering
                 df = df[df["Pt"].str.contains(r'^\d+$')].reset_index()  # Filter the df by "Pt" column
-                df.drop('Pt', axis=1, inplace=True)  # Drop that column
-                df.drop('index', axis=1, inplace=True)  # Finally, drop a column created by reset_index()
+                # Drop unnecessary columns
+                df.drop(['Pt', 'index'], axis=1, inplace=True)
                 df = self.convert_current(current_unit, df)
 
             case "PalmSens4":

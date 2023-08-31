@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 import numpy as np
@@ -142,4 +143,18 @@ def row_to_excel_col(row_num):
         col = chr(65 + remainder) + col
         row_num = (row_num - 1) // 26
     return col
+
+
+def custom_round(max_value):
+    if max_value <= 9:
+        next_rounded_value = math.ceil(max_value)
+    elif max_value <= 99:
+        next_rounded_value = math.ceil(max_value / 5) * 5
+    elif max_value <= 999:
+        next_rounded_value = math.ceil(max_value / 50) * 50
+    elif max_value <= 9999:
+        next_rounded_value = math.ceil(max_value / 100) * 100
+    else:
+        next_rounded_value = math.ceil(max_value / 10) * 10  # Default rounding to next 10
+    return next_rounded_value
 

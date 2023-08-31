@@ -2,8 +2,6 @@ import os
 import pandas as pd
 from tkinter import messagebox
 
-from icecream import ic
-
 
 class TimeLineProcessor:
     def __init__(self, path_to_check):
@@ -36,6 +34,7 @@ class TimeLineProcessor:
 
             if df.shape[1] != 1:
                 messagebox.showerror("Error", "The DataFrame must have only one column.")
+                return None
             return df
 
         except Exception as e:

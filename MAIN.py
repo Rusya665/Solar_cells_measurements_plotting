@@ -3,8 +3,8 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
-from Main_frame import IVProcessingMainClass
-from settings import settings
+from JV_plotter_GUI.Main_frame import IVProcessingMainClass
+from JV_plotter_GUI.settings import settings
 
 
 class RGBMainRoot(ctk.CTk):

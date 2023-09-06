@@ -5,7 +5,6 @@ from datetime import date
 
 import numpy as np
 import xlsxwriter
-from icecream import ic
 
 from instruments import open_file, row_to_excel_col, custom_round
 from settings import settings

@@ -7,13 +7,13 @@ import customtkinter as ctk
 from icecream import ic
 
 from JV_plotter_GUI.Potentostats_check import PotentiostatFileChecker
-from Plotter import DevicePlotter
-from Slide_frame import SlidePanel
-from The_lower_frames import LowestFrame, ProceedFrame
-from TimeLine_detector import TimeLineProcessor
-from Top_frame import FirstFrame
-from Treeviews_frame import TableFrames
-from settings import settings
+from JV_plotter_GUI.Plotter import DevicePlotter
+from JV_plotter_GUI.Slide_frame import SlidePanel
+from JV_plotter_GUI.The_lower_frames import LowestFrame, ProceedFrame
+from JV_plotter_GUI.TimeLine_detector import TimeLineProcessor
+from JV_plotter_GUI.Top_frame import FirstFrame
+from JV_plotter_GUI.Treeviews_frame import TableFrames
+from JV_plotter_GUI.settings import settings
 
 
 class IVProcessingMainClass(ctk.CTkFrame):

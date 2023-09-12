@@ -5,7 +5,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 from JV_plotter_GUI.Device_filter import DeviceDetector
 from icecream import ic
-from Active_areas import ActiveAreaDetector
+from JV_plotter_GUI.Active_areas import ActiveAreaDetector
 
 
 class TableFrames(ctk.CTkFrame):

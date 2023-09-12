@@ -3,6 +3,7 @@ from tkinter import messagebox
 
 import pandas as pd
 from fuzzywuzzy import fuzz
+from icecream import ic
 
 
 class DeviceDetector:
@@ -69,8 +70,8 @@ class DeviceDetector:
             for filename, direction in single_sweep_files.items():
                 if filename in processed_files:
                     continue
-
                 matched_file = self.find_fuzzy_pair(filename, single_sweep_files)
+                # ic(filename, matched_file, single_sweep_files[matched_file], direction)
                 # Pair found and they have complementary sweeps
                 if matched_file and single_sweep_files[matched_file] != direction:
                     combined_data, used_files = self.combine_data(folder_data[filename], folder_data[matched_file])
@@ -125,18 +126,20 @@ class DeviceDetector:
         """
         best_match = (None, 0)  # Tuple (filename, score)
 
-        for other_filename in single_sweep_files:
-            if other_filename == filename:  # We skip the same filename
-                continue
-            score = fuzz.ratio(filename, other_filename)
-            if score > best_match[1]:
-                best_match = (other_filename, score)
+        # Determine sweep direction and its opposite based on the filename
+        sweep_direction = 'Forward' if 'fw' in filename.lower() else 'Reverse'
+        opposite_direction = 'Reverse' if sweep_direction == 'Forward' else 'Forward'
 
-        # You can set a threshold here, e.g., 80, to only consider good matches.
-        if best_match[1] > 80:
-            return best_match[0]
-        else:
-            return None
+        # Filter and score filenames with opposite direction
+        candidates = [(other_filename, fuzz.ratio(filename, other_filename))
+                      for other_filename, direction in single_sweep_files.items()
+                      if direction == opposite_direction and other_filename != filename]
+
+        # Find the best match if any
+        if candidates:
+            best_match = max(candidates, key=lambda x: x[1])
+
+        return best_match[0] if best_match[1] > 80 else None
 
     @staticmethod
     def combine_data(data1, data2):

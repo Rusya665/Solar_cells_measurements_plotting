@@ -1,7 +1,7 @@
 import os
 import chardet
 import pandas as pd
-from Data_Reader import IVDataReader
+from JV_plotter_GUI.Data_Reader import IVDataReader
 
 
 class PotentiostatFileChecker:

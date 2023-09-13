@@ -2,38 +2,58 @@
 
 ## Description
 
-This project aims to help researchers to analyze their JV curves for different photovoltaic applications and helps beter investigate the degradation mechanisms of emerging solar cells. It could be used to analyze the data produced be accelerated ageing and visual tracking systems to improve the stability of these solar cells. 
+This project aims to help researchers to analyze their JV curves for different photovoltaic applications and helps better investigate the degradation mechanisms of emerging solar cells. It could be used to analyze the data produced by accelerated ageing and visual tracking systems to improve the stability of these solar cells.
 
 ## Table of Contents
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [Dependencies](#dependencies)
+  - [Supported Potentiostats](#supported-potentiostats)
+  - [Dependencies](#dependencies)
 - [Contributing](#contributing)
 - [License](#license)
 - [Contact](#contact)
 
 ## Installation
 
-1. Clone the repository
+1. **Clone the repository**
     ```bash
     git clone https://github.com/Rusya665/Solar_cells_measurements_plotting
     ```
 
-2. Install dependencies
-    
-   ```bash
-    poetry install  # This not implemented yet
+2. **Install dependencies**
+
+    ### Using Pipfile (Recommended)
+    ```bash
+    pip install pipenv  # If pipenv is not installed
+    cd Solar_cells_measurements_plotting
+    pipenv install
+    pipenv shell
+    ```
+    ### Using requirements.txt
+    ```bash
+    cd Solar_cells_measurements_plotting
+    pip install -r requirements.txt
     ```
 
 ## Usage
 
 Upcoming.
 
+### Supported Potentiostats
+
+The project currently supports the following potentiostats and their respective file formats:
+
+- **Gamry**: `.DTA`, automated current unit detection
+- **PalmSens4**: `.csv`, automated current unit detection
+- **SMU**: `.txt`, current is set to amps (A)
+- **SP-150e**: `.mpt`, automated current unit detection, preconditioning is taken into account
+
 ## Dependencies
 
-- Python 3.11+
-- Additional packages listed in `pyproject.toml`
+- Python 3.9+
+- Key packages: `matplotlib`, `numpy`, `pandas`, `scipy`, `xlsxwriter`
+- For a complete list of packages, see `Pipfile` or `requirements.txt`
 
 ## Contributing
 
@@ -49,4 +69,4 @@ This project is licensed under the MIT License.
 
 ## Contact
 
-Rustem Nizamov - rustem.nizamov@utu.fi
+Rustem Nizamov - rusya665@gmail.com

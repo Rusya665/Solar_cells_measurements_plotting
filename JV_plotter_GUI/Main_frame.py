@@ -110,6 +110,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
             # This should fetch selected items and not all top-level items
             items = list(self.table_frame.files_table.selection())
         elif state == "All":
+            if self.aging_mode and self.timeline_df is None:
+                messagebox.showerror('Warning!', "For aging mode the timeline mast be set!")
+                return
             # This should fetch all items in the tree, including children of top-level items
             items = list(self.table_frame.files_table.get_children(''))
             for top_level_item in items:

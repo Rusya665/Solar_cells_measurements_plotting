@@ -19,18 +19,17 @@ class TimeLineProcessor:
         file_extension = os.path.splitext(self.path)[1].lower()
 
         try:
-            match file_extension:
-                case '.txt':
+            if file_extension == '.txt':
                     df = pd.read_csv(self.path, delimiter='\t')  # Assuming tab-delimited txt file
-                case '.json':
-                    df = pd.read_json(self.path)
-                case '.csv':
-                    df = pd.read_csv(self.path)
-                case '.xlsx':
-                    df = pd.read_excel(self.path)
-                case _:
-                    messagebox.showerror('Error', 'Unknown file type')
-                    return None
+            elif file_extension == '.json':
+                df = pd.read_json(self.path)
+            elif file_extension == '.csv':
+                df = pd.read_csv(self.path)
+            elif file_extension == '.xlsx':
+                df = pd.read_excel(self.path)
+            else:
+                messagebox.showerror('Error', 'Unknown file type')
+                return None
 
             if df.shape[1] != 1:
                 messagebox.showerror("Error", "The DataFrame must have only one column.")

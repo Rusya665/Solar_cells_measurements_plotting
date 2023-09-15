@@ -176,7 +176,7 @@ class DevicePlotter:
                 ws.insert_chart('E16', self.plot_iv(sheet_name=ws_name, data_start=2,
                                                     data_end=row, name_suffix=None))
                 ws.insert_chart(f"J1", self.plot_iv(sheet_name=ws_name, data_start=2,
-                                                    data_end=row,
+                                                    data_end=len(data['1_Forward']) + 1,
                                                     name_suffix='Forward'))
                 ws.insert_chart(f"J{self.chart_vertical_spacing}", self.plot_iv(sheet_name=ws_name,
                                                                                 data_start=len(data['1_Forward']) + 2,

@@ -34,7 +34,7 @@ class DevicePlotter:
         self.j_mpp_forward, self.j_mpp_reverse = None, None
         self.rs_forward, self.rs_reverse = None, None
         self.rsh_forward, self.rsh_reverse = None, None
-        self.active_area, self.light_intensity = None, None
+        self.active_area, self.light_intensity, self.distance_to_light_source = None, None, None
         self.parameter_dict = {
             3: 'Efficiency (%)',
             4: 'Short-circuit current density (mA/cm²)',
@@ -135,6 +135,7 @@ class DevicePlotter:
                 self.set_headers(ws=ws, device_name=device_name)
                 self.active_area = device_data["Active area"]
                 self.light_intensity = device_data['Light Intensity']
+                self.distance_to_light_source = device_data['Distance to light source']
                 # Iterate through the sweeps (Forward and Reverse) for each device
                 row = 1
                 for sweep_name, sweep_data in device_data['data'].items():
@@ -173,7 +174,7 @@ class DevicePlotter:
                 self.write_parameters(ws, device_data)
 
                 # Insert IV charts into devices' sheets
-                ws.insert_chart('E16', self.plot_iv(sheet_name=ws_name, data_start=2,
+                ws.insert_chart('E17', self.plot_iv(sheet_name=ws_name, data_start=2,
                                                     data_end=row, name_suffix=None))
                 ws.insert_chart(f"J1", self.plot_iv(sheet_name=ws_name, data_start=2,
                                                     data_end=len(data['1_Forward']) + 1,
@@ -235,6 +236,7 @@ class DevicePlotter:
         ws.write(11, 4, 'Isc, mA', self.center)
         ws.write(12, 4, 'Active area, cm²', self.center)
         ws.write(13, 4, 'Light Intensity, W/cm²', self.center)
+        ws.write(14, 4, 'Distance to a light source', self.center)
 
         ws.set_column(4, 4, 35)
         # Write the "Values" header in column E
@@ -320,6 +322,8 @@ class DevicePlotter:
         self.write_center_across_selection(ws, (12, 5), self.active_area, 3)
         # Write the light intensity value
         self.write_center_across_selection(ws, (13, 5), self.light_intensity, 3)
+        # Write the distance to the light source
+        self.write_center_across_selection(ws, (14, 5), self.distance_to_light_source, 3)
 
         eff_avr = (self.efficiency_reverse + self.efficiency_forward) / 2
         ws.write(2, 5, self.efficiency_reverse)  # Reverse Efficiency
@@ -460,8 +464,8 @@ class DevicePlotter:
         ws.write_formula(row_index, 9, f"='{sheet_name}'!{col_letter}10")  # Series resistance
         ws.write_formula(row_index, 10, f"='{sheet_name}'!{col_letter}11")  # Shunt resistance
         ws.write_formula(row_index, 11, f"='{sheet_name}'!F13")  # Active area
-        ws.write_formula(row_index, 12, f"='{sheet_name}'!F13")  # Active area
-        ws.write_formula(row_index, 13, f"='{sheet_name}'!F13")  # Active area
+        ws.write_formula(row_index, 12, f"='{sheet_name}'!F14")  # Light intensity
+        ws.write_formula(row_index, 13, f"='{sheet_name}'!F15")  # Distance to a light source
         ws.write(row_index, 14, row_index)  # Track the device order
 
     def plot_iv(self, sheet_name, data_start, data_end, name_suffix):

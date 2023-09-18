@@ -235,7 +235,7 @@ class TableFrames(ctk.CTkFrame):
                             return
                         matched_devices[folder][device_name]['Active area'] = entry_value / 100
                         matched_devices[folder][device_name]['Light Intensity'] =\
-                            self.parent.additional_settings.light_intensity_entry.get()
+                            float(self.parent.additional_settings.light_intensity_entry.get())
                         matched_devices[folder][device_name]['Distance to light source'] =\
-                            self.parent.additional_settings.distance_to_light_entry.get()
+                            float(self.parent.additional_settings.distance_to_light_entry.get())
         return matched_devices

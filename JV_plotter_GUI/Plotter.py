@@ -420,7 +420,6 @@ class DevicePlotter:
                 for device_name, device_data in devices.items():
                     sheet_name = device_data['sheet_name']
                     for sweep in sweeps:
-                        # ic("fill tables", sweep)
                         self.write_table_rows(table, row_index, sheet_name, sweep)
                         row_index += 1
             table.autofilter(0, 0, row_index, 12)  # Apply auto filter to the table
@@ -439,6 +438,8 @@ class DevicePlotter:
             'Series resistance, Rs (ohm)',
             'Shunt resistance, Rsh (ohm)',
             'Active area, (cm²)',
+            'Light intensity (W/m²)',
+            'Distance to light source (mm)',
             'Device order'
         ]
         for i, header in enumerate(headers):
@@ -459,7 +460,9 @@ class DevicePlotter:
         ws.write_formula(row_index, 9, f"='{sheet_name}'!{col_letter}10")  # Series resistance
         ws.write_formula(row_index, 10, f"='{sheet_name}'!{col_letter}11")  # Shunt resistance
         ws.write_formula(row_index, 11, f"='{sheet_name}'!F13")  # Active area
-        ws.write(row_index, 12, row_index)  # Track the device order
+        ws.write_formula(row_index, 12, f"='{sheet_name}'!F13")  # Active area
+        ws.write_formula(row_index, 13, f"='{sheet_name}'!F13")  # Active area
+        ws.write(row_index, 14, row_index)  # Track the device order
 
     def plot_iv(self, sheet_name, data_start, data_end, name_suffix):
         name_suffix = ' ' + name_suffix if name_suffix else ''

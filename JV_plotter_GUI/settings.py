@@ -1,4 +1,6 @@
 settings = {
+    'light intensity': '1000',   # W/m²
+    'distance to light source': '120',   # mm
     'GUI_main': {
         'screen_width': 800,
         'screen_height': 680,

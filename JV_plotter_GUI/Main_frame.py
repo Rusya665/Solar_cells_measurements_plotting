@@ -8,12 +8,13 @@ from icecream import ic
 
 from JV_plotter_GUI.Potentostats_check import PotentiostatFileChecker
 from JV_plotter_GUI.Plotter import DevicePlotter
-from JV_plotter_GUI.Slide_frame import SlidePanel
+from JV_plotter_GUI.Slide_frame import SettingsPanel
 from JV_plotter_GUI.The_lower_frames import LowestFrame, ProceedFrame
 from JV_plotter_GUI.TimeLine_detector import TimeLineProcessor
-from JV_plotter_GUI.Top_frame import FirstFrame
+from JV_plotter_GUI.Top_frame import TopmostFrame
 from JV_plotter_GUI.Treeviews_frame import TableFrames
 from JV_plotter_GUI.settings import settings
+from JV_plotter_GUI.Additional_settings_panel import AdditionalSettings
 
 
 class IVProcessingMainClass(ctk.CTkFrame):
@@ -35,16 +36,16 @@ class IVProcessingMainClass(ctk.CTkFrame):
         # widgets
         self.pack(fill=ctk.BOTH, expand=True)
         self.table_frame = TableFrames(parent=self, height=400)
-        self.slide_frame = SlidePanel(parent=self, start_pos=1.0, end_pos=0.75)
-
+        self.additional_settings = AdditionalSettings(parent=self, start_pos=-0.25, end_pos=0)
+        self.slide_frame = SettingsPanel(parent=self, start_pos=1.0, end_pos=0.75)
         self.label_1 = ctk.CTkLabel(self, text='Specify a directory with images to work with')
         self.label_1.pack()
 
         self.button_1 = ctk.CTkButton(self, text='Choose a directory', command=lambda: self.ask_directory())
         self.button_1.pack()
 
-        self.first_frame = FirstFrame(parent=self, width=350, height=70, fg_color='transparent')
-        self.first_frame.pack()
+        self.topmost_frame = TopmostFrame(parent=self, width=350, height=70, fg_color='transparent')
+        self.topmost_frame.pack()
 
         self.table_frame.pack(pady=10)
 
@@ -228,7 +229,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
                         'unit': checking[3]['Unit'],
                         'Used files': file,
                         'Active area': None,
-                        'Light Intensity': 0.1,
+                        'Light Intensity': None,
+                        'Distance to light source': None,
                     }
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')

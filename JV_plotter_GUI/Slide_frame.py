@@ -3,7 +3,7 @@ from idlelib.tooltip import Hovertip
 import customtkinter as ctk
 
 
-class SlidePanel(ctk.CTkFrame):
+class SettingsPanel(ctk.CTkFrame):
     def __init__(self, parent, start_pos, end_pos):
         super().__init__(master=parent)
         self.parent = parent
@@ -43,6 +43,8 @@ class SlidePanel(ctk.CTkFrame):
                                                   command=self.parent.table_frame.update_entries_from_cache)
         self.open_wb_checkbox = ctk.CTkCheckBox(self, text='Open WB', command=self.parent.open_wb_activator)
         self.open_wb_checkbox.select()
+        self.additional_settings = ctk.CTkButton(self, text='Additional settings',
+                                                 command=self.parent.additional_settings.animate_additional_settings)
         self.slide_panel_label.pack(pady=10)
         self.potentiostat_combox_label.pack(pady=5)
         self.potentiostat_combox.pack(pady=5)
@@ -54,7 +56,8 @@ class SlidePanel(ctk.CTkFrame):
             self.aging_mode_label,
             self.aging_mode_checkbox,
             self.time_label,
-            self.timeline_detector_button
+            self.timeline_detector_button,
+            self.additional_settings
         ]
         for widget in widgets:
             widget.pack(pady=10)
@@ -78,6 +81,9 @@ class SlidePanel(ctk.CTkFrame):
         hover_aging_mode_checkbox = "  Activate \"Aging Mode\"!  \n  Time-travel in folders! ⏳  "
         hover_aging_timeline = "  Max timeline time! 🕒  \n  Shows if readable! 🤓  "
         hover_choose_the_timeline = "  Point to your timeline! 🗺️  \n  Specify the path! 🛣️  "
+        hover_additional_settings = ("  Dive Deeper! 🐠  \n"
+                                     "  Uncover more customization options  \n"
+                                     "  to fine-tune your experience! 🔧  ")
 
         Hovertip(self.potentiostat_combox, hover_potentiostat_combox, hover_delay=hover_delay)
         Hovertip(self.identical_areas_CheckBox, hover_text_sa, hover_delay=hover_delay)
@@ -88,12 +94,15 @@ class SlidePanel(ctk.CTkFrame):
         Hovertip(self.aging_mode_checkbox, hover_aging_mode_checkbox, hover_delay=hover_delay)
         Hovertip(self.time_label, hover_aging_timeline, hover_delay=hover_delay)
         Hovertip(self.timeline_detector_button, hover_choose_the_timeline, hover_delay=hover_delay)
+        Hovertip(self.additional_settings, hover_additional_settings, hover_delay=hover_delay)
 
     def animate(self):
         if self.in_start_pos:  # If the frame is about to be shown
             self.parent.bind("<Button-1>", self.hide_if_clicked_outside)  # Bind the event
             self.parent.table_frame.files_table.bind("<Button-1>", self.hide_if_clicked_outside)
             self.parent.table_frame.active_areas_scrollable_frame.bind("<Button-1>", self.hide_if_clicked_outside)
+        if not self.parent.additional_settings.in_start_pos:
+            self.parent.additional_settings.animate_additional_settings()
         target_pos = self.end_pos if self.in_start_pos else self.start_pos
         step = -0.03 if self.in_start_pos else 0.03
         self.animate_to_target(target_pos, step)

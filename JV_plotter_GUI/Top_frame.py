@@ -2,7 +2,7 @@ import customtkinter as ctk
 from idlelib.tooltip import Hovertip
 
 
-class FirstFrame(ctk.CTkFrame):
+class TopmostFrame(ctk.CTkFrame):
     def __init__(self, parent, width=200, height=200, fg_color='transparent', *args, **kwargs):
         super().__init__(master=parent, width=width, height=height, fg_color=fg_color, *args, **kwargs)
         self.parent = parent

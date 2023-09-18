@@ -2,6 +2,7 @@ import math
 import os
 import time
 from datetime import date
+from tkinter import messagebox
 
 import numpy as np
 import xlsxwriter
@@ -49,7 +50,7 @@ class DevicePlotter:
             10: 'Series resistance, Rs (ohm)',
             11: 'Shunt resistance, Rsh (ohm)',
             12: 'Active area, (cm²)',
-            13: 'Light intensity (W/m²)',
+            13: 'Light intensity (W/cm²)',
             14: 'Distance to light source (mm)',
             15: 'Device order',
         }
@@ -181,7 +182,7 @@ class DevicePlotter:
                 self.write_parameters(ws, device_data, device_name=device_name)
 
                 # Insert IV charts into devices' sheets
-                ws.insert_chart('E17', self.plot_iv(sheet_name=ws_name, data_start=2,
+                ws.insert_chart('E16', self.plot_iv(sheet_name=ws_name, data_start=2,
                                                     data_end=row, name_suffix=None))
                 ws.insert_chart(f"J1", self.plot_iv(sheet_name=ws_name, data_start=2,
                                                     data_end=len(data['1_Forward']) + 1,
@@ -228,20 +229,23 @@ class DevicePlotter:
         # Write the device name and parameters in column D
         ws.write(0, 4, device_name, self.center)
         ws.write(1, 4, 'Parameters', self.center)
-        ws.write(2, 4, 'Ƞ', self.center)
-        ws.write(3, 4, 'Short-circuit current density, mA/cm²)', self.center)
-        ws.write(4, 4, 'Voc, V', self.center)
-        ws.write(5, 4, 'FF', self.center)
-        ws.write(6, 4, 'Max power, W', self.center)
-        ws.write(7, 4, 'Voltage at MPP (V)', self.center)
-        ws.write(8, 4, 'Current density at MPP (mA/cm²)', self.center)
-        ws.write(9, 4, 'Series resistance, Rs (ohm)', self.center)
-        ws.write(10, 4, 'Shunt resistance, Rsh (ohm)', self.center)
-        ws.write(11, 4, 'Isc, mA', self.center)
-        ws.write(12, 4, 'Active area, cm²', self.center)
-        ws.write(13, 4, 'Light Intensity, W/cm²', self.center)
-        ws.write(14, 4, 'Distance to a light source', self.center)
-
+        # ws.write(2, 4, 'Ƞ', self.center)
+        # ws.write(3, 4, 'Short-circuit current density, mA/cm²)', self.center)
+        # ws.write(4, 4, 'Voc, V', self.center)
+        # ws.write(5, 4, 'FF', self.center)
+        # ws.write(6, 4, 'Max power, W', self.center)
+        # ws.write(7, 4, 'Voltage at MPP (V)', self.center)
+        # ws.write(8, 4, 'Current density at MPP (mA/cm²)', self.center)
+        # ws.write(9, 4, 'Series resistance, Rs (ohm)', self.center)
+        # ws.write(10, 4, 'Shunt resistance, Rsh (ohm)', self.center)
+        # ws.write(11, 4, 'Isc, mA', self.center)
+        # ws.write(12, 4, 'Active area, cm²', self.center)
+        # ws.write(13, 4, 'Light Intensity, W/cm²', self.center)
+        # ws.write(14, 4, 'Distance to a light source (mm)', self.center)
+        for i, value in self.parameter_dict.items():
+            if i in [1, 2, 15]:
+                continue
+            ws.write(i - 1, 4, value, self.center)
         ws.set_column(4, 4, 35)
         # Write the "Values" header in column E
         self.write_center_across_selection(ws, (0, 5), 'Values', 3)
@@ -313,7 +317,7 @@ class DevicePlotter:
         try:
             intercept, slope = self.linfit_golden(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
         except KeyError:
-            print(f"Warning: Invalid index encountered for {device_name} in {folder}. "
+            messagebox.showerror("Warning!",  f"Invalid index encountered for {device_name} in {folder}.\n"
                   f"This is likely due to bad IV data from a dead cell.")
             # Handle the error as you see fit, perhaps setting intercept and slope to some default values
             intercept, slope = 0, 1e-9  # Setting to some default values
@@ -323,11 +327,11 @@ class DevicePlotter:
 
     def write_parameters(self, ws, device_data, device_name):
         # Write the active area value
-        self.write_center_across_selection(ws, (12, 5), self.active_area, 3)
+        self.write_center_across_selection(ws, (11, 5), self.active_area, 3)
         # Write the light intensity value
-        self.write_center_across_selection(ws, (13, 5), self.light_intensity, 3)
+        self.write_center_across_selection(ws, (12, 5), self.light_intensity, 3)
         # Write the distance to the light source
-        self.write_center_across_selection(ws, (14, 5), self.distance_to_light_source, 3)
+        self.write_center_across_selection(ws, (13, 5), self.distance_to_light_source, 3)
 
         eff_avr = (self.efficiency_reverse + self.efficiency_forward) / 2
         ws.write(2, 5, self.efficiency_reverse)  # Reverse Efficiency
@@ -374,15 +378,8 @@ class DevicePlotter:
         ws.write(10, 6, self.rsh_forward)  # Forward shunt resistance, Rsh (ohm)
         ws.write(10, 7, rsh)  # Average shunt resistance, Rsh (ohm)
 
-        i_sc_average = (self.i_sc_forward + self.i_sc_reverse) / 2
-        ws.write(11, 5, self.i_sc_reverse)
-        ws.write(11, 6, self.i_sc_forward)
-        ws.write(11, 7, i_sc_average)
-
         device_data['Parameters'] = {}
         device_data['Parameters']['Forward'] = {
-            self.parameter_dict[1]: device_name,
-            self.parameter_dict[2]: 'Forward',
             self.parameter_dict[3]: self.efficiency_forward,
             self.parameter_dict[4]: self.i_sc_forward / self.active_area,
             self.parameter_dict[5]: self.v_oc_forward,
@@ -392,13 +389,8 @@ class DevicePlotter:
             self.parameter_dict[9]: self.j_mpp_forward,
             self.parameter_dict[10]: self.rs_forward,
             self.parameter_dict[11]: self.rsh_forward,
-            self.parameter_dict[12]: self.active_area,
-            self.parameter_dict[13]: self.light_intensity,
-            self.parameter_dict[14]: self.distance_to_light_source,
         }
         device_data['Parameters']['Reverse'] = {
-            self.parameter_dict[1]: device_name,
-            self.parameter_dict[2]: 'Reverse',
             self.parameter_dict[3]: self.efficiency_reverse,
             self.parameter_dict[4]: self.i_sc_reverse / self.active_area,
             self.parameter_dict[5]: self.v_oc_reverse,
@@ -408,13 +400,8 @@ class DevicePlotter:
             self.parameter_dict[9]: self.j_mpp_reverse,
             self.parameter_dict[10]: self.rs_reverse,
             self.parameter_dict[11]: self.rsh_reverse,
-            self.parameter_dict[12]: self.active_area,
-            self.parameter_dict[13]: self.light_intensity,
-            self.parameter_dict[14]: self.distance_to_light_source,
         }
         device_data['Parameters']['Average'] = {
-            self.parameter_dict[1]: device_name,
-            self.parameter_dict[2]: 'Average',
             self.parameter_dict[3]: eff_avr,
             self.parameter_dict[4]: j,
             self.parameter_dict[5]: v_oc_average,
@@ -424,9 +411,6 @@ class DevicePlotter:
             self.parameter_dict[9]: j_mpp,
             self.parameter_dict[10]: rs,
             self.parameter_dict[11]: rsh,
-            self.parameter_dict[12]: self.active_area,
-            self.parameter_dict[13]: self.light_intensity,
-            self.parameter_dict[14]: self.distance_to_light_source,
         }
 
     def fill_tables(self):
@@ -446,14 +430,13 @@ class DevicePlotter:
                     for sweep in sweeps:
                         self.write_table_rows(table, row_index, sheet_name, sweep)
                         row_index += 1
-            table.autofilter(0, 0, row_index, len(self.parameter_dict))  # Apply auto filter to the table
+            table.autofilter(0, 0, row_index, len(self.parameter_dict) - 1)  # Apply auto filter to the table
 
     def write_table_headers(self, ws):
         for i, header in self.parameter_dict.items():
-            ws.write(0, i + 1, header, self.center)
+            ws.write(0, i - 1, header, self.center)
 
-    @staticmethod
-    def write_table_rows(ws, row_index, sheet_name, sweep_direction):
+    def write_table_rows(self, ws, row_index, sheet_name, sweep_direction):
         col_letter = sweep_direction  # First letter of the sweep direction (F, G, or H)
         ws.write(row_index, 0, sheet_name)  # Label
         ws.write_formula(row_index, 1, f"='{sheet_name}'!{col_letter}2")  # Scan direction
@@ -466,10 +449,10 @@ class DevicePlotter:
         ws.write_formula(row_index, 8, f"='{sheet_name}'!{col_letter}9")  # Current density at MPP
         ws.write_formula(row_index, 9, f"='{sheet_name}'!{col_letter}10")  # Series resistance
         ws.write_formula(row_index, 10, f"='{sheet_name}'!{col_letter}11")  # Shunt resistance
-        ws.write_formula(row_index, 11, f"='{sheet_name}'!F13")  # Active area
-        ws.write_formula(row_index, 12, f"='{sheet_name}'!F14")  # Light intensity
-        ws.write_formula(row_index, 13, f"='{sheet_name}'!F15")  # Distance to a light source
-        ws.write(row_index, 14, row_index)  # Track the device order
+        ws.write_formula(row_index, 11, f"='{sheet_name}'!F12")  # Active area
+        ws.write_formula(row_index, 12, f"='{sheet_name}'!F13")  # Light intensity
+        ws.write_formula(row_index, 13, f"='{sheet_name}'!F14")  # Distance to a light source
+        ws.write(row_index, [k for k, v in self.parameter_dict.items() if v == 'Device order'][0] - 1, row_index)
 
     def plot_iv(self, sheet_name, data_start, data_end, name_suffix):
         name_suffix = ' ' + name_suffix if name_suffix else ''
@@ -547,7 +530,7 @@ class DevicePlotter:
 
         return chart_all_sweeps
 
-    def aging(self):
+    def aging(self) -> None:
         if not self.parent.aging_mode:
             return
         # Write header to the Aging sheet
@@ -557,19 +540,9 @@ class DevicePlotter:
         for row_num, value in enumerate(self.timeline_df[self.timeline_df.columns[0]]):
             self.aging_sheet.write(row_num + 1, 0, value)  # +1 to skip the header
 
-        headers = [
-            'Label',
-            'Scan direction',
-            'Efficiency (%)',
-            'Short-circuit current density (mA/cm²)',
-            'Open circuit voltage (V)',
-            'Fill factor',
-            'Maximum power (W)',
-            'Voltage at MPP (V)',
-            'Current density at MPP (mA/cm²)',
-            'Series resistance, Rs (ohm)',
-            'Shunt resistance, Rsh (ohm)',
-        ]
+        keys_to_exclude = [12, 13, 14, 15]  # Replace with the keys you want to exclude
+        headers = [value for key, value in self.parameter_dict.items() if key not in keys_to_exclude]
+
         headers.extend(
             [f"{header}_relative" for header in headers[2:]])  # Assuming the first two headers are not parameters
 
@@ -588,6 +561,7 @@ class DevicePlotter:
                     'folder_name': folder_name,
                 })
 
+        keys_to_exclude.extend([1, 2])
         first_values = {}  # To store the first value of each device-parameter combination
         current_row = 1  # starting row
 
@@ -615,7 +589,7 @@ class DevicePlotter:
 
                     # Loop through each parameter
                     for row, parameter in self.parameter_dict.items():
-                        if row in [1, 2, 12, 13, 14, 15]:
+                        if row in keys_to_exclude:
                             continue
                         # Retrieve parameter value from self.data
                         value = self.data[folder_name][device]['Parameters'][sweep][parameter]
@@ -627,7 +601,7 @@ class DevicePlotter:
 
                         # Write the value into the Excel sheet
                         self.aging_sheet.write(current_row, row + 1, value)
-                        self.aging_sheet.write(current_row, row + 1 + len(self.parameter_dict),
+                        self.aging_sheet.write(current_row, row + 1 + len(self.parameter_dict) - len(keys_to_exclude),
                                                relative_value)
 
                     # Increment row index for the next iteration

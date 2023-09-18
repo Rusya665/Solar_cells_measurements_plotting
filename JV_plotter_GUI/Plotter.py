@@ -5,6 +5,7 @@ from datetime import date
 
 import numpy as np
 import xlsxwriter
+from icecream import ic
 
 from JV_plotter_GUI.instruments import open_file, row_to_excel_col, custom_round
 from JV_plotter_GUI.settings import settings
@@ -36,6 +37,8 @@ class DevicePlotter:
         self.rsh_forward, self.rsh_reverse = None, None
         self.active_area, self.light_intensity, self.distance_to_light_source = None, None, None
         self.parameter_dict = {
+            1: 'Label',
+            2: 'Scan direction',
             3: 'Efficiency (%)',
             4: 'Short-circuit current density (mA/cm²)',
             5: 'Open circuit voltage (V)',
@@ -45,6 +48,10 @@ class DevicePlotter:
             9: 'Current density at MPP (mA/cm²)',
             10: 'Series resistance, Rs (ohm)',
             11: 'Shunt resistance, Rsh (ohm)',
+            12: 'Active area, (cm²)',
+            13: 'Light intensity (W/m²)',
+            14: 'Distance to light source (mm)',
+            15: 'Device order',
         }
 
         self.workbook = self.create_workbook()
@@ -171,7 +178,7 @@ class DevicePlotter:
                         ws.write(row, 0, current_density)
                         row += 1
 
-                self.write_parameters(ws, device_data)
+                self.write_parameters(ws, device_data, device_name=device_name)
 
                 # Insert IV charts into devices' sheets
                 ws.insert_chart('E17', self.plot_iv(sheet_name=ws_name, data_start=2,
@@ -201,9 +208,6 @@ class DevicePlotter:
                                                        data_start=len(data['1_Forward']) + 2,
                                                        data_end=row,
                                                        name_suffix='Reverse'))
-                # if self.parent.aging_mode:
-                #     self.aging_plots_forward_absolute(1, self.chart_horizontal_spacing * device_counter,
-                #                              self.plot_aging)
         # insert huge IV plots into the main sheet
         self.wb_main.insert_chart('A1', self.plot_all_sweeps(start_key='forward_start_row',
                                                              end_key='all_data_length', name_suffix=''))
@@ -317,7 +321,7 @@ class DevicePlotter:
         rs = 0.0 if intercept == 0 else -1 / intercept
         return voc, rs, (slope, intercept)
 
-    def write_parameters(self, ws, device_data):
+    def write_parameters(self, ws, device_data, device_name):
         # Write the active area value
         self.write_center_across_selection(ws, (12, 5), self.active_area, 3)
         # Write the light intensity value
@@ -374,8 +378,11 @@ class DevicePlotter:
         ws.write(11, 5, self.i_sc_reverse)
         ws.write(11, 6, self.i_sc_forward)
         ws.write(11, 7, i_sc_average)
+
         device_data['Parameters'] = {}
         device_data['Parameters']['Forward'] = {
+            self.parameter_dict[1]: device_name,
+            self.parameter_dict[2]: 'Forward',
             self.parameter_dict[3]: self.efficiency_forward,
             self.parameter_dict[4]: self.i_sc_forward / self.active_area,
             self.parameter_dict[5]: self.v_oc_forward,
@@ -385,8 +392,13 @@ class DevicePlotter:
             self.parameter_dict[9]: self.j_mpp_forward,
             self.parameter_dict[10]: self.rs_forward,
             self.parameter_dict[11]: self.rsh_forward,
+            self.parameter_dict[12]: self.active_area,
+            self.parameter_dict[13]: self.light_intensity,
+            self.parameter_dict[14]: self.distance_to_light_source,
         }
         device_data['Parameters']['Reverse'] = {
+            self.parameter_dict[1]: device_name,
+            self.parameter_dict[2]: 'Reverse',
             self.parameter_dict[3]: self.efficiency_reverse,
             self.parameter_dict[4]: self.i_sc_reverse / self.active_area,
             self.parameter_dict[5]: self.v_oc_reverse,
@@ -396,8 +408,13 @@ class DevicePlotter:
             self.parameter_dict[9]: self.j_mpp_reverse,
             self.parameter_dict[10]: self.rs_reverse,
             self.parameter_dict[11]: self.rsh_reverse,
+            self.parameter_dict[12]: self.active_area,
+            self.parameter_dict[13]: self.light_intensity,
+            self.parameter_dict[14]: self.distance_to_light_source,
         }
         device_data['Parameters']['Average'] = {
+            self.parameter_dict[1]: device_name,
+            self.parameter_dict[2]: 'Average',
             self.parameter_dict[3]: eff_avr,
             self.parameter_dict[4]: j,
             self.parameter_dict[5]: v_oc_average,
@@ -407,6 +424,9 @@ class DevicePlotter:
             self.parameter_dict[9]: j_mpp,
             self.parameter_dict[10]: rs,
             self.parameter_dict[11]: rsh,
+            self.parameter_dict[12]: self.active_area,
+            self.parameter_dict[13]: self.light_intensity,
+            self.parameter_dict[14]: self.distance_to_light_source,
         }
 
     def fill_tables(self):
@@ -426,28 +446,11 @@ class DevicePlotter:
                     for sweep in sweeps:
                         self.write_table_rows(table, row_index, sheet_name, sweep)
                         row_index += 1
-            table.autofilter(0, 0, row_index, 12)  # Apply auto filter to the table
+            table.autofilter(0, 0, row_index, len(self.parameter_dict))  # Apply auto filter to the table
 
     def write_table_headers(self, ws):
-        headers = [
-            'Label',
-            'Scan direction',
-            'Efficiency (%)',
-            'Short-circuit current density (mA/cm²)',
-            'Open circuit voltage (V)',
-            'Fill factor',
-            'Maximum power (W)',
-            'Voltage at MPP (V)',
-            'Current density at MPP (mA/cm²)',
-            'Series resistance, Rs (ohm)',
-            'Shunt resistance, Rsh (ohm)',
-            'Active area, (cm²)',
-            'Light intensity (W/m²)',
-            'Distance to light source (mm)',
-            'Device order'
-        ]
-        for i, header in enumerate(headers):
-            ws.write(0, i, header, self.center)
+        for i, header in self.parameter_dict.items():
+            ws.write(0, i + 1, header, self.center)
 
     @staticmethod
     def write_table_rows(ws, row_index, sheet_name, sweep_direction):
@@ -612,13 +615,14 @@ class DevicePlotter:
 
                     # Loop through each parameter
                     for row, parameter in self.parameter_dict.items():
+                        if row in [1, 2, 12, 13, 14, 15]:
+                            continue
                         # Retrieve parameter value from self.data
                         value = self.data[folder_name][device]['Parameters'][sweep][parameter]
 
                         # Check if it's the first value for this parameter-device combination
                         if parameter not in first_values[device]:
                             first_values[device][parameter] = value
-
                         relative_value = value / first_values[device][parameter]
 
                         # Write the value into the Excel sheet

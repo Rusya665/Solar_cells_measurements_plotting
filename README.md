@@ -3,7 +3,7 @@
 ## Description
 
 This project aims to help researchers to analyze their JV curves for different photovoltaic applications and helps better investigate the degradation mechanisms of emerging solar cells. It could be used to analyze the data produced by accelerated ageing and visual tracking systems to improve the stability of these solar cells.
-
+![img.png](Media/Main_GUI_default_window.png)
 ## Table of Contents
 
 - [Installation](#installation)
@@ -38,8 +38,8 @@ This project aims to help researchers to analyze their JV curves for different p
 
 ## Usage
 
-Upcoming.
-
+Settings panels![img.png](Media/Settings_slide_pannels.png)
+Aging mode example![img.png](Media/Aging_mode_example.png)
 ### Supported Potentiostats
 
 The project currently supports the following potentiostats and their respective file formats:

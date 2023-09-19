@@ -98,7 +98,7 @@ def get_screen_settings():
             return int(str(m).split('width=')[-1][:4]), int(str(m).split('height=')[-1][:4])
 
 
-def print_nested_dict(d, indent=0):
+def print_nested_dict(d, indent=0) -> None:
     """
     Recursively prints keys and values of a nested dictionary.
 
@@ -137,6 +137,12 @@ def flip_data_if_necessary(df):
 
 
 def row_to_excel_col(row_num):
+    """
+    Convert a row number to an Excel column letter.
+
+    :param row_num: Row number.
+    :return: Excel column letter.
+    """
     col = ''
     while row_num:
         remainder = (row_num - 1) % 26
@@ -146,6 +152,12 @@ def row_to_excel_col(row_num):
 
 
 def custom_round(max_value):
+    """
+    Custom rounding function.
+
+    :param max_value: Maximum value to round.
+    :return: Rounded value.
+    """
     if max_value <= 9:
         next_rounded_value = math.ceil(max_value)
     elif max_value <= 99:

@@ -11,7 +11,6 @@ class SettingsPanel(ctk.CTkFrame):
         self.start_pos = start_pos + 0.04
         self.end_pos = end_pos - 0.03
         self.width = abs(start_pos - end_pos)
-
         # animation logic
         self.pos = self.start_pos
         self.in_start_pos = True
@@ -96,7 +95,7 @@ class SettingsPanel(ctk.CTkFrame):
         Hovertip(self.timeline_detector_button, hover_choose_the_timeline, hover_delay=hover_delay)
         Hovertip(self.additional_settings, hover_additional_settings, hover_delay=hover_delay)
 
-    def animate(self):
+    def animate(self, step=0.03):
         if self.in_start_pos:  # If the frame is about to be shown
             self.parent.bind("<Button-1>", self.hide_if_clicked_outside)  # Bind the event
             self.parent.table_frame.files_table.bind("<Button-1>", self.hide_if_clicked_outside)
@@ -104,7 +103,7 @@ class SettingsPanel(ctk.CTkFrame):
         if not self.parent.additional_settings.in_start_pos:
             self.parent.additional_settings.animate_additional_settings()
         target_pos = self.end_pos if self.in_start_pos else self.start_pos
-        step = -0.03 if self.in_start_pos else 0.03
+        step = -1 * step if self.in_start_pos else step
         self.animate_to_target(target_pos, step)
         self.in_start_pos = not self.in_start_pos
 

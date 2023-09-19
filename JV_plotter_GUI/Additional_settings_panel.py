@@ -60,13 +60,13 @@ class AdditionalSettings(ctk.CTkFrame):
         Hovertip(self.light_intensity_label, "\n                    I said\n"
                                              "GO BACK TO YOUR WORK!\n", hover_delay=hover_delay*32)
 
-    def animate_additional_settings(self):
+    def animate_additional_settings(self, step=0.03):
         if self.in_start_pos:  # If the frame is about to be shown
             self.parent.bind("<Button-1>", self.hide_if_clicked_outside)  # Bind the event
             self.parent.table_frame.files_table.bind("<Button-1>", self.hide_if_clicked_outside)
             self.parent.table_frame.active_areas_scrollable_frame.bind("<Button-1>", self.hide_if_clicked_outside)
         target_pos = self.end_pos if self.in_start_pos else self.start_pos
-        step = 0.03 if self.in_start_pos else -0.03
+        step = step if self.in_start_pos else -1 * step
         self.animate_to_target(target_pos, step)
         self.in_start_pos = not self.in_start_pos
 

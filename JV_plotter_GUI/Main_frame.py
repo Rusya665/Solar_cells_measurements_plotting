@@ -41,8 +41,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.label_1 = ctk.CTkLabel(self, text='Specify a directory with images to work with')
         self.label_1.pack()
 
-        self.button_1 = ctk.CTkButton(self, text='Choose a directory', command=lambda: self.ask_directory())
-        self.button_1.pack()
+        self.ask_directory_button = ctk.CTkButton(self, text='Choose a directory', command=lambda: self.ask_directory())
+        self.ask_directory_button.pack()
 
         self.topmost_frame = TopmostFrame(parent=self, width=350, height=70, fg_color='transparent')
         self.topmost_frame.pack()
@@ -154,6 +154,10 @@ class IVProcessingMainClass(ctk.CTkFrame):
         Built-in Tkinter function to return a str with a path
         :return: String with a path
         """
+        if not self.additional_settings.in_start_pos:
+            self.additional_settings.animate_additional_settings(step=1)
+        if not self.slide_frame.in_start_pos:
+            self.slide_frame.animate(step=1)
         self.file_directory = filedialog.askdirectory(mustexist=True)
         if self.file_directory == "":
             self.label_1.configure(text='Specify a directory with images to work with')

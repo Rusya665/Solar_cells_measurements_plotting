@@ -6,7 +6,6 @@ from tkinter import messagebox
 
 import numpy as np
 import xlsxwriter
-from icecream import ic
 
 from JV_plotter_GUI.instruments import open_file, row_to_excel_col, custom_round
 from JV_plotter_GUI.settings import settings
@@ -64,7 +63,7 @@ class DevicePlotter:
         if self.parent.aging_mode:
             self.aging_sheet = self.workbook.add_worksheet('Aging')
 
-        self.wb_table = self.workbook.add_worksheet('Tabel_Total')
+        self.wb_table = self.workbook.add_worksheet('Table_Total')
 
         if self.parent.aging_mode:
             self.timeline_df = self.parent.timeline_df
@@ -75,9 +74,9 @@ class DevicePlotter:
             self.aging_plots_reverse_relative = self.workbook.add_worksheet('Aging_plots_reverse_relative')
             self.aging_plots_avg_relative = self.workbook.add_worksheet('Aging_plots_avg_relative')
 
-        self.wb_table_forward = self.workbook.add_worksheet('Tabel_Forward')
-        self.wb_table_reverse = self.workbook.add_worksheet('Tabel_Reverse')
-        self.wb_table_average = self.workbook.add_worksheet('Tabel_Average')
+        self.wb_table_forward = self.workbook.add_worksheet('Table_Forward')
+        self.wb_table_reverse = self.workbook.add_worksheet('Table_Reverse')
+        self.wb_table_average = self.workbook.add_worksheet('Table_Average')
 
         self.set_worksheets()
         self.fill_tables()
@@ -179,7 +178,7 @@ class DevicePlotter:
                         ws.write(row, 0, current_density)
                         row += 1
 
-                self.write_parameters(ws, device_data, device_name=device_name)
+                self.write_parameters(ws, device_data)
 
                 # Insert IV charts into devices' sheets
                 ws.insert_chart('E16', self.plot_iv(sheet_name=ws_name, data_start=2,
@@ -229,21 +228,9 @@ class DevicePlotter:
         # Write the device name and parameters in column D
         ws.write(0, 4, device_name, self.center)
         ws.write(1, 4, 'Parameters', self.center)
-        # ws.write(2, 4, 'Ƞ', self.center)
-        # ws.write(3, 4, 'Short-circuit current density, mA/cm²)', self.center)
-        # ws.write(4, 4, 'Voc, V', self.center)
-        # ws.write(5, 4, 'FF', self.center)
-        # ws.write(6, 4, 'Max power, W', self.center)
-        # ws.write(7, 4, 'Voltage at MPP (V)', self.center)
-        # ws.write(8, 4, 'Current density at MPP (mA/cm²)', self.center)
-        # ws.write(9, 4, 'Series resistance, Rs (ohm)', self.center)
-        # ws.write(10, 4, 'Shunt resistance, Rsh (ohm)', self.center)
-        # ws.write(11, 4, 'Isc, mA', self.center)
-        # ws.write(12, 4, 'Active area, cm²', self.center)
-        # ws.write(13, 4, 'Light Intensity, W/cm²', self.center)
-        # ws.write(14, 4, 'Distance to a light source (mm)', self.center)
+        last_key = list(self.parameter_dict.keys())[-1]
         for i, value in self.parameter_dict.items():
-            if i in [1, 2, 15]:
+            if i in [1, 2, last_key]:
                 continue
             ws.write(i - 1, 4, value, self.center)
         ws.set_column(4, 4, 35)
@@ -317,15 +304,15 @@ class DevicePlotter:
         try:
             intercept, slope = self.linfit_golden(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
         except KeyError:
-            messagebox.showerror("Warning!",  f"Invalid index encountered for {device_name} in {folder}.\n"
-                  f"This is likely due to bad IV data from a dead cell.")
+            messagebox.showerror("Warning!", f"Invalid index encountered for {device_name} in {folder}.\n"
+                                             f"This is likely due to bad IV data from a dead cell.")
             # Handle the error as you see fit, perhaps setting intercept and slope to some default values
             intercept, slope = 0, 1e-9  # Setting to some default values
         voc = -slope / intercept if intercept != 0 else 0
         rs = 0.0 if intercept == 0 else -1 / intercept
         return voc, rs, (slope, intercept)
 
-    def write_parameters(self, ws, device_data, device_name):
+    def write_parameters(self, ws, device_data):
         # Write the active area value
         self.write_center_across_selection(ws, (11, 5), self.active_area, 3)
         # Write the light intensity value
@@ -540,7 +527,7 @@ class DevicePlotter:
         for row_num, value in enumerate(self.timeline_df[self.timeline_df.columns[0]]):
             self.aging_sheet.write(row_num + 1, 0, value)  # +1 to skip the header
 
-        keys_to_exclude = [12, 13, 14, 15]  # Replace with the keys you want to exclude
+        keys_to_exclude = [key for key in self.parameter_dict.keys() if key >= 12]
         headers = [value for key, value in self.parameter_dict.items() if key not in keys_to_exclude]
 
         headers.extend(
@@ -589,7 +576,7 @@ class DevicePlotter:
 
                     # Loop through each parameter
                     for row, parameter in self.parameter_dict.items():
-                        if row in keys_to_exclude:
+                        if row in keys_to_exclude:  # Exclude non-parameter key
                             continue
                         # Retrieve parameter value from self.data
                         value = self.data[folder_name][device]['Parameters'][sweep][parameter]
@@ -612,9 +599,12 @@ class DevicePlotter:
 
                 # Plot charts here, outside the folder loop
                 for row, parameter in self.parameter_dict.items():
+                    if row in keys_to_exclude:  # Exclude non-parameter key
+                        continue
                     excel_col_abs = row_to_excel_col(
                         row + 2)  # 2 to adjust for initial columns (TimeLine, Label, Scan Direction)
-                    excel_col_rel = row_to_excel_col(row + 2 + len(self.parameter_dict))  # for relative values
+                    # for relative values
+                    excel_col_rel = row_to_excel_col(row + 2 + len(self.parameter_dict) - len(keys_to_exclude))
                     chart_iv_absolute = self.plot_aging(device_name=device, sweep=sweep,
                                                         param=parameter,
                                                         param_column=excel_col_abs,

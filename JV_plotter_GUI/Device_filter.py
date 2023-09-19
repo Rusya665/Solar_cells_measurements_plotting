@@ -3,7 +3,6 @@ from tkinter import messagebox
 
 import pandas as pd
 from fuzzywuzzy import fuzz
-from icecream import ic
 
 
 class DeviceDetector:
@@ -29,8 +28,6 @@ class DeviceDetector:
         :param data_dict: Dictionary containing device-related data.
         """
         self.data = data_dict
-        # for key, _ in data_dict.items():
-        #     print('key', key)
 
     def detect_and_filter(self):
         """

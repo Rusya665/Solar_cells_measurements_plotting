@@ -4,7 +4,6 @@ from collections import defaultdict
 from tkinter import messagebox, filedialog
 
 import customtkinter as ctk
-from icecream import ic
 
 from JV_plotter_GUI.Potentostats_check import PotentiostatFileChecker
 from JV_plotter_GUI.Plotter import DevicePlotter

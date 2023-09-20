@@ -67,12 +67,12 @@ class DevicePlotter:
 
         if self.parent.aging_mode:
             self.timeline_df = self.parent.timeline_df
-            self.aging_plots_forward_absolute = self.workbook.add_worksheet('Aging_plots_forward_absolute')
-            self.aging_plots_reverse_absolute = self.workbook.add_worksheet('Aging_plots_reverse_absolute')
-            self.aging_plots_avg_absolute = self.workbook.add_worksheet('Aging_plots_avg_absolute')
-            self.aging_plots_forward_relative = self.workbook.add_worksheet('Aging_plots_forward_relative')
-            self.aging_plots_reverse_relative = self.workbook.add_worksheet('Aging_plots_reverse_relative')
-            self.aging_plots_avg_relative = self.workbook.add_worksheet('Aging_plots_avg_relative')
+            self.aging_plots_forward_absolute = self.workbook.add_worksheet('Aging_plots_forward_raw')
+            self.aging_plots_reverse_absolute = self.workbook.add_worksheet('Aging_plots_reverse_raw')
+            self.aging_plots_avg_absolute = self.workbook.add_worksheet('Aging_plots_avg_raw')
+            self.aging_plots_forward_relative = self.workbook.add_worksheet('Aging_plots_forward_normalized')
+            self.aging_plots_reverse_relative = self.workbook.add_worksheet('Aging_plots_reverse_normalized')
+            self.aging_plots_avg_relative = self.workbook.add_worksheet('Aging_plots_avg_normalized')
 
         self.wb_table_forward = self.workbook.add_worksheet('Table_Forward')
         self.wb_table_reverse = self.workbook.add_worksheet('Table_Reverse')
@@ -304,7 +304,7 @@ class DevicePlotter:
         try:
             intercept, slope = self.linfit_golden(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
         except KeyError:
-            messagebox.showerror("Warning!", f"Invalid index encountered for {device_name} in {folder}.\n"
+            messagebox.showwarning("Warning!", f"Invalid index encountered for {device_name} in {folder}.\n"
                                              f"This is likely due to bad IV data from a dead cell.")
             # Handle the error as you see fit, perhaps setting intercept and slope to some default values
             intercept, slope = 0, 1e-9  # Setting to some default values

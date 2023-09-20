@@ -126,8 +126,8 @@ class DevicePlotter:
                     f"{folder_counter} {device_name}" if long_name_found
                     else f"{folder_name} {device_name}"
                 )
-                ws_name = ws_name[:31] if len(ws_name) > 31 else ws_name
                 ws_name = f'{device_name}' if len(self.data) == 1 else ws_name
+                ws_name = ws_name[:31] if len(ws_name) > 31 else ws_name
                 data = self.data[folder_name][device_name]['data']
                 self.data[folder_name][device_name].update({
                     'sheet_name': ws_name,

@@ -26,6 +26,7 @@ class DevicePlotter:
         self.chart_huge_horizontal_spacing = math.ceil((480 * settings[self.name]['all_in_one_chart_x_scale']) / 64) + 1
         self.chart_huge_vertical_spacing = math.ceil((288 * settings[self.name]['all_in_one_chart_y_scale']) / 20) + 1
         self.xlsx_name = ''
+        self.warning_messages = []
         self.efficiency_forward, self.efficiency_reverse = None, None
         self.i_sc_forward, self.i_sc_reverse = None, None
         self.v_oc_forward, self.v_oc_reverse = None, None
@@ -93,6 +94,11 @@ class DevicePlotter:
         if self.parent.open_wb:
             time.sleep(0.2)
             open_file(self.xlsx_name)
+        if self.warning_messages:
+            all_warnings = "\n".join(self.warning_messages)
+            messagebox.showwarning("Warning!", f"Invalid data detected while calculating the\n"
+                                               f"series resistance for the following devices:\n{all_warnings}\n"
+                                               "This is likely due to bad JV data from a dead cell.")
 
     def create_workbook(self):
         """
@@ -189,7 +195,11 @@ class DevicePlotter:
                 ws.insert_chart(f"J{self.chart_vertical_spacing}", self.plot_iv(sheet_name=ws_name,
                                                                                 data_start=len(data['1_Forward']) + 2,
                                                                                 data_end=row, name_suffix='Reverse'))
-
+                # Write file name(s) being used to create this pixel/device data
+                used_files_data = [device_data['Used files']] if isinstance(device_data['Used files'], str) else \
+                    device_data['Used files']
+                ws.write(0, 8 + self.chart_horizontal_spacing, 'Used files', self.center)
+                ws.write_column(1, 8 + self.chart_horizontal_spacing, used_files_data)
                 # Insert each devise plot separately into the main sheet
                 self.wb_main.insert_chart(self.chart_huge_vertical_spacing,
                                           self.chart_horizontal_spacing * device_counter,
@@ -304,8 +314,7 @@ class DevicePlotter:
         try:
             intercept, slope = self.linfit_golden(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
         except KeyError:
-            messagebox.showwarning("Warning!", f"Invalid index encountered for {device_name} in {folder}.\n"
-                                             f"This is likely due to bad IV data from a dead cell.")
+            self.warning_messages.append(f"{device_name} in {folder}")
             # Handle the error as you see fit, perhaps setting intercept and slope to some default values
             intercept, slope = 0, 1e-9  # Setting to some default values
         voc = -slope / intercept if intercept != 0 else 0

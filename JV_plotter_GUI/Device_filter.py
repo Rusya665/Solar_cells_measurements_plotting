@@ -83,8 +83,8 @@ class DeviceDetector:
                 else:
                     # Remove unmatched single sweep files
                     folder_data.pop(filename, None)
-                    messagebox.showerror('Unmatched file detected!',
-                                         message=f'The file {filename} appears to be a file without a match')
+                    messagebox.showwarning('Unmatched file detected!',
+                                           message=f'The file {filename} appears to be a file without a match')
 
             # Average out devices with multiple sweeps
             for filename, details in folder_data.items():

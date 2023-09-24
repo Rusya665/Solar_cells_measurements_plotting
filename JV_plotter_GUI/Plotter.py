@@ -7,7 +7,7 @@ from tkinter import messagebox
 import numpy as np
 import xlsxwriter
 
-from JV_plotter_GUI.instruments import open_file, row_to_excel_col, custom_round
+from JV_plotter_GUI.instruments import open_file, row_to_excel_col, custom_round, random_color
 from JV_plotter_GUI.settings import settings
 
 
@@ -60,24 +60,47 @@ class DevicePlotter:
         self.across_selection = self.workbook.add_format()
         self.across_selection.set_center_across()
         self.wb_main = self.workbook.add_worksheet('Total')
-
+        # Main Worksheet
+        self.wb_main.set_tab_color('#FFA500')  # Orange for the main worksheet
         if self.parent.aging_mode:
             self.aging_sheet = self.workbook.add_worksheet('Aging')
-
+            self.aging_sheet.set_tab_color('#1E90FF')  # Dodger Blue
         self.wb_table = self.workbook.add_worksheet('Table_Total')
-
+        self.wb_table.set_tab_color('#32CD32')  # Lime Green
+        # Aging-Related Sheets
         if self.parent.aging_mode:
             self.timeline_df = self.parent.timeline_df
+
+
             self.aging_plots_forward_absolute = self.workbook.add_worksheet('Aging_plots_forward_raw')
+            self.aging_plots_forward_absolute.set_tab_color('#4169E1')  # Royal Blue
+
             self.aging_plots_reverse_absolute = self.workbook.add_worksheet('Aging_plots_reverse_raw')
+            self.aging_plots_reverse_absolute.set_tab_color('#4682B4')  # Steel Blue
+
             self.aging_plots_avg_absolute = self.workbook.add_worksheet('Aging_plots_avg_raw')
+            self.aging_plots_avg_absolute.set_tab_color('#5F9EA0')  # Cadet Blue
+
             self.aging_plots_forward_relative = self.workbook.add_worksheet('Aging_plots_forward_normalized')
+            self.aging_plots_forward_relative.set_tab_color('#20B2AA')  # Light Sea Green
+
             self.aging_plots_reverse_relative = self.workbook.add_worksheet('Aging_plots_reverse_normalized')
+            self.aging_plots_reverse_relative.set_tab_color('#48D1CC')  # Medium Turquoise
+
             self.aging_plots_avg_relative = self.workbook.add_worksheet('Aging_plots_avg_normalized')
+            self.aging_plots_avg_relative.set_tab_color('#40E0D0')  # Turquoise
+
+        # Table-Related Sheets
+
 
         self.wb_table_forward = self.workbook.add_worksheet('Table_Forward')
+        self.wb_table_forward.set_tab_color('#228B22')  # Forest Green
+
         self.wb_table_reverse = self.workbook.add_worksheet('Table_Reverse')
+        self.wb_table_reverse.set_tab_color('#008000')  # Green
+
         self.wb_table_average = self.workbook.add_worksheet('Table_Average')
+        self.wb_table_average.set_tab_color('#ADFF2F')  # Green Yellow
 
         self.set_worksheets()
         self.fill_tables()
@@ -114,6 +137,9 @@ class DevicePlotter:
     def set_worksheets(self):
         folder_counter, device_counter = 0, -1
 
+        # Generate a random color for each folder
+        folder_colors = {folder_name: random_color() for folder_name in self.data.keys()}
+
         # Check if any name is too long
         long_name_found = any(
             len(f"{folder_name} {device_name}") > 31
@@ -124,9 +150,17 @@ class DevicePlotter:
         # Iterate through the folders
         for folder_name, devices in self.data.items():
             folder_counter += 1
+
+            # Determine color based on folder or device
+            color = folder_colors[folder_name] if len(self.data) > 1 else None
+
             # Iterate through the devices in each folder
             for device_name, device_data in devices.items():
                 device_counter += 1
+
+                if color is None:
+                    color = random_color()
+
                 # Decide the worksheet name based on whether a long name was found
                 ws_name = (
                     f"{folder_counter} {device_name}" if long_name_found
@@ -144,6 +178,11 @@ class DevicePlotter:
                     }
                 })
                 ws = self.workbook.add_worksheet(ws_name)
+                ws.set_tab_color(color)
+
+                # Reset color to None for the next device if there's only one folder
+                if len(self.data) == 1:
+                    color = None
 
                 self.set_headers(ws=ws, device_name=device_name)
                 self.active_area = device_data["Active area"]

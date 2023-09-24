@@ -2,6 +2,7 @@ import math
 import os
 import sys
 import subprocess
+import random
 
 
 def open_file(path_to_file):
@@ -88,3 +89,13 @@ def custom_round(max_value):
     else:
         next_rounded_value = math.ceil(max_value / 10) * 10  # Default rounding to next 10
     return next_rounded_value
+
+
+def random_color() -> str:
+    """
+    Generate a random color in hexadecimal RGB format.
+
+    :return: A string representing the random color in hexadecimal format (e.g., '#FFFFFF').
+    :rtype: str
+    """
+    return f"#{''.join([f'{random.randint(0, 255):02X}' for _ in range(3)])}"

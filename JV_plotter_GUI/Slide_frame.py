@@ -40,8 +40,7 @@ class SettingsPanel(ctk.CTkFrame):
         self.read_from_file = ctk.CTkButton(self, text='Read AA from file', command=self.parent.list_files)
         self.restore_cache_values = ctk.CTkButton(self, text='Cache values',
                                                   command=self.parent.table_frame.update_entries_from_cache)
-        self.open_wb_checkbox = ctk.CTkCheckBox(self, text='Open WB', command=self.parent.open_wb_activator)
-        self.open_wb_checkbox.select()
+
         self.additional_settings = ctk.CTkButton(self, text='Additional settings',
                                                  command=self.parent.additional_settings.animate_additional_settings)
         self.slide_panel_label.pack(pady=10)
@@ -51,7 +50,6 @@ class SettingsPanel(ctk.CTkFrame):
             self.identical_areas_CheckBox,
             self.read_from_file,
             self.restore_cache_values,
-            self.open_wb_checkbox,
             self.aging_mode_label,
             self.aging_mode_checkbox,
             self.time_label,
@@ -68,7 +66,6 @@ class SettingsPanel(ctk.CTkFrame):
         hover_text_sa = "  Twinsies! Identical  \n  active areas! 👯  "
         hover_text_read_from = "  Grab active areas  \n  from a secret file! 📁  "
         hover_text_cached = "  Cache me if you can!  \n  Restore NOT in \"Identical\"! 🔄  "
-        hover_text_open_wb = "  Workbook reveal!  \n  Open when done! 🎉  "
         hover_aging_mode_region = ("  Welcome, Adventurer!  🌟  \n"
                                    "  You\'re stepping into the aging  \n"
                                    "  Rollercoaster ride ahead!  🎢  \n"
@@ -88,7 +85,6 @@ class SettingsPanel(ctk.CTkFrame):
         Hovertip(self.identical_areas_CheckBox, hover_text_sa, hover_delay=hover_delay)
         Hovertip(self.read_from_file, hover_text_read_from, hover_delay=hover_delay)
         Hovertip(self.restore_cache_values, hover_text_cached, hover_delay=hover_delay)
-        Hovertip(self.open_wb_checkbox, hover_text_open_wb, hover_delay=hover_delay)
         Hovertip(self.aging_mode_label, hover_aging_mode_region, hover_delay=hover_delay)
         Hovertip(self.aging_mode_checkbox, hover_aging_mode_checkbox, hover_delay=hover_delay)
         Hovertip(self.time_label, hover_aging_timeline, hover_delay=hover_delay)

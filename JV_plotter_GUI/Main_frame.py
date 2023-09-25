@@ -31,6 +31,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.aging_mode = False
         self.iaa = True
         self.open_wb = True
+        self.color_wb = True
 
         # widgets
         self.pack(fill=ctk.BOTH, expand=True)
@@ -78,7 +79,14 @@ class IVProcessingMainClass(ctk.CTkFrame):
         Open workbook at the end of the code
         :return: None
         """
-        self.open_wb = bool(self.slide_frame.open_wb_checkbox.get())
+        self.open_wb = bool(self.additional_settings.open_wb_checkbox.get())
+
+    def color_wb_activator(self) -> None:
+        """
+        Open workbook at the end of the code
+        :return: None
+        """
+        self.color_wb = bool(self.additional_settings.color_wb_checkbox.get())
 
     def exit(self) -> None:
         """

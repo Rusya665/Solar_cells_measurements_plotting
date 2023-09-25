@@ -70,8 +70,6 @@ class DevicePlotter:
         # Aging-Related Sheets
         if self.parent.aging_mode:
             self.timeline_df = self.parent.timeline_df
-
-
             self.aging_plots_forward_absolute = self.workbook.add_worksheet('Aging_plots_forward_raw')
             self.aging_plots_forward_absolute.set_tab_color('#4169E1')  # Royal Blue
 
@@ -91,8 +89,6 @@ class DevicePlotter:
             self.aging_plots_avg_relative.set_tab_color('#40E0D0')  # Turquoise
 
         # Table-Related Sheets
-
-
         self.wb_table_forward = self.workbook.add_worksheet('Table_Forward')
         self.wb_table_forward.set_tab_color('#228B22')  # Forest Green
 
@@ -140,6 +136,9 @@ class DevicePlotter:
         # Generate a random color for each folder
         folder_colors = {folder_name: random_color() for folder_name in self.data.keys()}
 
+        # Dictionary to store worksheet references and colors
+        ws_color_dict = {}
+
         # Check if any name is too long
         long_name_found = any(
             len(f"{folder_name} {device_name}") > 31
@@ -178,8 +177,9 @@ class DevicePlotter:
                     }
                 })
                 ws = self.workbook.add_worksheet(ws_name)
-                ws.set_tab_color(color)
 
+                # Store worksheet reference and color in dictionary
+                ws_color_dict[ws] = color
                 # Reset color to None for the next device if there's only one folder
                 if len(self.data) == 1:
                     color = None
@@ -257,6 +257,10 @@ class DevicePlotter:
                                                        data_start=len(data['1_Forward']) + 2,
                                                        data_end=row,
                                                        name_suffix='Reverse'))
+        if self.parent.color_wb:
+            # Apply colors to all worksheets
+            for ws, color in ws_color_dict.items():
+                ws.set_tab_color(color)
         # insert huge IV plots into the main sheet
         self.wb_main.insert_chart('A1', self.plot_all_sweeps(start_key='forward_start_row',
                                                              end_key='all_data_length', name_suffix=''))

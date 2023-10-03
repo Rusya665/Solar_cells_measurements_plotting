@@ -20,7 +20,7 @@ class TimeLineProcessor:
 
         try:
             if file_extension == '.txt':
-                    df = pd.read_csv(self.path, delimiter='\t')  # Assuming tab-delimited txt file
+                df = pd.read_csv(self.path, delimiter='\t')  # Assuming tab-delimited txt file
             elif file_extension == '.json':
                 df = pd.read_json(self.path)
             elif file_extension == '.csv':

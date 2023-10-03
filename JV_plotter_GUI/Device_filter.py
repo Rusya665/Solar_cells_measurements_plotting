@@ -68,7 +68,6 @@ class DeviceDetector:
                 if filename in processed_files:
                     continue
                 matched_file = self.find_fuzzy_pair(filename, single_sweep_files)
-                # ic(filename, matched_file, single_sweep_files[matched_file], direction)
                 # Pair found and they have complementary sweeps
                 if matched_file and single_sweep_files[matched_file] != direction:
                     combined_data, used_files = self.combine_data(folder_data[filename], folder_data[matched_file])
@@ -92,6 +91,9 @@ class DeviceDetector:
                 rv_sweeps = details['Sweeps']['Reverse Sweeps']
 
                 if fw_sweeps > 1 or rv_sweeps > 1:
+                    messagebox.showwarning('Multiple sweeps case detected!',
+                                           message=f'The file {filename} was detected with multiple sweeps:\n'
+                                                   f' {fw_sweeps} Forward Sweeps and {rv_sweeps} Reverse Sweeps.')
                     averaged_data = self.combine_sweeps(details)
                     result_data[folder_name][filename] = averaged_data
                     result_data[folder_name][filename]['Used files'] = filename

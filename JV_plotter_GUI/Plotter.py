@@ -377,7 +377,7 @@ class DevicePlotter:
         ws.write(2, 6, self.efficiency_forward)  # Forward Efficiency
         ws.write(2, 7, eff_avr)  # Average Efficiency
 
-        j = 1000 * (self.i_sc_forward + self.i_sc_reverse) / self.active_area
+        j = 1000 * (self.i_sc_forward / self.active_area + self.i_sc_reverse / self.active_area) / 2
         ws.write(3, 5, 1000 * self.i_sc_reverse / self.active_area)  # Reverse short circuit current density
         ws.write(3, 6, 1000 * self.i_sc_forward / self.active_area)  # Forward short circuit current density
         ws.write(3, 7, j)  # Average short circuit current density

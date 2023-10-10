@@ -4,6 +4,8 @@ import sys
 import subprocess
 import random
 
+import pandas as pd
+
 
 def open_file(path_to_file):
     """
@@ -99,3 +101,21 @@ def random_color() -> str:
     :rtype: str
     """
     return f"#{''.join([f'{random.randint(0, 255):02X}' for _ in range(3)])}"
+
+
+def convert_df_to_dict(obj):
+    """
+    Recursively convert Pandas DataFrames to dictionaries within a nested dictionary.
+
+    :param obj: The object to convert. Can be a dictionary or a Pandas DataFrame.
+    :type obj: object
+
+    :return: The converted object. If the input was a dictionary, all nested DataFrames will be converted to dictionaries.
+    :rtype: object
+    """
+    if isinstance(obj, pd.DataFrame):
+        return obj.to_dict()
+    elif isinstance(obj, dict):
+        for key in obj.keys():
+            obj[key] = convert_df_to_dict(obj[key])
+    return obj

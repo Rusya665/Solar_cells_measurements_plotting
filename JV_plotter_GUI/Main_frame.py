@@ -32,6 +32,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.iaa = True
         self.open_wb = True
         self.color_wb = True
+        self.dump_json = False
 
         # widgets
         self.pack(fill=ctk.BOTH, expand=True)
@@ -87,6 +88,13 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :return: None
         """
         self.color_wb = bool(self.additional_settings.color_wb_checkbox.get())
+
+    def dump_json_activator(self) -> None:
+        """
+        Dump json into a file in the project root folder
+        :return: None
+        """
+        self.dump_json = bool(self.additional_settings.dump_json_checkbox.get())
 
     def exit(self) -> None:
         """

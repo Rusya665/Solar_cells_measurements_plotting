@@ -36,6 +36,8 @@ class AdditionalSettings(ctk.CTkFrame):
         self.open_wb_checkbox.select()
         self.color_wb_checkbox = ctk.CTkCheckBox(self, text='Colorful tabs', command=self.parent.color_wb_activator)
         self.color_wb_checkbox.select()
+        # self.dump_json_label = ctk.CTkLabel(self, text='Dump json')
+        self.dump_json_checkbox = ctk.CTkCheckBox(self, text='Dump JSON', command=self.parent.dump_json_activator)
 
         self.additional_settings_label.pack(pady=10)
 
@@ -46,7 +48,8 @@ class AdditionalSettings(ctk.CTkFrame):
             self.distance_to_light_entry,
             self.excel_label,
             self.open_wb_checkbox,
-            self.color_wb_checkbox
+            self.color_wb_checkbox,
+            self.dump_json_checkbox
         ]
         for widget in widgets:
             widget.pack(pady=8)
@@ -55,6 +58,7 @@ class AdditionalSettings(ctk.CTkFrame):
     def hovers(self):
         hover_delay = 400
 
+        hover_additional_settings = "Additional Settings 🛠️\nConfigure extra parameters here."
         hover_light_intensity = ("  How Bright? 🌞  \n"
                                  "  Set the light intensity in W/m²  \n"
                                  "  to simulate real-world conditions! 📊  ")
@@ -64,6 +68,7 @@ class AdditionalSettings(ctk.CTkFrame):
         hover_excel_settings = "Excel Settings 📝\nConfigure the Excel export settings here."
         hover_text_open_wb = "  Workbook reveal!  \n  Open when done! 🎉  "
         hover_color_wb = "Color Tabs 🌈\nChoose to color your workbook tabs. Note: may affect speed."
+        hover_dump_json = "Dump JSON 💾\nChoose to dump data as a JSON file."
         Hovertip(self.light_intensity_label, hover_light_intensity, hover_delay=hover_delay)
         Hovertip(self.light_intensity_entry, hover_light_intensity, hover_delay=hover_delay)
         Hovertip(self.distance_to_light_label, hover_distance_to_light, hover_delay=hover_delay)
@@ -74,6 +79,9 @@ class AdditionalSettings(ctk.CTkFrame):
         Hovertip(self.excel_label, hover_excel_settings, hover_delay=hover_delay)
         Hovertip(self.open_wb_checkbox, hover_text_open_wb, hover_delay=hover_delay)
         Hovertip(self.color_wb_checkbox, hover_color_wb, hover_delay=hover_delay)
+
+        Hovertip(self.additional_settings_label, hover_additional_settings, hover_delay=hover_delay)
+        Hovertip(self.dump_json_checkbox, hover_dump_json, hover_delay=hover_delay)
 
     def animate_additional_settings(self, step=0.03):
         if self.in_start_pos:  # If the frame is about to be shown

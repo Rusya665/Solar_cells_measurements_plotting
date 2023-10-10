@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import time
@@ -7,7 +8,7 @@ from tkinter import messagebox
 import numpy as np
 import xlsxwriter
 
-from JV_plotter_GUI.instruments import open_file, row_to_excel_col, custom_round, random_color
+from JV_plotter_GUI.instruments import open_file, row_to_excel_col, custom_round, random_color, convert_df_to_dict
 from JV_plotter_GUI.settings import settings
 
 
@@ -113,6 +114,8 @@ class DevicePlotter:
         if self.parent.open_wb:
             time.sleep(0.2)
             open_file(self.xlsx_name)
+        if self.parent.dump_json:
+            self.dump_json_data()
         if self.warning_messages:
             all_warnings = "\n".join(self.warning_messages)
             messagebox.showwarning("Warning!", f"Invalid data detected while calculating the\n"
@@ -129,6 +132,25 @@ class DevicePlotter:
                                       f"{date.today()} {base_dir} JV plots and calculations.xlsx")
         self.workbook = xlsxwriter.Workbook(self.xlsx_name, {'strings_to_numbers': True})
         return self.workbook
+
+    def dump_json_data(self):
+        """
+        Dumping JSON data to a file. Handles nested dictionaries and converts any
+        Pandas DataFrames to dictionaries to ensure they are JSON serializable.
+
+        :return: None
+        """
+        if self.parent.dump_json:
+            base_dir = os.path.basename(self.parent.file_directory)
+            current_date = date.today()
+            json_name = os.path.join(self.parent.file_directory,
+                                     f"{current_date} {base_dir} data.json")
+
+            # Convert DataFrame to dictionary recursively
+            converted_data = convert_df_to_dict(self.data)
+
+            with open(json_name, 'w') as f:
+                json.dump(converted_data, f)
 
     def set_worksheets(self):
         folder_counter, device_counter = 0, -1
@@ -420,23 +442,23 @@ class DevicePlotter:
         device_data['Parameters'] = {}
         device_data['Parameters']['Forward'] = {
             self.parameter_dict[3]: self.efficiency_forward,
-            self.parameter_dict[4]: self.i_sc_forward / self.active_area,
+            self.parameter_dict[4]: 1000 * self.i_sc_forward / self.active_area,
             self.parameter_dict[5]: self.v_oc_forward,
             self.parameter_dict[6]: self.fill_factor_forward,
             self.parameter_dict[7]: self.max_power_forward,
             self.parameter_dict[8]: self.v_mpp_forward,
-            self.parameter_dict[9]: self.j_mpp_forward,
+            self.parameter_dict[9]: 1000 * self.j_mpp_forward,
             self.parameter_dict[10]: self.rs_forward,
             self.parameter_dict[11]: self.rsh_forward,
         }
         device_data['Parameters']['Reverse'] = {
             self.parameter_dict[3]: self.efficiency_reverse,
-            self.parameter_dict[4]: self.i_sc_reverse / self.active_area,
+            self.parameter_dict[4]: 1000 * self.i_sc_reverse / self.active_area,
             self.parameter_dict[5]: self.v_oc_reverse,
             self.parameter_dict[6]: self.fill_factor_reverse,
             self.parameter_dict[7]: self.max_power_reverse,
             self.parameter_dict[8]: self.v_mpp_reverse,
-            self.parameter_dict[9]: self.j_mpp_reverse,
+            self.parameter_dict[9]: 1000 * self.j_mpp_reverse,
             self.parameter_dict[10]: self.rs_reverse,
             self.parameter_dict[11]: self.rsh_reverse,
         }

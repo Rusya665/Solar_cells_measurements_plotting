@@ -8,7 +8,7 @@ from tkinter import messagebox
 import numpy as np
 import xlsxwriter
 
-from JV_plotter_GUI.instruments import open_file, row_to_excel_col, custom_round, random_color, convert_df_to_dict
+from JV_plotter_GUI.instruments import open_file, row_to_excel_col, custom_round, random_color, remove_data_key
 from JV_plotter_GUI.settings import settings
 
 
@@ -114,8 +114,7 @@ class DevicePlotter:
         if self.parent.open_wb:
             time.sleep(0.2)
             open_file(self.xlsx_name)
-        if self.parent.dump_json:
-            self.dump_json_data()
+        self.dump_json_data()
         if self.warning_messages:
             all_warnings = "\n".join(self.warning_messages)
             messagebox.showwarning("Warning!", f"Invalid data detected while calculating the\n"
@@ -135,8 +134,8 @@ class DevicePlotter:
 
     def dump_json_data(self):
         """
-        Dumping JSON data to a file. Handles nested dictionaries and converts any
-        Pandas DataFrames to dictionaries to ensure they are JSON serializable.
+        Dumping JSON data to a file. Handles nested dictionaries and excludes the 'data'
+        key that contains non-serializable Pandas DataFrames.
 
         :return: None
         """
@@ -146,11 +145,11 @@ class DevicePlotter:
             json_name = os.path.join(self.parent.file_directory,
                                      f"{current_date} {base_dir} data.json")
 
-            # Convert DataFrame to dictionary recursively
-            converted_data = convert_df_to_dict(self.data)
+            # Recursively remove 'data' key
+            cleaned_data = remove_data_key(self.data)
 
             with open(json_name, 'w') as f:
-                json.dump(converted_data, f)
+                json.dump(cleaned_data, f, indent=4)
 
     def set_worksheets(self):
         folder_counter, device_counter = 0, -1

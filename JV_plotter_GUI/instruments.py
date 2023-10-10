@@ -119,3 +119,21 @@ def convert_df_to_dict(obj):
         for key in obj.keys():
             obj[key] = convert_df_to_dict(obj[key])
     return obj
+
+
+def remove_data_key(d):
+    """
+    Recursively remove the 'data' key from a dictionary.
+
+    :param d: dictionary to process
+    :return: new dictionary without 'data' keys
+    """
+    new_dict = {}
+    for key, value in d.items():
+        if key == 'data':
+            continue
+        if isinstance(value, dict):
+            new_dict[key] = remove_data_key(value)
+        else:
+            new_dict[key] = value
+    return new_dict

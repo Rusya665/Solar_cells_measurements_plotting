@@ -166,7 +166,6 @@ class DevicePlotter:
             for folder_name, devices in self.data.items()
             for device_name in devices
         )
-
         # Iterate through the folders
         for folder_name, devices in self.data.items():
             folder_counter += 1

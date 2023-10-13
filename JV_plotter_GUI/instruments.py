@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 import random
+from collections import OrderedDict
 
 import pandas as pd
 
@@ -137,3 +138,29 @@ def remove_data_key(d):
         else:
             new_dict[key] = value
     return new_dict
+
+
+def sort_inner_keys(data):
+    """
+    Sorts the inner keys of a nested dictionary while keeping the outer keys intact.
+
+    :param data: The nested dictionary with data to be sorted.
+    :return: A new dictionary with sorted inner keys.
+    """
+    sorted_data = {}
+
+    # # Print original upper and inner keys for debugging
+    # print("Before Sorting")
+    # for date, inner_dict in data.items():
+    #     print(f"Upper key: {date}")
+    #     print(f"Inner keys: {list(inner_dict.keys())}")
+
+    for date, inner_dict in data.items():
+        sorted_inner_dict = OrderedDict(sorted(inner_dict.items(), key=lambda x: int(x[0].split('-')[-1])))
+        sorted_data[date] = sorted_inner_dict
+
+        # # Print for debugging
+        # print(f"After Sorting -> Upper key: {date}")
+        # print(f"Sorted inner keys: {list(sorted_inner_dict.keys())}")
+
+    return sorted_data

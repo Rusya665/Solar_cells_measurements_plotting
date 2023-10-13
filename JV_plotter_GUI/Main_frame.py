@@ -14,6 +14,7 @@ from JV_plotter_GUI.Top_frame import TopmostFrame
 from JV_plotter_GUI.Treeviews_frame import TableFrames
 from JV_plotter_GUI.settings import settings
 from JV_plotter_GUI.Additional_settings_panel import AdditionalSettings
+from JV_plotter_GUI.instruments import sort_inner_keys
 
 
 class IVProcessingMainClass(ctk.CTkFrame):
@@ -135,7 +136,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
                 child_items = list(self.table_frame.files_table.get_children(top_level_item))
                 items.extend(child_items)
         matched = self.table_frame.devices_by_folder(items)
-        DevicePlotter(parent=self, matched_devices=matched)
+        matched_sorted = sort_inner_keys(matched)
+        DevicePlotter(parent=self, matched_devices=matched_sorted)
         self.exit()
 
     def expand_collapse(self, expand=True) -> None:

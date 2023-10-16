@@ -4,6 +4,7 @@ import os
 import time
 from datetime import date
 from tkinter import messagebox
+from xlsxwriter.worksheet import Worksheet
 
 import numpy as np
 import xlsxwriter
@@ -315,7 +316,21 @@ class DevicePlotter:
         ws.write(1, 6, 'Forward', self.center)
         ws.write(1, 7, 'Average', self.center)
 
-    def write_center_across_selection(self, ws, position, text, number_of_cells):
+    def write_center_across_selection(self, ws: Worksheet, position: tuple[int, int], text: str,
+                                      number_of_cells: int) -> None:
+        """
+        Write text into a cell and center it across a specified number of adjacent cells in the Excel worksheet.
+
+        This method writes the given text into the cell specified by the 'position' parameter. It then leaves the
+        adjacent cells empty but sets their format to 'center across selection', effectively centering the text
+        across 'number_of_cells' cells.
+
+        :param ws: The xlsxwriter worksheet object where the text is to be written and centered.
+        :param position: A tuple specifying the row and column indices of the starting cell.
+        :param text: The text to be written and centered.
+        :param number_of_cells: The number of cells across which the text will be centered.
+        :return: None
+        """
         row, col = position
         ws.write(row, col, text, self.across_selection)
         for i in range(1, number_of_cells):

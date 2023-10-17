@@ -47,6 +47,7 @@ smop = ">=0.41"
 tzdata = ">=2023.3"
 virtualenv = ">=20.24.4"
 xlsxwriter = ">=3.1.2"
+natsort = ">=8.4.0"
 
 [dev-packages]
 

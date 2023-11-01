@@ -39,6 +39,7 @@ class DevicePlotter:
         self.rs_forward, self.rs_reverse = None, None
         self.rsh_forward, self.rsh_reverse = None, None
         self.active_area, self.light_intensity, self.distance_to_light_source = None, None, None
+        self.h_index = None
         self.parameter_dict = {
             1: 'Label',
             2: 'Scan direction',
@@ -51,10 +52,11 @@ class DevicePlotter:
             9: 'Current density at MPP (mA/cm²)',
             10: 'Series resistance, Rs (ohm)',
             11: 'Shunt resistance, Rsh (ohm)',
-            12: 'Active area, (cm²)',
-            13: 'Light intensity (W/cm²)',
-            14: 'Distance to light source (mm)',
-            15: 'Device order',
+            12: 'H-index',
+            13: 'Active area, (cm²)',
+            14: 'Light intensity (W/cm²)',
+            15: 'Distance to light source (mm)',
+            16: 'Device order',
         }
 
         self.workbook = self.create_workbook()
@@ -400,13 +402,6 @@ class DevicePlotter:
         return voc, rs, (slope, intercept)
 
     def write_parameters(self, ws, device_data):
-        # Write the active area value
-        self.write_center_across_selection(ws, (11, 5), self.active_area, 3)
-        # Write the light intensity value
-        self.write_center_across_selection(ws, (12, 5), self.light_intensity, 3)
-        # Write the distance to the light source
-        self.write_center_across_selection(ws, (13, 5), self.distance_to_light_source, 3)
-
         eff_avr = (self.efficiency_reverse + self.efficiency_forward) / 2
         ws.write(2, 5, self.efficiency_reverse)  # Reverse Efficiency
         ws.write(2, 6, self.efficiency_forward)  # Forward Efficiency
@@ -451,6 +446,17 @@ class DevicePlotter:
         ws.write(10, 5, self.rsh_reverse)  # Reverse shunt resistance, Rsh (ohm)
         ws.write(10, 6, self.rsh_forward)  # Forward shunt resistance, Rsh (ohm)
         ws.write(10, 7, rsh)  # Average shunt resistance, Rsh (ohm)
+
+        # https://doi.org/10.1021/acsenergylett.8b01627
+        self.h_index = (self.efficiency_reverse - self.efficiency_forward) / self.efficiency_reverse
+        # Write H-index
+        self.write_center_across_selection(ws, (11, 5), self.h_index, 3)
+        # Write the active area value
+        self.write_center_across_selection(ws, (12, 5), self.active_area, 3)
+        # Write the light intensity value
+        self.write_center_across_selection(ws, (13, 5), self.light_intensity, 3)
+        # Write the distance to the light source
+        self.write_center_across_selection(ws, (14, 5), self.distance_to_light_source, 3)
 
         device_data['Parameters'] = {}
         device_data['Parameters']['Forward'] = {
@@ -523,9 +529,10 @@ class DevicePlotter:
         ws.write_formula(row_index, 8, f"='{sheet_name}'!{col_letter}9")  # Current density at MPP
         ws.write_formula(row_index, 9, f"='{sheet_name}'!{col_letter}10")  # Series resistance
         ws.write_formula(row_index, 10, f"='{sheet_name}'!{col_letter}11")  # Shunt resistance
-        ws.write_formula(row_index, 11, f"='{sheet_name}'!F12")  # Active area
-        ws.write_formula(row_index, 12, f"='{sheet_name}'!F13")  # Light intensity
-        ws.write_formula(row_index, 13, f"='{sheet_name}'!F14")  # Distance to a light source
+        ws.write_formula(row_index, 11, f"='{sheet_name}'!F12")  # H-index
+        ws.write_formula(row_index, 12, f"='{sheet_name}'!F13")  # Active area
+        ws.write_formula(row_index, 13, f"='{sheet_name}'!F14")  # Light intensity
+        ws.write_formula(row_index, 13, f"='{sheet_name}'!F15")  # Distance to a light source
         ws.write(row_index, [k for k, v in self.parameter_dict.items() if v == 'Device order'][0] - 1, row_index)
 
     def plot_iv(self, sheet_name, data_start, data_end, name_suffix):

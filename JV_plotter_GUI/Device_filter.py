@@ -41,7 +41,6 @@ class DeviceDetector:
         """
 
         result_data = {}
-
         # Iterate through folders and then files
         for folder_name, folder_data in self.data.items():
             single_sweep_files = {}
@@ -67,7 +66,7 @@ class DeviceDetector:
             for filename, direction in single_sweep_files.items():
                 if filename in processed_files:
                     continue
-                matched_file = self.find_fuzzy_pair(filename, single_sweep_files)
+                matched_file = self.find_fuzzy_pair(filename, single_sweep_files, folder_name)
                 # Pair found and they have complementary sweeps
                 if matched_file and single_sweep_files[matched_file] != direction:
                     combined_data, used_files = self.combine_data(folder_data[filename], folder_data[matched_file])
@@ -114,13 +113,14 @@ class DeviceDetector:
             adjusted_dict[folder_name] = adjusted_folder_data
         return adjusted_dict
 
-    @staticmethod
-    def find_fuzzy_pair(filename, single_sweep_files):
+    def find_fuzzy_pair(self, filename, single_sweep_files, folder_name) -> str:
         """
-        Find a fuzzy-matching filename for the given filename.
+        Find a fuzzy-matching filename for the given filename within the specified folder,
+        ensuring the sweep direction matches the 'Sweeps' data in self.data.
 
         :param filename: The filename to match.
         :param single_sweep_files: A dict of filenames with single sweeps.
+        :param folder_name: The name of the folder containing the file data.
         :return: The matching filename or None.
         """
         best_match = (None, 0)  # Tuple (filename, score)
@@ -129,15 +129,27 @@ class DeviceDetector:
         sweep_direction = 'Forward' if 'fw' in filename.lower() else 'Reverse'
         opposite_direction = 'Reverse' if sweep_direction == 'Forward' else 'Forward'
 
-        # Filter and score filenames with opposite direction
-        candidates = [(other_filename, fuzz.ratio(filename, other_filename))
-                      for other_filename, direction in single_sweep_files.items()
-                      if direction == opposite_direction and other_filename != filename]
+        # ic(self.data)
+        # Check if the actual sweep direction from the data matches the inferred direction
+        if self.data[folder_name][filename]['Sweeps'][f'{sweep_direction} Sweeps'] == 0:
+            messagebox.showwarning(
+                'Filename and Data Mismatch',
+                f"The file {filename} suggests a {sweep_direction} sweep,\n "
+                f"but the data indicates it is not. Please check the file naming.\n"
+                f"Please note, this might also be relevant the corrupted IV data"
+            )
 
+        # Filter and score filenames with the opposite direction
+        candidates = [
+            (other_filename, fuzz.ratio(filename, other_filename))
+            for other_filename, direction in single_sweep_files.items()
+            if direction == opposite_direction and other_filename != filename and
+               (('fw' in filename.lower() and 'rv' in other_filename.lower()) or
+                ('rv' in filename.lower() and 'fw' in other_filename.lower()))
+        ]
         # Find the best match if any
         if candidates:
             best_match = max(candidates, key=lambda x: x[1])
-
         return best_match[0] if best_match[1] > 80 else None
 
     @staticmethod

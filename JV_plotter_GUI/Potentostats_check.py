@@ -1,6 +1,8 @@
 import os
+
 import chardet
 import pandas as pd
+
 from JV_plotter_GUI.Data_Reader import IVDataReader
 
 
@@ -88,7 +90,6 @@ class PotentiostatFileChecker:
 
         # Determine the initial direction based on the first two data points
         current_direction = "increasing" if df['V'].iloc[1] > df['V'].iloc[0] else "decreasing"
-
         for idx in range(1, len(df)):
             current_v = df['V'].iloc[idx]
             previous_v = df['V'].iloc[idx - 1]

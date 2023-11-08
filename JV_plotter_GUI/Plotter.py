@@ -532,7 +532,7 @@ class DevicePlotter:
         ws.write_formula(row_index, 11, f"='{sheet_name}'!F12")  # H-index
         ws.write_formula(row_index, 12, f"='{sheet_name}'!F13")  # Active area
         ws.write_formula(row_index, 13, f"='{sheet_name}'!F14")  # Light intensity
-        ws.write_formula(row_index, 13, f"='{sheet_name}'!F15")  # Distance to a light source
+        ws.write_formula(row_index, 14, f"='{sheet_name}'!F15")  # Distance to a light source
         ws.write(row_index, [k for k, v in self.parameter_dict.items() if v == 'Device order'][0] - 1, row_index)
 
     def plot_iv(self, sheet_name, data_start, data_end, name_suffix):

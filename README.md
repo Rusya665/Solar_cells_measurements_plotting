@@ -40,6 +40,10 @@ This project aims to help researchers to analyze their JV curves for different p
 
 Settings panels![img.png](Media/Settings_slide_pannels.png)
 Aging mode example![img.png](Media/Aging_mode_example.png)
+For cases with Windows scaling enabled,
+apply the solution from [this Stack Overflow post](https://stackoverflow.com/questions/62794931/high-dpi-tkinter-re-scaling-when-i-run-it-in-spyder-and-when-i-run-it-direct-in/62937256#62937256)
+to override the DPI settings.
+
 ### Supported Potentiostats
 
 The project currently supports the following potentiostats and their respective file formats:

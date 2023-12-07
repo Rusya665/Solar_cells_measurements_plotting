@@ -294,7 +294,7 @@ class DevicePlotter:
                                   self.plot_all_sweeps(start_key='reverse_start_row',
                                                        end_key='all_data_length', name_suffix='Reverse'))
 
-    def set_headers(self, ws, device_name):
+    def set_headers(self, ws: Worksheet, device_name: str) -> None:
         # Write the headers for I, V, and P
         ws.write(0, 0, 'J, mA/cm²', self.center)
         # ws.write(0, 0, 'I, mA', self.center)
@@ -401,7 +401,7 @@ class DevicePlotter:
         rs = 0.0 if intercept == 0 else -1 / intercept
         return voc, rs, (slope, intercept)
 
-    def write_parameters(self, ws, device_data):
+    def write_parameters(self, ws: Worksheet, device_data: dict) -> None:
         eff_avr = (self.efficiency_reverse + self.efficiency_forward) / 2
         ws.write(2, 5, self.efficiency_reverse)  # Reverse Efficiency
         ws.write(2, 6, self.efficiency_forward)  # Forward Efficiency
@@ -512,11 +512,11 @@ class DevicePlotter:
                         row_index += 1
             table.autofilter(0, 0, row_index, len(self.parameter_dict) - 1)  # Apply auto filter to the table
 
-    def write_table_headers(self, ws):
+    def write_table_headers(self, ws: Worksheet) -> None:
         for i, header in self.parameter_dict.items():
             ws.write(0, i - 1, header, self.center)
 
-    def write_table_rows(self, ws, row_index, sheet_name, sweep_direction):
+    def write_table_rows(self, ws: Worksheet, row_index: int, sheet_name: str, sweep_direction: str) -> None:
         col_letter = sweep_direction  # First letter of the sweep direction (F, G, or H)
         ws.write(row_index, 0, sheet_name)  # Label
         ws.write_formula(row_index, 1, f"='{sheet_name}'!{col_letter}2")  # Scan direction
@@ -535,7 +535,7 @@ class DevicePlotter:
         ws.write_formula(row_index, 14, f"='{sheet_name}'!F15")  # Distance to a light source
         ws.write(row_index, [k for k, v in self.parameter_dict.items() if v == 'Device order'][0] - 1, row_index)
 
-    def plot_iv(self, sheet_name, data_start, data_end, name_suffix):
+    def plot_iv(self, sheet_name: str, data_start: int, data_end: int, name_suffix: str or None):
         name_suffix = ' ' + name_suffix if name_suffix else ''
         chart_iv = self.workbook.add_chart({'type': 'scatter'})
         chart_iv.add_series({

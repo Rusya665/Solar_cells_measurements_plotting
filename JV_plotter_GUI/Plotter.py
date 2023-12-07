@@ -146,7 +146,7 @@ class DevicePlotter:
             base_dir = os.path.basename(self.parent.file_directory)
             current_date = date.today()
             json_name = os.path.join(self.parent.file_directory,
-                                     f"{current_date} {base_dir} data.json")
+                                     f"{current_date} {base_dir} IV data.json")
 
             # Recursively remove 'data' key
             cleaned_data = remove_data_key(self.data)

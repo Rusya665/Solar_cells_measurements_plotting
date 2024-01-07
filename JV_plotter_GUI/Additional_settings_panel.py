@@ -1,7 +1,9 @@
-import customtkinter as ctk
-from tkinter import END
-from JV_plotter_GUI.settings import settings
 from idlelib.tooltip import Hovertip
+from tkinter import END
+
+import customtkinter as ctk
+
+from JV_plotter_GUI.settings import settings
 
 
 class AdditionalSettings(ctk.CTkFrame):
@@ -22,13 +24,13 @@ class AdditionalSettings(ctk.CTkFrame):
         self.additional_settings_label = ctk.CTkLabel(self, text="Additional Settings")
         self.additional_settings_label.cget("font").configure(size=20)
 
-        self.light_intensity_label = ctk.CTkLabel(self, text="Light Intensity, W/m²")
+        self.light_intensity_label = ctk.CTkLabel(self, text="Light intensity, W/m²")
         self.light_intensity_entry = ctk.CTkEntry(self)
-        self.light_intensity_entry.insert(END, settings['light intensity'])
+        self.light_intensity_entry.insert(END, settings['Light intensity (W/cm²)'])
 
         self.distance_to_light_label = ctk.CTkLabel(self, text="Distance to light source, mm")
         self.distance_to_light_entry = ctk.CTkEntry(self)
-        self.distance_to_light_entry.insert(END, settings['distance to light source'])
+        self.distance_to_light_entry.insert(END, settings['Distance to light source (mm)'])
 
         self.excel_label = ctk.CTkLabel(self, text='Excel settings')
         self.excel_label.cget("font").configure(size=18)

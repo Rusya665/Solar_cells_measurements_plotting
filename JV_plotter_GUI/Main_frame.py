@@ -1,20 +1,26 @@
 import os
 import tkinter as tk
 from collections import defaultdict
-from tkinter import messagebox, filedialog
+from tkinter import filedialog
+from typing import Optional
 
 import customtkinter as ctk
+from CTkMessagebox import CTkMessagebox
 
+from JV_plotter_GUI.Additional_settings_panel import AdditionalSettings
+from JV_plotter_GUI.Calculate_IV_parameters import CalculateIVParameters
+from JV_plotter_GUI.Device_filter import DeviceDetector
+from JV_plotter_GUI.Pixel_sorter import PixelGroupingManager, PixelSorterInterface
+from JV_plotter_GUI.Plotter_new import DevicePlotter
 from JV_plotter_GUI.Potentostats_check import PotentiostatFileChecker
-from JV_plotter_GUI.Plotter import DevicePlotter
+# from JV_plotter_GUI.Plotter import DevicePlotter
 from JV_plotter_GUI.Slide_frame import SettingsPanel
 from JV_plotter_GUI.The_lower_frames import LowestFrame, ProceedFrame
 from JV_plotter_GUI.TimeLine_detector import TimeLineProcessor
 from JV_plotter_GUI.Top_frame import TopmostFrame
 from JV_plotter_GUI.Treeviews_frame import TableFrames
-from JV_plotter_GUI.settings import settings
-from JV_plotter_GUI.Additional_settings_panel import AdditionalSettings
 from JV_plotter_GUI.instruments import sort_inner_keys
+from JV_plotter_GUI.settings import settings
 
 
 class IVProcessingMainClass(ctk.CTkFrame):
@@ -22,6 +28,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
         super().__init__(master=parent, *args, **kwargs)
 
         # Some variables
+        self.pixel_sorter_instance = None
+        self.pixels = None
         self.parent = parent
         self.table_size = settings['Main frame']['table_size']
         self.potentiostat = 'All'
@@ -43,7 +51,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.label_1 = ctk.CTkLabel(self, text='Specify a directory with images to work with')
         self.label_1.pack()
 
-        self.ask_directory_button = ctk.CTkButton(self, text='Choose a directory', command=lambda: self.ask_directory())
+        self.ask_directory_button = ctk.CTkButton(self, text='Choose a directory', command=self.ask_directory)
         self.ask_directory_button.pack()
 
         self.topmost_frame = TopmostFrame(parent=self, width=350, height=70, fg_color='transparent')
@@ -51,8 +59,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
 
         self.table_frame.pack(pady=10)
 
-        self.frame = ProceedFrame(parent=self, width=200, height=200)
-        self.frame.pack(pady=10)
+        self.proceed_frame = ProceedFrame(parent=self, width=200, height=200)
+        self.proceed_frame.pack(pady=10)
 
         self.lowest_frame = LowestFrame(self, fg_color='transparent')
         self.lowest_frame.pack(fill='x')
@@ -65,7 +73,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.aging_mode = bool(self.slide_frame.aging_mode_checkbox.get())
         self.slide_frame.timeline_detector_button.configure(
             state='normal' if self.slide_frame.aging_mode_checkbox.get() else 'disabled')
-        self.frame.button_selected.configure(
+        self.proceed_frame.button_selected.configure(
             state='disabled' if self.slide_frame.aging_mode_checkbox.get() else 'normal')
         self.list_files()
 
@@ -104,14 +112,17 @@ class IVProcessingMainClass(ctk.CTkFrame):
         """
         self.quit()
 
-    @staticmethod
-    def change_appearance_mode_event(new_appearance_mode: str) -> None:
+    def change_appearance_mode_event(self, new_appearance_mode: str) -> None:
         """
         Change the Tkinter appearance mode
         :param new_appearance_mode: Type of appearance mode
         :return: None
         """
         ctk.set_appearance_mode(new_appearance_mode)
+        if new_appearance_mode.lower() == "dark" and self.pixel_sorter_instance:
+            self.pixel_sorter_instance.menu.configure(bg_color='#2b2b2b')
+        elif new_appearance_mode.lower() == "light" and self.pixel_sorter_instance:
+            self.pixel_sorter_instance.menu.configure(bg_color='#dbdbdb')
 
     def final_output(self, state) -> None:
         """
@@ -120,7 +131,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         :return: None
         """
         if self.file_directory is None:
-            messagebox.showerror('Warning!', "Choose a folder to continue!")
+            CTkMessagebox(title='Warning!', message="Choose a folder to continue!", icon="cancel")
             return
         items = []
         if state == "Selected":
@@ -128,7 +139,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
             items = list(self.table_frame.files_table.selection())
         elif state == "All":
             if self.aging_mode and self.timeline_df is None:
-                messagebox.showerror('Warning!', "For aging mode the timeline mast be set!")
+                CTkMessagebox(title='Warning!', message="For aging mode the timeline mast be set!", icon="warning",
+                              option_1='Cancel')
                 return
             # This should fetch all items in the tree, including children of top-level items
             items = list(self.table_frame.files_table.get_children(''))
@@ -137,6 +149,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
                 items.extend(child_items)
         matched = self.table_frame.devices_by_folder(items)
         matched_sorted = sort_inner_keys(matched)
+
+        CalculateIVParameters(parent=self, matched_devices=matched_sorted)
         DevicePlotter(parent=self, matched_devices=matched_sorted)
         self.exit()
 
@@ -206,6 +220,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
         """
         Update and fill the file table with filtered files
         """
+        if self.pixel_sorter_instance is not None:
+            # self.pixel_sorter_instance.destroy()  # Close and destroy the instance
+            self.pixel_sorter_instance = None
         if self.file_directory == "":
             return
         # Check if there are any items in the treeview
@@ -216,7 +233,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.added_iv.clear()
         self.process_directory(root_node, abspath)
 
-    def process_directory(self, parent, path, is_root_call=True):
+    def process_directory(self, parent, path, is_root_call: Optional[bool] = True):
         """
         Insert to a table and into the file_list filtered by extension type of files, including nested folders.
         Will show folders only if it contains required file.
@@ -249,9 +266,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
                         'data': checking[3]["Data"],
                         'unit': checking[3]['Unit'],
                         'Used files': file,
-                        'Active area': None,
-                        'Light Intensity': None,
-                        'Distance to light source': None,
+                        # 'Active area': None,
+                        # 'Light Intensity': None,
+                        # 'Distance to light source': None,
                     }
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')
@@ -266,11 +283,40 @@ class IVProcessingMainClass(ctk.CTkFrame):
                 if device_detected:
                     if b == depth:  # Nested folders with the deep of one only
                         # allowed for the Processed folders
-                        return messagebox.showerror('Waring!', f"Too many sub folders in"
-                                                               f" a folder {abspath}")
+
+                        return CTkMessagebox(title='Warning!', message=f"Too many sub folders in"
+                                                                       f" a folder\n{abspath}", icon="warning",
+                                             option_1='Cancel')
+
                     oid = self.table_frame.files_table.insert(parent, 'end', text=file, open=False, tags='folder',
                                                               values=['', '', abspath])
                     self.process_directory(oid, abspath, is_root_call=False)
         # Only run the following lines if it's the root call
         if is_root_call:
-            self.table_frame.construct_active_areas_entries(data=self.added_iv, path=self.file_directory)
+            self.table_frame.construct_active_areas_entries(data=self.detect_pixels(), path=self.file_directory)
+
+    def detect_pixels(self):
+        detected_devices = DeviceDetector(data_dict=self.added_iv).detect_and_filter()
+        unique_devices = set()
+        for folder_name, devices in detected_devices.items():
+            for device_name, device_data in devices.items():
+                if device_name not in unique_devices:
+                    unique_devices.add(device_name)
+        self.pixels = list(unique_devices)
+        self.slide_frame.pixel_manager.configure(state='normal')
+        return detected_devices
+
+    def pixel_managing(self):
+        self.parent.state('iconic')
+        grouping_manager = PixelGroupingManager(self.pixels)
+        sorted_out = grouping_manager.group_pixels_by_substrate()
+        if self.pixel_sorter_instance is not None and self.pixel_sorter_instance.winfo_exists():
+            self.pixel_sorter_instance.deiconify()  # Restore the window if it exists
+
+        else:
+            # Disable "Selected" button, since the logic is not yet adapted
+            self.proceed_frame.button_selected.configure(state='disabled')
+            # Create a new instance if none exists
+            self.pixel_sorter_instance = PixelSorterInterface(parent=self.parent, sorted_dict=sorted_out,
+                                                              pixel_list=self.pixels,
+                                                              file_directory=self.file_directory)

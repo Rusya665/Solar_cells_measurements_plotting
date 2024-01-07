@@ -1,7 +1,8 @@
-import os
 import json
-import openpyxl
+import os
 from difflib import SequenceMatcher
+
+import openpyxl
 
 
 class ActiveAreaDetector:
@@ -36,7 +37,7 @@ class ActiveAreaDetector:
     @staticmethod
     def similar(a, b):
         """
-        Determine how similar two strings are.
+        Determine how similar the two strings are.
 
         :param a: First string to compare.
         :param b: Second string to compare.

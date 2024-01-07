@@ -1,10 +1,10 @@
 from functools import partial
+from tkinter import messagebox
 from tkinter import ttk, END
+
 import customtkinter as ctk
 
-from tkinter import messagebox
-from JV_plotter_GUI.Device_filter import DeviceDetector
-from JV_plotter_GUI.Active_areas import ActiveAreaDetector
+from JV_plotter_GUI.Active_areas_detector import ActiveAreaDetector
 
 
 class TableFrames(ctk.CTkFrame):
@@ -47,7 +47,7 @@ class TableFrames(ctk.CTkFrame):
     def construct_active_areas_entries(self, data, path) -> None:
         for child in self.active_areas_scrollable_frame.winfo_children():
             child.destroy()
-        self.devices = DeviceDetector(data_dict=data).detect_and_filter()
+        self.devices = data
         label0 = ctk.CTkLabel(master=self.active_areas_scrollable_frame,
                               text='№', fg_color="transparent")
         label1 = ctk.CTkLabel(master=self.active_areas_scrollable_frame,
@@ -232,10 +232,10 @@ class TableFrames(ctk.CTkFrame):
                                                  f"Please enter a positive numerical value greater than 0"
                                                  f" (e.g., 5 or 5.25).")
                             return
-                        matched_devices[folder][device_name]['Active area'] = entry_value / 100
-                        matched_devices[folder][device_name]['Light Intensity'] =\
+                        matched_devices[folder][device_name]['Active area (cm²)'] = entry_value / 100
+                        matched_devices[folder][device_name]['Light intensity (W/cm²)'] = \
                             float(self.parent.additional_settings.light_intensity_entry.get()) / 10000  # Store values
                         # in W/cm²
-                        matched_devices[folder][device_name]['Distance to light source'] =\
+                        matched_devices[folder][device_name]['Distance to light source (mm)'] = \
                             float(self.parent.additional_settings.distance_to_light_entry.get())
         return matched_devices

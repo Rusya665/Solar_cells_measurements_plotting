@@ -1,13 +1,12 @@
 import math
 import os
-import sys
-import subprocess
 import random
+import subprocess
+import sys
 from collections import OrderedDict
-from natsort import natsorted
-
 
 import pandas as pd
+from natsort import natsorted
 
 
 def open_file(path_to_file):
@@ -169,3 +168,27 @@ def sort_inner_keys(data):
         # print(f"Sorted inner keys: {list(sorted_inner_dict.keys())}")
 
     return sorted_data
+
+
+def get_newest_file_global(root_dir, suffix):
+    """
+    Get the newest file that contains the given suffix in the specified directory and its subdirectories.
+
+    :param root_dir: The root directory to start the search
+    :param suffix: The suffix to look for in filenames
+    :return: The path to the newest file that contains the suffix, or None if no such file is found
+    """
+    newest_file = None
+    newest_time = 0
+
+    # Walk through the directory, including subdirectories
+    for dir_path, _, filenames in os.walk(root_dir):
+        for filename in filenames:
+            if suffix in filename:
+                full_path = os.path.join(dir_path, filename)
+                m_time = os.path.getmtime(full_path)
+                if m_time > newest_time:
+                    newest_time = m_time
+                    newest_file = full_path
+
+    return newest_file

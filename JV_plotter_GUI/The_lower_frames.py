@@ -24,7 +24,7 @@ class LowestFrame(ctk.CTkFrame):
         self.lowest_frame_right.pack(side='right', padx=15)
         self.appearance_mode_label = ctk.CTkLabel(self.lowest_frame_left, text='Appearance mode')
         self.appearance_mode_label.pack()
-        self.appearance_mode = ctk.CTkOptionMenu(self.lowest_frame_left, values=["Dark", "Light", "System"], width=100,
+        self.appearance_mode = ctk.CTkOptionMenu(self.lowest_frame_left, values=["System", "Dark", "Light"], width=100,
                                                  command=self.parent.change_appearance_mode_event)
         self.appearance_mode.pack()
         self.exit_button = ctk.CTkButton(self.lowest_frame_right, text='Exit', width=70,

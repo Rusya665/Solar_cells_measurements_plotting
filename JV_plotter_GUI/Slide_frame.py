@@ -40,7 +40,8 @@ class SettingsPanel(ctk.CTkFrame):
         self.read_from_file = ctk.CTkButton(self, text='Read AA from file', command=self.parent.list_files)
         self.restore_cache_values = ctk.CTkButton(self, text='Cache values',
                                                   command=self.parent.table_frame.update_entries_from_cache)
-
+        self.pixel_manager = ctk.CTkButton(self, text='Pixel Manager', command=self.parent.pixel_managing,
+                                           state='disabled')
         self.additional_settings = ctk.CTkButton(self, text='Additional settings',
                                                  command=self.parent.additional_settings.animate_additional_settings)
         self.slide_panel_label.pack(pady=10)
@@ -50,6 +51,7 @@ class SettingsPanel(ctk.CTkFrame):
             self.identical_areas_CheckBox,
             self.read_from_file,
             self.restore_cache_values,
+            self.pixel_manager,
             self.aging_mode_label,
             self.aging_mode_checkbox,
             self.time_label,

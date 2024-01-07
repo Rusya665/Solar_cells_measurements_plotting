@@ -1,11 +1,8 @@
-import json
-import os
-from datetime import date
 from tkinter import messagebox
 
 import numpy as np
 
-from JV_plotter_GUI.instruments import remove_data_key
+from JV_plotter_GUI.settings import settings
 
 
 class CalculateIVParameters:
@@ -28,60 +25,41 @@ class CalculateIVParameters:
         self.rsh_forward, self.rsh_reverse = None, None
         self.active_area, self.light_intensity, self.distance_to_light_source = None, None, None
         self.h_index = None
-        self.parameter_dict = {
-            1: 'Label',
-            2: 'Scan direction',
-            3: 'Efficiency (%)',
-            4: 'Short-circuit current density (mA/cm²)',
-            5: 'Open circuit voltage (V)',
-            6: 'Fill factor',
-            7: 'Maximum power (W)',
-            8: 'Voltage at MPP (V)',
-            9: 'Current density at MPP (mA/cm²)',
-            10: 'Series resistance, Rs (ohm)',
-            11: 'Shunt resistance, Rsh (ohm)',
-            12: 'H-index',
-            13: 'Active area, (cm²)',
-            14: 'Light intensity (W/cm²)',
-            15: 'Distance to light source (mm)',
-            16: 'Device order',
-        }
+        self.parameter_dict = settings['parameter_dict']
+        # self.parameter_dict = {
+        #     1: 'Label',
+        #     2: 'Scan direction',
+        #     3: 'Efficiency (%)',
+        #     4: 'Short-circuit current density (mA/cm²)',
+        #     5: 'Open circuit voltage (V)',
+        #     6: 'Fill factor',
+        #     7: 'Maximum power (W)',
+        #     8: 'Voltage at MPP (V)',
+        #     9: 'Current density at MPP (mA/cm²)',
+        #     10: 'Series resistance, Rs (ohm)',
+        #     11: 'Shunt resistance, Rsh (ohm)',
+        #     12: 'H-index',
+        #     13: 'Active area, (cm²)',
+        #     14: 'Light intensity (W/cm²)',
+        #     15: 'Distance to light source (mm)',
+        #     16: 'Device order',
+        # }
 
         self.perform_calculation()
-        self.dump_json_data()
         if self.warning_messages:
             all_warnings = "\n".join(self.warning_messages)
             messagebox.showwarning("Warning!", f"Invalid data detected while calculating the\n"
                                                f"series resistance for the following devices:\n{all_warnings}\n"
                                                "This is likely due to bad JV data from a dead cell.")
 
-    def dump_json_data(self):
-        """
-        Dumping JSON data to a file. Handles nested dictionaries and excludes the 'data'
-        key that contains non-serializable Pandas DataFrames.
-
-        :return: None
-        """
-        if self.parent.dump_json:
-            base_dir = os.path.basename(self.parent.file_directory)
-            current_date = date.today()
-            json_name = os.path.join(self.parent.file_directory,
-                                     f"{current_date} {base_dir} IV data.json")
-
-            # Recursively remove 'data' key
-            cleaned_data = remove_data_key(self.data)
-
-            with open(json_name, 'w') as f:
-                json.dump(cleaned_data, f, indent=4)
-
     def perform_calculation(self):
         # Iterate through the folders
         for folder_name, devices in self.data.items():
             # Iterate through the devices in each folder
             for device_name, device_data in devices.items():
-                self.active_area = device_data["Active area"]
-                self.light_intensity = device_data['Light Intensity']
-                self.distance_to_light_source = device_data['Distance to light source']
+                self.active_area = device_data["Active area (cm²)"]
+                self.light_intensity = device_data['Light intensity (W/cm²)']
+                self.distance_to_light_source = device_data['Distance to light source (mm)']
                 for sweep_name, sweep_data in device_data['data'].items():
                     power = sweep_data['I'] * sweep_data['V']
                     ind_mpp = np.argmax(power)
@@ -107,7 +85,7 @@ class CalculateIVParameters:
                         self.efficiency_reverse, self.fill_factor_reverse = eff, ff
 
                 self.fill_dict_with_iv_parameters(device_data=device_data)
-                device_data['h_index'] = self.h_index
+                device_data['H-index'] = self.h_index
 
     @staticmethod
     def calculate_voc_approx(voltage_data, current_data):

@@ -4,10 +4,10 @@ import os
 import time
 from datetime import date
 from tkinter import messagebox
-from xlsxwriter.worksheet import Worksheet
 
 import numpy as np
 import xlsxwriter
+from xlsxwriter.worksheet import Worksheet
 
 from JV_plotter_GUI.instruments import open_file, row_to_excel_col, custom_round, random_color, remove_data_key
 from JV_plotter_GUI.settings import settings
@@ -53,7 +53,7 @@ class DevicePlotter:
             10: 'Series resistance, Rs (ohm)',
             11: 'Shunt resistance, Rsh (ohm)',
             12: 'H-index',
-            13: 'Active area, (cm²)',
+            13: 'Active area (cm²)',
             14: 'Light intensity (W/cm²)',
             15: 'Distance to light source (mm)',
             16: 'Device order',

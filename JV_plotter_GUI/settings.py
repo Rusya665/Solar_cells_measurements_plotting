@@ -13,8 +13,6 @@ settings = {
         'chart_y_scale': 1,  # 288 pixels
         'all_in_one_chart_x_scale': 1.7,
         'all_in_one_chart_y_scale': 1.7,
-        'chart_average_col': 4,
-        'chart_fr_rw_col': 9,
     },
     'parameter_dict': {
         1: 'Label',

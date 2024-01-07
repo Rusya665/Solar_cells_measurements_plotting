@@ -7,8 +7,9 @@ from JV_plotter_GUI.settings import settings
 
 class CalculateIVParameters:
     """
-    This class is designed for analyzing device measurements, specifically for photovoltaic devices.
+        This class is designed for analyzing device measurements, specifically for photovoltaic devices.
     """
+
     def __init__(self, parent, matched_devices: dict):
         self.data = matched_devices
         self.parent = parent
@@ -25,6 +26,24 @@ class CalculateIVParameters:
         self.active_area, self.light_intensity, self.distance_to_light_source = None, None, None
         self.h_index = None
         self.parameter_dict = settings['parameter_dict']
+        # self.parameter_dict = {
+        #     1: 'Label',
+        #     2: 'Scan direction',
+        #     3: 'Efficiency (%)',
+        #     4: 'Short-circuit current density (mA/cm²)',
+        #     5: 'Open circuit voltage (V)',
+        #     6: 'Fill factor',
+        #     7: 'Maximum power (W)',
+        #     8: 'Voltage at MPP (V)',
+        #     9: 'Current density at MPP (mA/cm²)',
+        #     10: 'Series resistance, Rs (ohm)',
+        #     11: 'Shunt resistance, Rsh (ohm)',
+        #     12: 'H-index',
+        #     13: 'Active area, (cm²)',
+        #     14: 'Light intensity (W/cm²)',
+        #     15: 'Distance to light source (mm)',
+        #     16: 'Device order',
+        # }
 
         self.perform_calculation()
         if self.warning_messages:
@@ -76,7 +95,7 @@ class CalculateIVParameters:
     @staticmethod
     def linfit_golden(x_data, y_data):
         """
-        A linear fit using various methods.
+        Linear fit using various methods.
         Uncomment the desired method.
 
         :param x_data: np.ndarray
@@ -102,7 +121,7 @@ class CalculateIVParameters:
 
         # Method 2: Direct Solve Method (Uncomment to use)
         # Fastest method (~0.020 seconds).
-        # It may be less stable for ill-conditioned matrices.
+        # May be less stable for ill-conditioned matrices.
         # slope, intercept = np.linalg.solve(design_matrix.T @ design_matrix, design_matrix.T @ y_data)
 
         # Method 3: Inverse Method (Uncomment to use)
@@ -169,6 +188,3 @@ class CalculateIVParameters:
             self.parameter_dict[10]: (self.rs_forward + self.rs_reverse) / 2,
             self.parameter_dict[11]: (self.rsh_reverse + self.rsh_forward) / 2,
         }
-
-    def return_data(self):
-        return self.data

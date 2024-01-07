@@ -1,13 +1,15 @@
+import json
 import math
 import os
 import time
 from datetime import date
 from tkinter import messagebox
-from xlsxwriter.worksheet import Worksheet
 
 import xlsxwriter
+from icecream import ic
+from xlsxwriter.worksheet import Worksheet
 
-from JV_plotter_GUI.instruments import open_file, row_to_excel_col, custom_round, random_color
+from JV_plotter_GUI.instruments import (open_file, row_to_excel_col, custom_round, random_color, remove_data_key)
 from JV_plotter_GUI.settings import settings
 
 
@@ -18,6 +20,7 @@ class DevicePlotter:
 
     def __init__(self, parent, matched_devices: dict):
         self.data = matched_devices
+        ic(self.data)
         self.parent = parent
         self.name = self.__class__.__name__
         # Assuming the default cells height 20 pixels and width 64
@@ -27,25 +30,7 @@ class DevicePlotter:
         self.chart_huge_vertical_spacing = math.ceil((288 * settings[self.name]['all_in_one_chart_y_scale']) / 20) + 1
         self.xlsx_name = ''
         self.warning_messages = []
-        self.parameter_dict = {
-            1: 'Label',
-            2: 'Scan direction',
-            3: 'Efficiency (%)',
-            4: 'Short-circuit current density (mA/cm²)',
-            5: 'Open circuit voltage (V)',
-            6: 'Fill factor',
-            7: 'Maximum power (W)',
-            8: 'Voltage at MPP (V)',
-            9: 'Current density at MPP (mA/cm²)',
-            10: 'Series resistance, Rs (ohm)',
-            11: 'Shunt resistance, Rsh (ohm)',
-            12: 'H-index',
-            13: 'Active area, (cm²)',
-            14: 'Light intensity (W/cm²)',
-            15: 'Distance to light source (mm)',
-            16: 'Device order',
-        }
-
+        self.parameter_dict = settings['parameter_dict']
         self.workbook = self.create_workbook()
         self.center = self.workbook.add_format({'align': 'center'})
         self.across_selection = self.workbook.add_format()
@@ -101,6 +86,7 @@ class DevicePlotter:
             self.aging_sheet.autofit()
 
         self.workbook.close()
+        self.dump_json_data()
         if self.parent.open_wb:
             time.sleep(0.2)
             open_file(self.xlsx_name)
@@ -120,6 +106,26 @@ class DevicePlotter:
                                       f"{date.today()} {base_dir} JV plots and calculations.xlsx")
         self.workbook = xlsxwriter.Workbook(self.xlsx_name, {'strings_to_numbers': True})
         return self.workbook
+
+    def dump_json_data(self):
+        """
+        Dumping JSON data to a file. Handles nested dictionaries and excludes the 'data'
+        key that contains non-serializable Pandas DataFrames.
+
+        :return: None
+        """
+
+        if self.parent.dump_json:
+            base_dir = os.path.basename(self.parent.file_directory)
+            current_date = date.today()
+            json_name = os.path.join(self.parent.file_directory,
+                                     f"{current_date} {base_dir} IV data.json")
+
+            # # Recursively remove 'data' key
+            cleaned_data = remove_data_key(self.data)
+
+            with open(json_name, 'w') as f:
+                json.dump(cleaned_data, f, indent=4)
 
     def set_worksheets(self):
         folder_counter, device_counter = 0, -1
@@ -177,7 +183,18 @@ class DevicePlotter:
                 self.set_headers(ws=ws, device_name=device_name)
                 # Iterate through the sweeps (Forward and Reverse) for each device
                 row = 1
+                for sweep_name, sweep_data in device_data['data'].items():
+                    # Write the data to the worksheet
+                    for _, row_data in sweep_data.iterrows():
+                        ws.write(row, 1, row_data['V'])
+                        power = row_data['I'] * row_data['V']
+                        current_density = 1000 * row_data['I'] / device_data['Active area (cm²)']
+                        ws.write(row, 2, power)
+                        ws.write(row, 0, current_density)
+                        row += 1
+
                 self.write_parameters(ws, device_data)
+
                 # Insert IV charts into devices' sheets
                 ws.insert_chart('E16', self.plot_iv(sheet_name=ws_name, data_start=2,
                                                     data_end=row, name_suffix=None))
@@ -271,18 +288,15 @@ class DevicePlotter:
 
     def write_parameters(self, ws: Worksheet, device_data: dict) -> None:
         # Write the main parameters for Forward, Reverse and Average cases.
-        sweeps_list = ['Forward', 'Reverse', 'Average']
-        for row in range(11, 2):
-            for col, sweep in enumerate(sweeps_list, 5):
-                ws.write(row, col, device_data['Parameters'][sweep])
-        # Write H-index
-        self.write_center_across_selection(ws, (11, 5), device_data['h_index'], 3)
-        # Write the active area value
-        self.write_center_across_selection(ws, (12, 5), device_data["Active area"], 3)
-        # Write the light intensity value
-        self.write_center_across_selection(ws, (13, 5), device_data['Light Intensity'], 3)
-        # Write the distance to the light source
-        self.write_center_across_selection(ws, (14, 5), device_data['Distance to light source'], 3)
+        sweeps_list = ['Reverse', 'Forward', 'Average']
+
+        # Iterate through values 3 to 15 (inclusive) in self.parameter_dict
+        for row, value in enumerate(list(self.parameter_dict.values())[2:15], start=2):
+            for col, sweep in enumerate(sweeps_list, start=5):
+                if row >= 11 and col == 5:  # For rows beyond 11th and first column
+                    self.write_center_across_selection(ws, (row, col), device_data[value], 3)
+                elif row < 11:
+                    ws.write(row, col, device_data['Parameters'][sweep][value])
 
     def fill_tables(self):
         table_type = {self.wb_table: ['G', 'F'],

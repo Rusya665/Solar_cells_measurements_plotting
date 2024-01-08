@@ -1,6 +1,7 @@
 import os
+
 import pandas as pd
-from tkinter import messagebox
+from CTkMessagebox import CTkMessagebox
 
 
 class TimeLineProcessor:
@@ -28,14 +29,14 @@ class TimeLineProcessor:
             elif file_extension == '.xlsx':
                 df = pd.read_excel(self.path)
             else:
-                messagebox.showerror('Error', 'Unknown file type')
+                CTkMessagebox(title="Error", message='Unknown file type', icon="cancel")
                 return None
 
             if df.shape[1] != 1:
-                messagebox.showerror("Error", "The DataFrame must have only one column.")
+                CTkMessagebox(title="Error", message="The DataFrame must have only one column.", icon="cancel")
                 return None
             return df
 
         except Exception as e:
-            messagebox.showerror('Error', str(e))
+            CTkMessagebox(title="Error", message=str(e), icon="cancel")
             return None

@@ -1,8 +1,8 @@
+from datetime import timedelta
 from pathlib import Path
-from tkinter import messagebox
 
 import pandas as pd
-from datetime import timedelta
+from CTkMessagebox import CTkMessagebox
 
 from JV_plotter_GUI.instruments import flip_data_if_necessary
 
@@ -138,8 +138,9 @@ class IVDataReader:
         elif current_unit in ['µA', 'Iµ']:
             df['I'] = df['I'].divide(10 ** 6)  # Converting from µA to A
         else:
-            messagebox.showerror(title=f"Unexpected current unit!",
-                                 message=f"This current unit {current_unit} for {self.path} was detected.\n"
-                                         f" Expected one of ['A', 'mA', 'µA']")
+            CTkMessagebox(title="Unexpected current unit!",
+                          message=f"This current unit {current_unit} for {self.path} was detected.\n"
+                                  f" Expected one of ['A', 'mA', 'µA']",
+                          icon="cancel")
             self.parent.parent.exit()
         return df

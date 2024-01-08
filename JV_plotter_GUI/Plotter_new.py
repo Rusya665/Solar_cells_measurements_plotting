@@ -3,9 +3,9 @@ import math
 import os
 import time
 from datetime import date
-from tkinter import messagebox
 
 import xlsxwriter
+from CTkMessagebox import CTkMessagebox
 from icecream import ic
 from xlsxwriter.worksheet import Worksheet
 
@@ -20,7 +20,6 @@ class DevicePlotter:
 
     def __init__(self, parent, matched_devices: dict):
         self.data = matched_devices
-        ic(self.data)
         self.parent = parent
         self.name = self.__class__.__name__
         # Assuming the default cells height 20 pixels and width 64
@@ -92,9 +91,11 @@ class DevicePlotter:
             open_file(self.xlsx_name)
         if self.warning_messages:
             all_warnings = "\n".join(self.warning_messages)
-            messagebox.showwarning("Warning!", f"Invalid data detected while calculating the\n"
-                                               f"series resistance for the following devices:\n{all_warnings}\n"
-                                               "This is likely due to bad JV data from a dead cell.")
+            CTkMessagebox(title="Warning!",
+                          message=f"Invalid data detected while calculating the\n"
+                                  f"series resistance for the following devices:\n{all_warnings}\n"
+                                  "This is likely due to bad JV data from a dead cell.",
+                          icon="warning", option_1='Okay, unbelievable')
 
     def create_workbook(self):
         """
@@ -164,6 +165,7 @@ class DevicePlotter:
                 ws_name = f'{device_name}' if len(self.data) == 1 else ws_name
                 ws_name = ws_name[:31] if len(ws_name) > 31 else ws_name
                 data = self.data[folder_name][device_name]['data']
+                ic(data)
                 self.data[folder_name][device_name].update({
                     'sheet_name': ws_name,
                     'sweep_indexes_data': {

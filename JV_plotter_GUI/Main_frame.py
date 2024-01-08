@@ -1,7 +1,7 @@
 import os
 import tkinter as tk
 from collections import defaultdict
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from typing import Optional
 
 import customtkinter as ctk
@@ -13,7 +13,6 @@ from JV_plotter_GUI.Device_filter import DeviceDetector
 from JV_plotter_GUI.Pixel_sorter import PixelGroupingManager, PixelSorterInterface
 from JV_plotter_GUI.Plotter_new import DevicePlotter
 from JV_plotter_GUI.Potentostats_check import PotentiostatFileChecker
-# from JV_plotter_GUI.Plotter import DevicePlotter
 from JV_plotter_GUI.Slide_frame import SettingsPanel
 from JV_plotter_GUI.The_lower_frames import LowestFrame, ProceedFrame
 from JV_plotter_GUI.TimeLine_detector import TimeLineProcessor
@@ -21,6 +20,8 @@ from JV_plotter_GUI.Top_frame import TopmostFrame
 from JV_plotter_GUI.Treeviews_frame import TableFrames
 from JV_plotter_GUI.instruments import sort_inner_keys
 from JV_plotter_GUI.settings import settings
+from JV_plotter_GUI.Pixel_merger import PixelMerger
+from JV_plotter_GUI.Filter_data import FilterJVData
 
 
 class IVProcessingMainClass(ctk.CTkFrame):
@@ -42,6 +43,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.open_wb = True
         self.color_wb = True
         self.dump_json = False
+        self.filter1, self.filter2 = False, False
 
         # widgets
         self.pack(fill=ctk.BOTH, expand=True)
@@ -77,33 +79,24 @@ class IVProcessingMainClass(ctk.CTkFrame):
             state='disabled' if self.slide_frame.aging_mode_checkbox.get() else 'normal')
         self.list_files()
 
-    def identical_active_areas_activator(self) -> None:
+    def activate_setting(self, setting_type: str) -> None:
         """
-        Apply the same active areas for all devices
+        Activate a setting based on the given type.
+        :param setting_type: Type of the setting to be activated.
         :return: None
         """
-        self.iaa = bool(self.slide_frame.identical_areas_CheckBox.get())
-
-    def open_wb_activator(self) -> None:
-        """
-        Open workbook at the end of the code
-        :return: None
-        """
-        self.open_wb = bool(self.additional_settings.open_wb_checkbox.get())
-
-    def color_wb_activator(self) -> None:
-        """
-        Open workbook at the end of the code
-        :return: None
-        """
-        self.color_wb = bool(self.additional_settings.color_wb_checkbox.get())
-
-    def dump_json_activator(self) -> None:
-        """
-        Dump json into a file in the project root folder
-        :return: None
-        """
-        self.dump_json = bool(self.additional_settings.dump_json_checkbox.get())
+        if setting_type == "identical_active_areas":
+            self.iaa = bool(self.slide_frame.identical_areas_CheckBox.get())
+        elif setting_type == "open_wb":
+            self.open_wb = bool(self.additional_settings.open_wb_checkbox.get())
+        elif setting_type == "color_wb":
+            self.color_wb = bool(self.additional_settings.color_wb_checkbox.get())
+        elif setting_type == "dump_json":
+            self.dump_json = bool(self.additional_settings.dump_json_checkbox.get())
+        elif setting_type == "filter1":
+            self.filter1 = bool(self.additional_settings.filter1_checkbox.get())
+        elif setting_type == "filter2":
+            self.filter2 = bool(self.additional_settings.filter2_checkbox.get())
 
     def exit(self) -> None:
         """
@@ -148,9 +141,17 @@ class IVProcessingMainClass(ctk.CTkFrame):
                 child_items = list(self.table_frame.files_table.get_children(top_level_item))
                 items.extend(child_items)
         matched = self.table_frame.devices_by_folder(items)
-        matched_sorted = sort_inner_keys(matched)
 
-        CalculateIVParameters(parent=self, matched_devices=matched_sorted)
+        CalculateIVParameters(parent=self, matched_devices=matched)
+        if self.filter1 and self.pixel_sorter_instance:
+            matched = FilterJVData(parent=self.parent, data=matched,
+                                   substrates=self.pixel_sorter_instance.return_sorted_dict()).filter1()
+        if self.filter2:
+            matched = FilterJVData(parent=self.parent, data=matched).filter2()
+        if self.pixel_sorter_instance:
+            matched = PixelMerger(data=matched,
+                                  substrates=self.pixel_sorter_instance.return_sorted_dict()).return_merged_data()
+        matched_sorted = sort_inner_keys(matched)
         DevicePlotter(parent=self, matched_devices=matched_sorted)
         self.exit()
 
@@ -283,11 +284,13 @@ class IVProcessingMainClass(ctk.CTkFrame):
                 if device_detected:
                     if b == depth:  # Nested folders with the deep of one only
                         # allowed for the Processed folders
-
-                        return CTkMessagebox(title='Warning!', message=f"Too many sub folders in"
-                                                                       f" a folder\n{abspath}", icon="warning",
-                                             option_1='Cancel')
-
+                        messagebox.showerror('Waring!', f"Too many sub folders in"
+                                                        f" a folder {abspath}")
+                        # box = CTkMessagebox(title='Warning!',
+                        #                      message=f"Too many sub folders in the folder\n{abspath}", icon="warning",
+                        #                      option_1='Cancel', width=600)
+                        # box.info._text_label.configure(wraplength=600)
+                        return
                     oid = self.table_frame.files_table.insert(parent, 'end', text=file, open=False, tags='folder',
                                                               values=['', '', abspath])
                     self.process_directory(oid, abspath, is_root_call=False)
@@ -314,7 +317,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.pixel_sorter_instance.deiconify()  # Restore the window if it exists
 
         else:
-            # Disable "Selected" button, since the logic is not yet adapted
+            # Disable the "Selected" button, since the logic is not yet adapted
             self.proceed_frame.button_selected.configure(state='disabled')
             # Create a new instance if none exists
             self.pixel_sorter_instance = PixelSorterInterface(parent=self.parent, sorted_dict=sorted_out,

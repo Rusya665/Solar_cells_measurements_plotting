@@ -1,5 +1,6 @@
-import customtkinter as ctk
 from idlelib.tooltip import Hovertip
+
+import customtkinter as ctk
 
 
 class TopmostFrame(ctk.CTkFrame):

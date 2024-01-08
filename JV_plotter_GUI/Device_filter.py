@@ -1,7 +1,7 @@
 import os
-from tkinter import messagebox
 
 import pandas as pd
+from CTkMessagebox import CTkMessagebox
 from fuzzywuzzy import fuzz
 
 
@@ -81,18 +81,19 @@ class DeviceDetector:
                 else:
                     # Remove unmatched single sweep files
                     folder_data.pop(filename, None)
-                    messagebox.showwarning('Unmatched file detected!',
-                                           message=f'The file {filename} appears to be a file without a match')
-
+                    CTkMessagebox(title="Unmatched file detected!",
+                                  message=f'The file {filename} appears to be a file without a match',
+                                  icon="warning", option_1='Okay, whatever')
             # Average out devices with multiple sweeps
             for filename, details in folder_data.items():
                 fw_sweeps = details['Sweeps']['Forward Sweeps']
                 rv_sweeps = details['Sweeps']['Reverse Sweeps']
 
                 if fw_sweeps > 1 or rv_sweeps > 1:
-                    messagebox.showwarning('Multiple sweeps case detected!',
-                                           message=f'The file {filename} was detected with multiple sweeps:\n'
-                                                   f' {fw_sweeps} Forward Sweeps and {rv_sweeps} Reverse Sweeps.')
+                    CTkMessagebox(title="Multiple sweeps case detected!",
+                                  message=f'The file {filename} was detected with multiple sweeps:\n'
+                                          f' {fw_sweeps} Forward Sweeps and {rv_sweeps} Reverse Sweeps.',
+                                  icon="warning", option_1='Okay, fascinating')
                     averaged_data = self.combine_sweeps(details)
                     result_data[folder_name][filename] = averaged_data
                     result_data[folder_name][filename]['Used files'] = filename
@@ -132,12 +133,11 @@ class DeviceDetector:
         # ic(self.data)
         # Check if the actual sweep direction from the data matches the inferred direction
         if self.data[folder_name][filename]['Sweeps'][f'{sweep_direction} Sweeps'] == 0:
-            messagebox.showwarning(
-                'Filename and Data Mismatch',
-                f"The file {filename} suggests a {sweep_direction} sweep,\n "
-                f"but the data indicates it is not. Please check the file naming.\n"
-                f"Please note, this might also be relevant the corrupted IV data"
-            )
+            CTkMessagebox(title='Filename and Data Mismatch',
+                          message=f"The file {filename} suggests a {sweep_direction} sweep,\n "
+                                  f"but the data indicates it is not. Please check the file naming.\n"
+                                  f"Please note, this might also be relevant the corrupted IV data",
+                          icon="warning", option_1='Okay, this is bad')
 
         # Filter and score filenames with the opposite direction
         candidates = [

@@ -34,15 +34,24 @@ class AdditionalSettings(ctk.CTkFrame):
 
         self.excel_label = ctk.CTkLabel(self, text='Excel settings')
         self.excel_label.cget("font").configure(size=18)
-        self.open_wb_checkbox = ctk.CTkCheckBox(self, text='Open WB', command=self.parent.open_wb_activator)
+        self.open_wb_checkbox = ctk.CTkCheckBox(self, text='Open WB',
+                                                command=lambda: self.parent.activate_setting('open_wb'))
         self.open_wb_checkbox.select()
-        self.color_wb_checkbox = ctk.CTkCheckBox(self, text='Colorful tabs', command=self.parent.color_wb_activator)
+        self.color_wb_checkbox = ctk.CTkCheckBox(self, text='Colorful tabs',
+                                                 command=lambda: self.parent.activate_setting('color_wb'))
         self.color_wb_checkbox.select()
         # self.dump_json_label = ctk.CTkLabel(self, text='Dump json')
-        self.dump_json_checkbox = ctk.CTkCheckBox(self, text='Dump JSON', command=self.parent.dump_json_activator)
+        self.dump_json_checkbox = ctk.CTkCheckBox(self, text='Dump JSON',
+                                                  command=lambda: self.parent.activate_setting('dump_json'))
 
         self.additional_settings_label.pack(pady=10)
 
+        self.filtering_label = ctk.CTkLabel(self, text="Data filters")
+        self.filtering_label.cget("font").configure(size=18)
+        self.filter1_checkbox = ctk.CTkCheckBox(self, text='Filter 1',
+                                                command=lambda: self.parent.activate_setting('filter1'))
+        self.filter2_checkbox = ctk.CTkCheckBox(self, text='Filter 2',
+                                                command=lambda: self.parent.activate_setting('filter1'))
         widgets = [
             self.light_intensity_label,
             self.light_intensity_entry,
@@ -51,7 +60,10 @@ class AdditionalSettings(ctk.CTkFrame):
             self.excel_label,
             self.open_wb_checkbox,
             self.color_wb_checkbox,
-            self.dump_json_checkbox
+            self.dump_json_checkbox,
+            self.filtering_label,
+            self.filter1_checkbox,
+            self.filter2_checkbox
         ]
         for widget in widgets:
             widget.pack(pady=8)
@@ -75,9 +87,9 @@ class AdditionalSettings(ctk.CTkFrame):
         Hovertip(self.light_intensity_entry, hover_light_intensity, hover_delay=hover_delay)
         Hovertip(self.distance_to_light_label, hover_distance_to_light, hover_delay=hover_delay)
         Hovertip(self.distance_to_light_entry, hover_distance_to_light, hover_delay=hover_delay)
-        Hovertip(self.light_intensity_label, "\nGo back to work you lazy\n", hover_delay=hover_delay*16)
+        Hovertip(self.light_intensity_label, "\nGo back to work you lazy\n", hover_delay=hover_delay * 16)
         Hovertip(self.light_intensity_label, "\n                    I said\n"
-                                             "GO BACK TO YOUR WORK!\n", hover_delay=hover_delay*32)
+                                             "GO BACK TO YOUR WORK!\n", hover_delay=hover_delay * 32)
         Hovertip(self.excel_label, hover_excel_settings, hover_delay=hover_delay)
         Hovertip(self.open_wb_checkbox, hover_text_open_wb, hover_delay=hover_delay)
         Hovertip(self.color_wb_checkbox, hover_color_wb, hover_delay=hover_delay)

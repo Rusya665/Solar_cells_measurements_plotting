@@ -504,8 +504,10 @@ class PixelSorterInterface(ctk.CTkToplevel):
         if read_data:
             # Capture the current layout state
             self.current_layout_state = read_data
-
             # Minimize or hide the window, keeping it in memory
             self.withdraw()
             if self.parent.state().lower() != 'normal':
                 self.parent.state('normal')
+
+    def return_sorted_dict(self):
+        return self.current_layout_state

@@ -34,7 +34,8 @@ class SettingsPanel(ctk.CTkFrame):
         self.timeline_detector_button = ctk.CTkButton(self, text='Choose the TimeLine', state='disabled',
                                                       command=lambda: self.parent.specify_timeline())
         self.identical_areas_CheckBox = ctk.CTkCheckBox(self, text='Identical AA',
-                                                        command=self.parent.identical_active_areas_activator)
+                                                        command=lambda: self.parent.activate_setting(
+                                                            "identical_active_areas"))
         self.identical_areas_CheckBox.select()
 
         self.read_from_file = ctk.CTkButton(self, text='Read AA from file', command=self.parent.list_files)

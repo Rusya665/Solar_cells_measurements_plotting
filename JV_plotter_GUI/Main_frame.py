@@ -1,5 +1,4 @@
 import os
-import time
 import tkinter as tk
 from collections import defaultdict
 from tkinter import filedialog, messagebox
@@ -11,10 +10,8 @@ from CTkMessagebox import CTkMessagebox
 from JV_plotter_GUI.Additional_settings_panel import AdditionalSettings
 from JV_plotter_GUI.Calculate_IV_parameters import CalculateIVParameters
 from JV_plotter_GUI.Device_filter import DeviceDetector
-from JV_plotter_GUI.Filter_data import FilterJVData
-from JV_plotter_GUI.Pixel_merger import PixelMerger
 from JV_plotter_GUI.Pixel_sorter import PixelGroupingManager, PixelSorterInterface
-from JV_plotter_GUI.Plotter import DevicePlotter
+from JV_plotter_GUI.Plotter_new import DevicePlotter
 from JV_plotter_GUI.Potentostats_check import PotentiostatFileChecker
 from JV_plotter_GUI.Slide_frame import SettingsPanel
 from JV_plotter_GUI.The_lower_frames import LowestFrame, ProceedFrame
@@ -23,6 +20,8 @@ from JV_plotter_GUI.Top_frame import TopmostFrame
 from JV_plotter_GUI.Treeviews_frame import TableFrames
 from JV_plotter_GUI.instruments import sort_inner_keys
 from JV_plotter_GUI.settings import settings
+from JV_plotter_GUI.Pixel_merger import PixelMerger
+from JV_plotter_GUI.Filter_data import FilterJVData
 
 
 class IVProcessingMainClass(ctk.CTkFrame):
@@ -30,12 +29,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
         super().__init__(master=parent, *args, **kwargs)
 
         # Some variables
-        self.sorted = False
-        self.stat = "std_dev"
-        self.start_time_workbook = None
-        self.start_time = None
         self.pixel_sorter_instance = None
-        self.all_unique_devices = None
+        self.pixels = None
         self.parent = parent
         self.table_size = settings['Main frame']['table_size']
         self.potentiostat = 'All'
@@ -102,9 +97,6 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.filter1 = bool(self.additional_settings.filter1_checkbox.get())
         elif setting_type == "filter2":
             self.filter2 = bool(self.additional_settings.filter2_checkbox.get())
-        elif setting_type in ['std_dev', 'mae', 'mse', 'rmse', 'mape', 'mad']:
-            self.stat = setting_type
-            self.pixel_sorter_instance.error_metric_button.configure(text=f'Chosen metric: {setting_type}')
 
     def exit(self) -> None:
         """
@@ -124,6 +116,44 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.pixel_sorter_instance.menu.configure(bg_color='#2b2b2b')
         elif new_appearance_mode.lower() == "light" and self.pixel_sorter_instance:
             self.pixel_sorter_instance.menu.configure(bg_color='#dbdbdb')
+
+    def final_output(self, state) -> None:
+        """
+        Choose the state to work on
+        :param state: Selected some files or all the files
+        :return: None
+        """
+        if self.file_directory is None:
+            CTkMessagebox(title='Warning!', message="Choose a folder to continue!", icon="cancel")
+            return
+        items = []
+        if state == "Selected":
+            # This should fetch selected items and not all top-level items
+            items = list(self.table_frame.files_table.selection())
+        elif state == "All":
+            if self.aging_mode and self.timeline_df is None:
+                CTkMessagebox(title='Warning!', message="For aging mode the timeline mast be set!", icon="warning",
+                              option_1='Cancel')
+                return
+            # This should fetch all items in the tree, including children of top-level items
+            items = list(self.table_frame.files_table.get_children(''))
+            for top_level_item in items:
+                child_items = list(self.table_frame.files_table.get_children(top_level_item))
+                items.extend(child_items)
+        matched = self.table_frame.devices_by_folder(items)
+
+        CalculateIVParameters(parent=self, matched_devices=matched)
+        if self.filter1 and self.pixel_sorter_instance:
+            matched = FilterJVData(parent=self.parent, data=matched,
+                                   substrates=self.pixel_sorter_instance.return_sorted_dict()).filter1()
+        if self.filter2:
+            matched = FilterJVData(parent=self.parent, data=matched).filter2()
+        if self.pixel_sorter_instance:
+            matched = PixelMerger(data=matched,
+                                  substrates=self.pixel_sorter_instance.return_sorted_dict()).return_merged_data()
+        matched_sorted = sort_inner_keys(matched)
+        DevicePlotter(parent=self, matched_devices=matched_sorted)
+        self.exit()
 
     def expand_collapse(self, expand=True) -> None:
         """
@@ -192,8 +222,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
         Update and fill the file table with filtered files
         """
         if self.pixel_sorter_instance is not None:
+            # self.pixel_sorter_instance.destroy()  # Close and destroy the instance
             self.pixel_sorter_instance = None
-            self.additional_settings.filter1_checkbox.configure(state='disabled')
         if self.file_directory == "":
             return
         # Check if there are any items in the treeview
@@ -224,6 +254,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
                 checking = potentiostat_checker.check_file(abspath)
                 if checking[0]:  # Insert a file only if it's potentiostats file
                     potentiostat = checking[2]
+                    # data = [potentiostat, checking[1], abspath]
                     data = [potentiostat, checking[-1]['Unit'], abspath]
                     folder_name = os.path.basename(path)
                     if folder_name not in self.added_iv:
@@ -236,6 +267,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
                         'data': checking[3]["Data"],
                         'unit': checking[3]['Unit'],
                         'Used files': file,
+                        # 'Active area': None,
+                        # 'Light Intensity': None,
+                        # 'Distance to light source': None,
                     }
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')
@@ -252,6 +286,10 @@ class IVProcessingMainClass(ctk.CTkFrame):
                         # allowed for the Processed folders
                         messagebox.showerror('Waring!', f"Too many sub folders in"
                                                         f" a folder {abspath}")
+                        # box = CTkMessagebox(title='Warning!',
+                        #                      message=f"Too many sub folders in the folder\n{abspath}", icon="warning",
+                        #                      option_1='Cancel', width=600)
+                        # box.info._text_label.configure(wraplength=600)
                         return
                     oid = self.table_frame.files_table.insert(parent, 'end', text=file, open=False, tags='folder',
                                                               values=['', '', abspath])
@@ -261,22 +299,19 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.table_frame.construct_active_areas_entries(data=self.detect_pixels(), path=self.file_directory)
 
     def detect_pixels(self):
-        self.all_unique_devices = None
         detected_devices = DeviceDetector(data_dict=self.added_iv).detect_and_filter()
         unique_devices = set()
         for folder_name, devices in detected_devices.items():
             for device_name, device_data in devices.items():
                 if device_name not in unique_devices:
                     unique_devices.add(device_name)
-        self.all_unique_devices = list(unique_devices)
-
-        if self.all_unique_devices:
-            self.slide_frame.pixel_manager.configure(state='normal')
+        self.pixels = list(unique_devices)
+        self.slide_frame.pixel_manager.configure(state='normal')
         return detected_devices
 
     def pixel_managing(self):
         self.parent.state('iconic')
-        grouping_manager = PixelGroupingManager(self.all_unique_devices)
+        grouping_manager = PixelGroupingManager(self.pixels)
         sorted_out = grouping_manager.group_pixels_by_substrate()
         if self.pixel_sorter_instance is not None and self.pixel_sorter_instance.winfo_exists():
             self.pixel_sorter_instance.deiconify()  # Restore the window if it exists
@@ -284,72 +319,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         else:
             # Disable the "Selected" button, since the logic is not yet adapted
             self.proceed_frame.button_selected.configure(state='disabled')
-            self.additional_settings.filter1_checkbox.configure(state='normal')
             # Create a new instance if none exists
             self.pixel_sorter_instance = PixelSorterInterface(parent=self.parent, sorted_dict=sorted_out,
-                                                              pixel_list=self.all_unique_devices,
+                                                              pixel_list=self.pixels,
                                                               file_directory=self.file_directory)
-
-    def final_output(self, state) -> None:
-        """
-        Choose the state to work on
-        :param state: Selected some files or all the files
-        :return: None
-        """
-        if self.file_directory is None:
-            CTkMessagebox(title='Warning!', message="Choose a folder to continue!", icon="cancel")
-            return
-        items = []
-        if state == "Selected":
-            # This should fetch selected items and not all top-level items
-            items = list(self.table_frame.files_table.selection())
-        elif state == "All":
-            if self.aging_mode and self.timeline_df is None:
-                CTkMessagebox(title='Warning!', message="For aging mode the timeline mast be set!", icon="warning",
-                              option_1='Cancel')
-                return
-            # This should fetch all items in the tree, including children of top-level items
-            items = list(self.table_frame.files_table.get_children(''))
-            for top_level_item in items:
-                child_items = list(self.table_frame.files_table.get_children(top_level_item))
-                items.extend(child_items)
-
-        matched = self.table_frame.devices_by_folder(items)
-
-        if matched is None:
-            return
-
-        self.start_time = time.time()
-        matched = CalculateIVParameters(parent=self, matched_devices=matched).return_data()
-        iv_calculation_time = time.time() - self.start_time
-        print('JV parameters have been calculated')
-        print("--- %s seconds ---" % iv_calculation_time)
-
-        filter_instance = FilterJVData(parent=self)
-        if self.filter1 and self.pixel_sorter_instance:
-            start_time = time.time()
-            matched = filter_instance.filter1(data=matched, substrates=self.pixel_sorter_instance.return_sorted_dict())
-            filter1_time = time.time() - start_time
-            print('\nFilter 1 has been applied')
-            print(f"--- {filter1_time} seconds ---")
-
-        if self.filter2:
-            start_time = time.time()
-            matched = filter_instance.filter2(data=matched)
-            filter2_time = time.time() - start_time
-            print('\nFilter 2 has been applied')
-            print(f"--- {filter2_time} seconds ---")
-
-        filter_instance.dump_log()
-        if self.pixel_sorter_instance:
-            start_time = time.time()
-            matched = PixelMerger(data=matched, parent=self,
-                                  substrates=self.pixel_sorter_instance.return_sorted_dict()).return_merged_data()
-            pixel_merger_time = time.time() - start_time
-            self.sorted = True
-            print('\nPixel merging has been completed')
-            print(f"--- {pixel_merger_time} seconds ---")
-        self.start_time_workbook = time.time()
-        matched_sorted = sort_inner_keys(matched)
-        DevicePlotter(parent=self, matched_devices=matched_sorted)
-        self.exit()

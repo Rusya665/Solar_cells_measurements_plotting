@@ -3,10 +3,10 @@ import math
 import os
 import time
 from datetime import date
-from tkinter import messagebox
 
 import numpy as np
 import xlsxwriter
+from CTkMessagebox import CTkMessagebox
 from xlsxwriter.worksheet import Worksheet
 
 from JV_plotter_GUI.instruments import open_file, row_to_excel_col, custom_round, random_color, remove_data_key
@@ -120,9 +120,11 @@ class DevicePlotter:
         self.dump_json_data()
         if self.warning_messages:
             all_warnings = "\n".join(self.warning_messages)
-            messagebox.showwarning("Warning!", f"Invalid data detected while calculating the\n"
-                                               f"series resistance for the following devices:\n{all_warnings}\n"
-                                               "This is likely due to bad JV data from a dead cell.")
+            CTkMessagebox(title="Warning!",
+                          message=f"Invalid data detected while calculating the\n"
+                                  f"series resistance for the following devices:\n{all_warnings}\n"
+                                  "This is likely due to bad JV data from a dead cell.",
+                          icon="warning", option_1='Okay, unbelievable')
 
     def create_workbook(self):
         """

@@ -50,9 +50,8 @@ class PixelGroupingManager:
 
 
 class PixelSorterInterface(ctk.CTkToplevel):
-    def __init__(self, parent, sorted_dict: dict, pixel_list: List[str], file_directory: str):
+    def __init__(self, parent: ctk.CTk, sorted_dict: dict, pixel_list: List[str], file_directory: str):
         super().__init__()
-        self.error_metric_button = None
         self.parent = parent
         self.menu = None
         self.current_layout_state = None
@@ -64,7 +63,7 @@ class PixelSorterInterface(ctk.CTkToplevel):
         self.column_frames = []
         self.substrate_frames = {}  # To store frames for each substrate
         self.initialize_ui()
-        self.protocol("WM_DELETE_WINDOW", self.exit_and_terminate)
+        self.protocol("WM_DELETE_WINDOW", self.withdraw_and_proceed)
 
     def initialize_ui(self) -> None:
         """
@@ -83,8 +82,6 @@ class PixelSorterInterface(ctk.CTkToplevel):
         menu_button = self.menu.add_cascade("Menu")
         edit_button = self.menu.add_cascade("Edit")
         view_button = self.menu.add_cascade("View")
-        self.error_metric_button = self.menu.add_cascade("Error Metric")
-
         menu_dropdown = CustomDropdownMenu(widget=menu_button)
         menu_dropdown.add_option(option="Dump JSON", command=self.dump_json_pixels)
         menu_dropdown.add_separator()
@@ -93,7 +90,7 @@ class PixelSorterInterface(ctk.CTkToplevel):
         menu_dropdown.add_option("Read JSON", command=lambda: self.populate_substrate_dict_from_file(
             path_to_file=filedialog.askdirectory(mustexist=True)))
         menu_dropdown.add_separator()
-        menu_dropdown.add_option("Exit and terminate instance", command=self.exit_and_terminate)
+        menu_dropdown.add_option("Exit")
 
         edit_dropdown = CustomDropdownMenu(widget=edit_button, padx=-10)
         edit_dropdown.add_option(option='Rebuild sorting', command=self.initialize_pixels_placement)
@@ -106,32 +103,6 @@ class PixelSorterInterface(ctk.CTkToplevel):
         for i in range(1, 11):
             command = partial(self.initialize_pixels_placement, None, True, i)
             submenu.add_option(f'{i}', command=command)
-
-        error_metric_dropdown = CustomDropdownMenu(widget=self.error_metric_button, padx=-30)
-        error_metric_dropdown.add_option(option='Standard Deviation',
-                                         command=lambda: self.parent.main_frame.activate_setting('std_dev'))
-        error_metric_dropdown.add_separator()
-
-        error_metric_dropdown.add_option(option='Mean Absolute Error',
-                                         command=lambda: self.parent.main_frame.activate_setting('mae'))
-        error_metric_dropdown.add_separator()
-
-        error_metric_dropdown.add_option(option='Mean Squared Error',
-                                         command=lambda: self.parent.main_frame.activate_setting('mse'))
-        error_metric_dropdown.add_separator()
-
-        error_metric_dropdown.add_option(option='Root Mean Squared Error',
-                                         command=lambda: self.parent.main_frame.activate_setting('rmse'))
-        error_metric_dropdown.add_separator()
-
-        error_metric_dropdown.add_option(option='Mean Absolute Percentage Error',
-                                         command=lambda: self.parent.main_frame.activate_setting('mape'))
-        error_metric_dropdown.add_separator()
-
-        error_metric_dropdown.add_option(option='Median Absolute Deviation',
-                                         command=lambda: self.parent.main_frame.activate_setting('mad'))
-        error_metric_dropdown.add_separator()
-
         self.save_and_proceed_button = ctk.CTkButton(self, text="Save and Proceed", command=self.withdraw_and_proceed)
         self.save_and_proceed_button.pack(side=tk.BOTTOM, pady=10)
         self.initialize_pixels_placement(rebuild_column_frames=True)
@@ -533,23 +504,6 @@ class PixelSorterInterface(ctk.CTkToplevel):
         if read_data:
             # Capture the current layout state
             self.current_layout_state = read_data
-
-            # Flatten the list of current unique devices
-            updated_devices = self.pixel_list.copy()
-
-            for substrate, pixels in read_data.items():
-                # Check if each pixel is in the current unique devices list
-                for pixel in pixels:
-                    if pixel in self.pixel_list:
-                        # Remove the pixel and add the substrate instead
-                        updated_devices.remove(pixel)
-                # Add the substrate name if not already in the list
-                if substrate not in updated_devices:
-                    updated_devices.append(substrate)
-
-            # Update the all_unique_devices list
-            self.parent.main_frame.all_unique_devices = updated_devices
-
             # Minimize or hide the window, keeping it in memory
             self.withdraw()
             if self.parent.state().lower() != 'normal':
@@ -557,10 +511,3 @@ class PixelSorterInterface(ctk.CTkToplevel):
 
     def return_sorted_dict(self):
         return self.current_layout_state
-
-    def exit_and_terminate(self):
-        self.withdraw()
-        if self.parent.state().lower() != 'normal':
-            self.parent.state('normal')
-        self.parent.main_frame.pixel_sorter_instance = None
-        self.parent.main_frame.additional_settings.filter1_checkbox.configure(state='disabled')

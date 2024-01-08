@@ -1,8 +1,8 @@
 from functools import partial
-from tkinter import messagebox
 from tkinter import ttk, END
 
 import customtkinter as ctk
+from CTkMessagebox import CTkMessagebox
 
 from JV_plotter_GUI.Active_areas_detector import ActiveAreaDetector
 
@@ -215,22 +215,25 @@ class TableFrames(ctk.CTkFrame):
                 for folder, devices in matched_devices.items():
                     if device_name in devices:
                         if not entry_value:
-                            messagebox.showerror('Warning!', f"Missing active area value for the device:"
-                                                             f" {device_name}")
+                            CTkMessagebox(title='Warning!',
+                                          message=f"Missing active area value for the device:\n{device_name}",
+                                          icon="warning", option_1='Okay, this is bad')
                             return
                         try:
                             entry_value = float(entry_value)
                             if entry_value <= 0:
-                                messagebox.showerror('Warning!',
-                                                     f"Invalid active area value for the device: {device_name}. "
-                                                     f"Please enter a positive numerical value greater"
-                                                     f" than 0 (e.g., 5 or 5.25).")
+                                CTkMessagebox(title='Warning!',
+                                              message=f"Invalid active area value for the device: {device_name}. "
+                                                      f"Please enter a positive numerical value greater"
+                                                      f" than 0 (e.g., 5 or 5.25).",
+                                              icon="warning", option_1='Okay, this is bad')
                                 return
                         except ValueError:
-                            messagebox.showerror('Warning!',
-                                                 f"Invalid active area value for the device: {device_name}. "
-                                                 f"Please enter a positive numerical value greater than 0"
-                                                 f" (e.g., 5 or 5.25).")
+                            CTkMessagebox(title='Warning!',
+                                          message=f"Invalid active area value for the device: {device_name}. "
+                                                  f"Please enter a positive numerical value greater than 0"
+                                                  f" (e.g., 5 or 5.25).",
+                                          icon="warning", option_1='Okay, this is bad')
                             return
                         matched_devices[folder][device_name]['Active area (cm²)'] = entry_value / 100
                         matched_devices[folder][device_name]['Light intensity (W/cm²)'] = \

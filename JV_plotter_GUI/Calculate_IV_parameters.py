@@ -1,6 +1,5 @@
-from tkinter import messagebox
-
 import numpy as np
+from CTkMessagebox import CTkMessagebox
 
 from JV_plotter_GUI.settings import settings
 
@@ -26,31 +25,15 @@ class CalculateIVParameters:
         self.active_area, self.light_intensity, self.distance_to_light_source = None, None, None
         self.h_index = None
         self.parameter_dict = settings['parameter_dict']
-        # self.parameter_dict = {
-        #     1: 'Label',
-        #     2: 'Scan direction',
-        #     3: 'Efficiency (%)',
-        #     4: 'Short-circuit current density (mA/cm²)',
-        #     5: 'Open circuit voltage (V)',
-        #     6: 'Fill factor',
-        #     7: 'Maximum power (W)',
-        #     8: 'Voltage at MPP (V)',
-        #     9: 'Current density at MPP (mA/cm²)',
-        #     10: 'Series resistance, Rs (ohm)',
-        #     11: 'Shunt resistance, Rsh (ohm)',
-        #     12: 'H-index',
-        #     13: 'Active area, (cm²)',
-        #     14: 'Light intensity (W/cm²)',
-        #     15: 'Distance to light source (mm)',
-        #     16: 'Device order',
-        # }
 
         self.perform_calculation()
         if self.warning_messages:
             all_warnings = "\n".join(self.warning_messages)
-            messagebox.showwarning("Warning!", f"Invalid data detected while calculating the\n"
-                                               f"series resistance for the following devices:\n{all_warnings}\n"
-                                               "This is likely due to bad JV data from a dead cell.")
+            CTkMessagebox(title="Warning!",
+                          message=f"Invalid data detected while calculating the\n"
+                                  f"series resistance for the following devices:\n{all_warnings}\n"
+                                  "This is likely due to bad JV data from a dead cell.",
+                          icon="warning", option_1='Okay, whatever')
 
     def perform_calculation(self):
         # Iterate through the folders
@@ -121,7 +104,7 @@ class CalculateIVParameters:
 
         # Method 2: Direct Solve Method (Uncomment to use)
         # Fastest method (~0.020 seconds).
-        # May be less stable for ill-conditioned matrices.
+        # It may be less stable for ill-conditioned matrices.
         # slope, intercept = np.linalg.solve(design_matrix.T @ design_matrix, design_matrix.T @ y_data)
 
         # Method 3: Inverse Method (Uncomment to use)

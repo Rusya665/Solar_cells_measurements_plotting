@@ -1,11 +1,13 @@
 import os
 import tkinter as tk
+import time
 from collections import defaultdict
 from tkinter import filedialog, messagebox
 from typing import Optional
 
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
+from icecream import ic
 
 from JV_plotter_GUI.Additional_settings_panel import AdditionalSettings
 from JV_plotter_GUI.Calculate_IV_parameters import CalculateIVParameters
@@ -29,6 +31,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
         super().__init__(master=parent, *args, **kwargs)
 
         # Some variables
+        self.stat = "std_dev"
+        self.start_time_workbook = None
+        self.start_time = None
         self.pixel_sorter_instance = None
         self.pixels = None
         self.parent = parent
@@ -116,44 +121,6 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.pixel_sorter_instance.menu.configure(bg_color='#2b2b2b')
         elif new_appearance_mode.lower() == "light" and self.pixel_sorter_instance:
             self.pixel_sorter_instance.menu.configure(bg_color='#dbdbdb')
-
-    def final_output(self, state) -> None:
-        """
-        Choose the state to work on
-        :param state: Selected some files or all the files
-        :return: None
-        """
-        if self.file_directory is None:
-            CTkMessagebox(title='Warning!', message="Choose a folder to continue!", icon="cancel")
-            return
-        items = []
-        if state == "Selected":
-            # This should fetch selected items and not all top-level items
-            items = list(self.table_frame.files_table.selection())
-        elif state == "All":
-            if self.aging_mode and self.timeline_df is None:
-                CTkMessagebox(title='Warning!', message="For aging mode the timeline mast be set!", icon="warning",
-                              option_1='Cancel')
-                return
-            # This should fetch all items in the tree, including children of top-level items
-            items = list(self.table_frame.files_table.get_children(''))
-            for top_level_item in items:
-                child_items = list(self.table_frame.files_table.get_children(top_level_item))
-                items.extend(child_items)
-        matched = self.table_frame.devices_by_folder(items)
-
-        CalculateIVParameters(parent=self, matched_devices=matched)
-        if self.filter1 and self.pixel_sorter_instance:
-            matched = FilterJVData(parent=self.parent, data=matched,
-                                   substrates=self.pixel_sorter_instance.return_sorted_dict()).filter1()
-        if self.filter2:
-            matched = FilterJVData(parent=self.parent, data=matched).filter2()
-        if self.pixel_sorter_instance:
-            matched = PixelMerger(data=matched,
-                                  substrates=self.pixel_sorter_instance.return_sorted_dict()).return_merged_data()
-        matched_sorted = sort_inner_keys(matched)
-        DevicePlotter(parent=self, matched_devices=matched_sorted)
-        self.exit()
 
     def expand_collapse(self, expand=True) -> None:
         """
@@ -323,3 +290,62 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.pixel_sorter_instance = PixelSorterInterface(parent=self.parent, sorted_dict=sorted_out,
                                                               pixel_list=self.pixels,
                                                               file_directory=self.file_directory)
+
+    def final_output(self, state) -> None:
+        """
+        Choose the state to work on
+        :param state: Selected some files or all the files
+        :return: None
+        """
+        if self.file_directory is None:
+            CTkMessagebox(title='Warning!', message="Choose a folder to continue!", icon="cancel")
+            return
+        items = []
+        if state == "Selected":
+            # This should fetch selected items and not all top-level items
+            items = list(self.table_frame.files_table.selection())
+        elif state == "All":
+            if self.aging_mode and self.timeline_df is None:
+                CTkMessagebox(title='Warning!', message="For aging mode the timeline mast be set!", icon="warning",
+                              option_1='Cancel')
+                return
+            # This should fetch all items in the tree, including children of top-level items
+            items = list(self.table_frame.files_table.get_children(''))
+            for top_level_item in items:
+                child_items = list(self.table_frame.files_table.get_children(top_level_item))
+                items.extend(child_items)
+        matched = self.table_frame.devices_by_folder(items)
+
+        self.start_time = time.time()
+        matched = CalculateIVParameters(parent=self, matched_devices=matched).return_data()
+        iv_calculation_time = time.time() - self.start_time
+        print('JV parameters have been calculated')
+        print("--- %s seconds ---" % iv_calculation_time)
+
+        filter_instance = FilterJVData(parent=self)
+        if self.filter1 and self.pixel_sorter_instance:
+            start_time = time.time()
+            matched = filter_instance.filter1(data=matched, substrates=self.pixel_sorter_instance.return_sorted_dict())
+            filter1_time = time.time() - start_time
+            print('\nFilter 1 has been applied')
+            print(f"--- {filter1_time} seconds ---")
+
+        if self.filter2:
+            start_time = time.time()
+            matched = filter_instance.filter2(data=matched)
+            filter2_time = time.time() - start_time
+            print('\nFilter 2 has been applied')
+            print(f"--- {filter2_time} seconds ---")
+
+        filter_instance.dump_log()
+        if self.pixel_sorter_instance:
+            start_time = time.time()
+            matched = PixelMerger(data=matched, parent=self,
+                                  substrates=self.pixel_sorter_instance.return_sorted_dict()).return_merged_data()
+            pixel_merger_time = time.time() - start_time
+            print('\nPixel merging has been completed')
+            print(f"--- {pixel_merger_time} seconds ---")
+        self.start_time_workbook = time.time()
+        matched_sorted = sort_inner_keys(matched)
+        DevicePlotter(parent=self, matched_devices=matched_sorted)
+        self.exit()

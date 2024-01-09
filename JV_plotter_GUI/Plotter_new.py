@@ -6,7 +6,6 @@ from datetime import date
 
 import xlsxwriter
 from CTkMessagebox import CTkMessagebox
-from icecream import ic
 from xlsxwriter.worksheet import Worksheet
 
 from JV_plotter_GUI.instruments import (open_file, row_to_excel_col, custom_round, random_color, remove_data_key)
@@ -84,11 +83,17 @@ class DevicePlotter:
         if self.parent.aging_mode:
             self.aging_sheet.autofit()
 
+        print("\nWorksheets have been set.")
+        print("--- %s seconds ---" % (time.time() - self.parent.start_time_workbook))
+        print("\nCompressing the Excel file, hold on...")
+        start_time = time.time()
         self.workbook.close()
         self.dump_json_data()
         if self.parent.open_wb:
             time.sleep(0.2)
             open_file(self.xlsx_name)
+        print("--- %s seconds ---" % (time.time() - start_time))
+        print(f"\nThe total time is {time.time() - self.parent.start_time}")
         if self.warning_messages:
             all_warnings = "\n".join(self.warning_messages)
             CTkMessagebox(title="Warning!",
@@ -165,7 +170,6 @@ class DevicePlotter:
                 ws_name = f'{device_name}' if len(self.data) == 1 else ws_name
                 ws_name = ws_name[:31] if len(ws_name) > 31 else ws_name
                 data = self.data[folder_name][device_name]['data']
-                ic(data)
                 self.data[folder_name][device_name].update({
                     'sheet_name': ws_name,
                     'sweep_indexes_data': {

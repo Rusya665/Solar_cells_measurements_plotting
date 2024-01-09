@@ -171,3 +171,6 @@ class CalculateIVParameters:
             self.parameter_dict[10]: (self.rs_forward + self.rs_reverse) / 2,
             self.parameter_dict[11]: (self.rsh_reverse + self.rsh_forward) / 2,
         }
+
+    def return_data(self):
+        return self.data

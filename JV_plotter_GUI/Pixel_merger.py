@@ -1,19 +1,22 @@
 from typing import Any, List, Dict
-
+import numpy as np
 import pandas as pd
 
 
 class PixelMerger:
-    def __init__(self, data: Dict[str, Any], substrates: Dict[str, List[str]]):
+    def __init__(self, data: Dict[str, Any], substrates: Dict[str, List[str]], parent):
         """
         Initialize the PixelMerger class.
 
+        :param parent: An instance of the main ctk app, used for integration with a custom tkinter interface.
         :param data: A dictionary containing pixel data.
         :param substrates: A dictionary where each key is a substrate name, and its value is a list of pixel names.
         """
+        self.parent = parent
         self.data = data
         self.substrates = substrates
         self.merged_data = {}
+        self.stat = self.parent.stat
         self.merge_substrates()
 
     @staticmethod

@@ -1,136 +1,134 @@
-from typing import Any, List, Dict, Optional
-
-import customtkinter as ctk
+import os
+from datetime import datetime
+from typing import Any, Dict, Optional, List
+import inspect
 
 
 class FilterJVData:
-    def __init__(self, parent: ctk.CTk, data: Dict[str, Any], substrates: Optional[Dict[str, List[str]]] = None):
+    def __init__(self, parent=None):
         """
         Initialize the FilterJVData class.
 
-        :param parent: An instance of the main ctk app.
-        :param data: A dictionary containing raw device data.
-        :param substrates: An optional dictionary where each key is a substrate name, and its value is a list of pixel
-         names.
+
+        :param parent: (Optional) An instance of the main ctk app, used for integration with a custom tkinter interface.
+
         """
         self.parent = parent
-        self.data = data
-        self.substrates = substrates
-        pass
+        self.log = []
 
-    def filter1(self) -> Dict:
+    def filter1(self, data: Dict[str, Any], substrates: Optional[Dict[str, List[str]]]) -> Dict[str, Any]:
         """
-        Filter to remove dead pixels from the data. A pixel is considered dead if its average efficiency is less than
-        0.01. If all pixels within a substrate are dead, one pixel is retained but its parameters (except IV data)
-        are zeroed out.
+        Removes dead pixels from the data.
+        A pixel is considered dead if its average efficiency is less than 0.01.
+        If all pixels within a substrate are dead, one pixel is retained but with zeroed parameters (except IV data).
 
-        The method iterates through each folder and device in the data. For substrates with multiple pixels, it
-        checks each pixel's efficiency. If a pixel is dead, it's removed unless all pixels in the substrate are dead.
-        In that case, one pixel is retained with all its parameters (except 'data') set to zero.
+        Iterates through each folder and device, checking each pixel's efficiency.
+        Dead pixels are removed unless
+        all pixels in a substrate are dead, in which case one pixel is retained with zeroed parameters.
+
+        :param substrates: (Optional) A dictionary where each key is a substrate name, and its value is a list of
+                           pixel names.
+                           This is used for more advanced filtering based on substrates.
+        :param data: A dictionary containing raw device data.
+        The data is expected to be structured with folder names as keys and devices as values.
+        :return: A tuple containing the modified data and a list of logs detailing the deletions.
         """
+        current_frame = inspect.currentframe()
+        method_name = inspect.getframeinfo(current_frame).function
+        self.log.append(f"{method_name} is activated\n")
+        log_counter = 0
         # Iterate through the folders
-        for folder_name, devices in self.data.items():
+        for folder_name, devices in data.items():
             # Iterate through the devices in each folder
             for device_name, device_data in devices.items():
-                if device_name in self.substrates and len(self.substrates[device_name]) > 1:
+                if device_name in substrates and len(substrates[device_name]) > 1:
                     dead_pixels = []
-                    for pixel_name in self.substrates[device_name]:
+                    # Check each pixel's efficiency
+                    for pixel_name in substrates[device_name]:
                         pixel_data = device_data.get(pixel_name)
                         if pixel_data and pixel_data['Parameters']['Average']['Efficiency (%)'] < 0.01:
                             dead_pixels.append(pixel_name)
 
-                    # If all pixels are dead, retain one pixel with zeroed parameters
-                    if len(dead_pixels) == len(self.substrates[device_name]):
-                        retained_pixel = self.substrates[device_name][0]
-                        # Zero out H-index and all nested Parameters
+                    # Retain or delete pixels based on the condition
+                    if len(dead_pixels) == len(substrates[device_name]):
+                        retained_pixel = substrates[device_name][0]
                         device_data[retained_pixel] = {key: 0 for key in device_data[retained_pixel].keys()}
                         device_data[retained_pixel]['Parameters'] = {k: {p: 0 for p in v} for k, v in
                                                                      device_data[retained_pixel]['Parameters'].items()}
                         device_data[retained_pixel]['H-index'] = 0
-                        device_data[retained_pixel]['data'] = device_data[retained_pixel][
-                            'data']  # Preserve the IV data
+                        device_data[retained_pixel]['data'] = device_data[retained_pixel]['data']
                     else:
-                        # Delete dead pixels
                         for dead_pixel in dead_pixels:
                             del device_data[dead_pixel]
+                            log_counter += 1
+                            self.log.append(f"{log_counter}. Deleted dead pixel in the folder: {folder_name},"
+                                            f" device: {device_name}")
+        if log_counter == 0:
+            self.log.append('Non device was filtered out')
+        self.log.append('\n')
+        return data
 
-        return self.data
-
-    def filter2(self):
+    def filter2(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
-         Updated filter to remove erroneous measurement points based on the new criteria.
-        It checks the efficiency of each pixel in sequential measurements across devices and removes the entire pixel data
-        if a pixel is dead (efficiency < 0.01) for one or more measurements and then comes back to life in a subsequent measurement.
+        Removes specific erroneous measurement points from the data.
+        It targets measurements where a device is dead (efficiency < 0.01) and then comes back to life
+        (efficiency >= 0.01) in subsequent measurements.
+        Iterates through each device's measurements, identifying and marking dead-then-alive patterns.
+        Such measurements are then deleted from the data.
 
-        :return: Modified data with a list of deleted pixels and their respective folder names.
+        :param data: A dictionary containing raw device data.
+        The data is expected to be structured with folder names as keys and devices as values.
+        :return: A tuple containing the modified data and a list of logs detailing the deletions.
         """
-        deleted_pixels = []
+        current_frame = inspect.currentframe()
+        method_name = inspect.getframeinfo(current_frame).function
+        self.log.append(f"{method_name} is activated\n")
+        log_counter = 0
+        device_efficiencies = {}
+        # Accumulate efficiencies for each device
+        for folder_name, devices in data.items():
+            for device_name, device_data in devices.items():
+                if 'Parameters' in device_data and 'Average' in device_data['Parameters']:
+                    efficiency = device_data['Parameters']['Average'].get('Efficiency (%)')
+                    if device_name not in device_efficiencies:
+                        device_efficiencies[device_name] = []
+                    device_efficiencies[device_name].append([folder_name, efficiency])
 
-        # Accumulate efficiencies for each pixel across devices
-        pixel_efficiencies = {}
-        for device_name, device_data in self.data.items():
-            for pixel_name, pixel_info in device_data.items():
-                if 'Parameters' in pixel_info and 'Average' in pixel_info['Parameters']:
-                    efficiency = pixel_info['Parameters']['Average'].get('Efficiency (%)')
-                    if efficiency is not None:
-                        if pixel_name not in pixel_efficiencies:
-                            pixel_efficiencies[pixel_name] = []
-                        pixel_efficiencies[pixel_name].append(efficiency)
+        # Identify and delete erroneous measurements
+        for device, measurements in device_efficiencies.items():
+            to_delete = []
+            first_dead_index = None
 
-        # Check for consecutive dead measurements followed by an alive one
-        for pixel_name, efficiencies in pixel_efficiencies.items():
-            was_dead = False
-            for efficiency in efficiencies:
-                if efficiency < 0.01:
-                    was_dead = True
-                elif was_dead and efficiency >= 0.01:
-                    deleted_pixels.append(pixel_name)
-                    break
+            for measurement_index, (date, efficiency) in enumerate(measurements):
+                if efficiency < 0.01 and first_dead_index is None:
+                    first_dead_index = measurement_index
+                elif efficiency >= 0.01 and first_dead_index is not None:
+                    to_delete.extend(range(first_dead_index, measurement_index))
+                    first_dead_index = None
+            for measurement in to_delete:
+                folder_name = measurements[measurement][0]
+                del data[folder_name][device]
+                log_counter += 1
+                self.log.append(f"{log_counter}. Deleted dead device in the folder: {folder_name}, device: {device}")
+        if log_counter == 0:
+            self.log.append('Non device was filtered out')
+        self.log.append('\n')
+        return data
 
-        # Remove the entire pixel data for pixels that showed the dead-then-alive pattern
-        for device_name, device_data in data.items():
-            for pixel_name in deleted_pixels:
-                if pixel_name in device_data:
-                    del device_data[pixel_name]
-
-        return data, deleted_pixels
-
-    def updated_filter2(data):
+    def dump_log(self, filename: Optional[str] = None):
         """
-        Updated filter to remove erroneous measurement points based on the new criteria.
-        It checks the efficiency of each pixel in sequential measurements across devices and removes the entire pixel data
-        if a pixel is dead (efficiency < 0.01) for one or more measurements and then comes back to life in a subsequent measurement.
+        Dumps the log to a specified file.
+        If no filename is provided, a default name with a timestamp is used.
 
-        :param data: The JSON data loaded from the file.
-        :return: Modified data with a list of deleted pixels and their respective folder names.
+        :param filename: The (optional) name of the file to write the log to.
         """
-        deleted_pixels = []
+        if self.log:
+            if not filename:
+                base_dir = os.path.basename(self.parent.file_directory)
+                today = f'{datetime.now():%Y-%m-%d %H.%M.%S%z}'
+                log = f'Filter_log_{today}_for_{base_dir}.txt'
+                filename = os.path.join(self.parent.file_directory, log)
 
-        # Accumulate efficiencies for each pixel across devices
-        pixel_efficiencies = {}
-        for device_name, device_data in data.items():
-            for pixel_name, pixel_info in device_data.items():
-                if 'Parameters' in pixel_info and 'Average' in pixel_info['Parameters']:
-                    efficiency = pixel_info['Parameters']['Average'].get('Efficiency (%)')
-                    if efficiency is not None:
-                        if pixel_name not in pixel_efficiencies:
-                            pixel_efficiencies[pixel_name] = []
-                        pixel_efficiencies[pixel_name].append(efficiency)
-
-        # Check for consecutive dead measurements followed by an alive one
-        for pixel_name, efficiencies in pixel_efficiencies.items():
-            was_dead = False
-            for efficiency in efficiencies:
-                if efficiency < 0.01:
-                    was_dead = True
-                elif was_dead and efficiency >= 0.01:
-                    deleted_pixels.append(pixel_name)
-                    break
-
-        # Remove the entire pixel data for pixels that showed the dead-then-alive pattern
-        for device_name, device_data in data.items():
-            for pixel_name in deleted_pixels:
-                if pixel_name in device_data:
-                    del device_data[pixel_name]
-
-        return data, deleted_pixels
+            with open(filename, 'w') as file:
+                for entry in self.log:
+                    file.write(entry + '\n')

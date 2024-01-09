@@ -2,7 +2,6 @@ import json
 from typing import Any, List, Dict
 
 import numpy as np
-import pandas as pd
 from icecream import ic
 
 
@@ -19,8 +18,25 @@ class PixelMerger:
         self.data = data
         self.substrates = substrates
         self.merged_data = {}
-        self.stat = self.parent.stat
+        self.stat = 'std_dev'
+        # self.stat = 'mae'
         self.merge_substrates()
+
+    @staticmethod
+    def average_parameters1(parameter_dicts: List[Dict[str, Any]]) -> Dict[str, float]:
+        """
+        Average the parameters across a set of pixels.
+
+        :param parameter_dicts: A list of dictionaries, each containing parameter of a pixel.
+        :return: A dictionary containing averaged parameters.
+        """
+        averaged_params = {}
+        count = len(parameter_dicts)
+        for param_dict in parameter_dicts:
+            for key, value in param_dict.items():
+                averaged_params[key] = averaged_params.get(key, 0) + value / count
+        ic(averaged_params)
+        return averaged_params
 
     def average_parameters(self, parameter_dicts: List[Dict[str, Any]]) -> Dict[str, float]:
         """
@@ -98,26 +114,26 @@ class PixelMerger:
         merged['H-index'] = sum(h_index_values) / len(h_index_values) if h_index_values else None
 
         # Determine sweep types dynamically
-        all_sweep_types = set()
-        for pixel_name in substrate_pixels:
-            all_sweep_types.update(self.data[folder_name][pixel_name]['data'].keys())
+        # all_sweep_types = set()
+        # for pixel_name in substrate_pixels:
+        #     all_sweep_types.update(self.data[folder_name][pixel_name]['data'].keys())
         # ic(all_sweep_types)
 
-        # Process and average IV data for each sweep type
-        for sweep_type in all_sweep_types:
-            sweep_data_frames = []
-            for pixel_name in substrate_pixels:
-                pixel_data = self.data[folder_name][pixel_name]
-                if sweep_type in pixel_data['data']:
-                    sweep_data_frames.append(pixel_data['data'][sweep_type])
-
-            if sweep_data_frames:
-                # Assuming 'V' is the same in all DataFrames
-                merged['data'][sweep_type] = pd.DataFrame()
-                merged['data'][sweep_type]['V'] = sweep_data_frames[0]['V']
-
-                # Compute the average for the 'I' column across all DataFrames
-                merged['data'][sweep_type]['I'] = sum(df['I'] for df in sweep_data_frames) / len(sweep_data_frames)
+        # # Process and average IV data for each sweep type
+        # for sweep_type in all_sweep_types:
+        #     sweep_data_frames = []
+        #     for pixel_name in substrate_pixels:
+        #         pixel_data = self.data[folder_name][pixel_name]
+        #         if sweep_type in pixel_data['data']:
+        #             sweep_data_frames.append(pixel_data['data'][sweep_type])
+        #
+        #     if sweep_data_frames:
+        #         # Assuming 'V' is the same in all DataFrames
+        #         merged['data'][sweep_type] = pd.DataFrame()
+        #         merged['data'][sweep_type]['V'] = sweep_data_frames[0]['V']
+        #
+        #         # Compute the average for the 'I' column across all DataFrames
+        #         merged['data'][sweep_type]['I'] = sum(df['I'] for df in sweep_data_frames) / len(sweep_data_frames)
 
         # Merge 'Used files' into a list, ensuring no duplicates.
         used_files = [date_data[pixel_name]['Used files'] for pixel_name in substrate_pixels if
@@ -182,3 +198,4 @@ if __name__ == "__main__":
     instance = PixelMerger(data=json_data, substrates=sub_data, parent=None)
     json_data = instance.return_merged_data()
     helper('after', data=json_data)
+    ic(json_data)

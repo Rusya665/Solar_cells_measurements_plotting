@@ -51,7 +51,7 @@ class AdditionalSettings(ctk.CTkFrame):
         self.filter1_checkbox = ctk.CTkCheckBox(self, text='Filter 1',
                                                 command=lambda: self.parent.activate_setting('filter1'))
         self.filter2_checkbox = ctk.CTkCheckBox(self, text='Filter 2',
-                                                command=lambda: self.parent.activate_setting('filter1'))
+                                                command=lambda: self.parent.activate_setting('filter2'))
         widgets = [
             self.light_intensity_label,
             self.light_intensity_entry,

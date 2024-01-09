@@ -27,7 +27,7 @@ with open(path, 'r', encoding='utf-8') as file:
     json_data = json.load(file)
 
 # Print the structure
-# print_json_structure(json_data)
-for key, val in json_data.items():
-    for key1 in val.keys():
-        ic(key, key1)
+print_json_structure(json_data)
+# for key, val in json_data.items():
+#     for key1 in val.keys():
+#         ic(key, key1)

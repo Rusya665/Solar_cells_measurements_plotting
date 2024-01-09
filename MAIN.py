@@ -1,4 +1,3 @@
-import time
 from tkinter import ttk
 
 import customtkinter as ctk
@@ -24,7 +23,5 @@ class JVProcessorMAIN(ctk.CTk):
 
 if __name__ == "__main__":
     ctk.set_appearance_mode("dark")
-    app_1 = JVProcessorMAIN()
-    start_time = time.time()
-    app_1.mainloop()
-    print("\n", "--- %s seconds ---" % (time.time() - start_time))
+    jv_processor_app = JVProcessorMAIN()
+    jv_processor_app.mainloop()

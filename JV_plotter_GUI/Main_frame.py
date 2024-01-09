@@ -1,17 +1,18 @@
 import os
-import tkinter as tk
 import time
+import tkinter as tk
 from collections import defaultdict
 from tkinter import filedialog, messagebox
 from typing import Optional
 
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
-from icecream import ic
 
 from JV_plotter_GUI.Additional_settings_panel import AdditionalSettings
 from JV_plotter_GUI.Calculate_IV_parameters import CalculateIVParameters
 from JV_plotter_GUI.Device_filter import DeviceDetector
+from JV_plotter_GUI.Filter_data import FilterJVData
+from JV_plotter_GUI.Pixel_merger import PixelMerger
 from JV_plotter_GUI.Pixel_sorter import PixelGroupingManager, PixelSorterInterface
 from JV_plotter_GUI.Plotter_new import DevicePlotter
 from JV_plotter_GUI.Potentostats_check import PotentiostatFileChecker
@@ -22,8 +23,6 @@ from JV_plotter_GUI.Top_frame import TopmostFrame
 from JV_plotter_GUI.Treeviews_frame import TableFrames
 from JV_plotter_GUI.instruments import sort_inner_keys
 from JV_plotter_GUI.settings import settings
-from JV_plotter_GUI.Pixel_merger import PixelMerger
-from JV_plotter_GUI.Filter_data import FilterJVData
 
 
 class IVProcessingMainClass(ctk.CTkFrame):
@@ -31,6 +30,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         super().__init__(master=parent, *args, **kwargs)
 
         # Some variables
+        self.sorted = False
         self.stat = "std_dev"
         self.start_time_workbook = None
         self.start_time = None
@@ -102,6 +102,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.filter1 = bool(self.additional_settings.filter1_checkbox.get())
         elif setting_type == "filter2":
             self.filter2 = bool(self.additional_settings.filter2_checkbox.get())
+        elif setting_type in ['std_dev', 'mae']:
+            self.stat = setting_type
+            self.pixel_sorter_instance.error_metric_button.configure(text=f'Chosen metric: {setting_type}')
 
     def exit(self) -> None:
         """
@@ -343,6 +346,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
             matched = PixelMerger(data=matched, parent=self,
                                   substrates=self.pixel_sorter_instance.return_sorted_dict()).return_merged_data()
             pixel_merger_time = time.time() - start_time
+            self.sorted = True
             print('\nPixel merging has been completed')
             print(f"--- {pixel_merger_time} seconds ---")
         self.start_time_workbook = time.time()

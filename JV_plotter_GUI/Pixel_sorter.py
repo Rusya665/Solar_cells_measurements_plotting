@@ -50,8 +50,9 @@ class PixelGroupingManager:
 
 
 class PixelSorterInterface(ctk.CTkToplevel):
-    def __init__(self, parent: ctk.CTk, sorted_dict: dict, pixel_list: List[str], file_directory: str):
+    def __init__(self, parent, sorted_dict: dict, pixel_list: List[str], file_directory: str):
         super().__init__()
+        self.error_metric_button = None
         self.parent = parent
         self.menu = None
         self.current_layout_state = None
@@ -82,6 +83,8 @@ class PixelSorterInterface(ctk.CTkToplevel):
         menu_button = self.menu.add_cascade("Menu")
         edit_button = self.menu.add_cascade("Edit")
         view_button = self.menu.add_cascade("View")
+        self.error_metric_button = self.menu.add_cascade("Error Metric")
+
         menu_dropdown = CustomDropdownMenu(widget=menu_button)
         menu_dropdown.add_option(option="Dump JSON", command=self.dump_json_pixels)
         menu_dropdown.add_separator()
@@ -103,6 +106,14 @@ class PixelSorterInterface(ctk.CTkToplevel):
         for i in range(1, 11):
             command = partial(self.initialize_pixels_placement, None, True, i)
             submenu.add_option(f'{i}', command=command)
+
+        error_metric_dropdown = CustomDropdownMenu(widget=self.error_metric_button, padx=-30)
+        error_metric_dropdown.add_option(option='Standard Deviation',
+                                         command=lambda: self.parent.main_frame.activate_setting('std_dev'))
+        error_metric_dropdown.add_separator()
+        error_metric_dropdown.add_option(option='Mean Absolute Error',
+                                         command=lambda: self.parent.main_frame.activate_setting('mae'))
+
         self.save_and_proceed_button = ctk.CTkButton(self, text="Save and Proceed", command=self.withdraw_and_proceed)
         self.save_and_proceed_button.pack(side=tk.BOTTOM, pady=10)
         self.initialize_pixels_placement(rebuild_column_frames=True)

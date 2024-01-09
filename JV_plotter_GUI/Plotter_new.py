@@ -20,6 +20,8 @@ class DevicePlotter:
     def __init__(self, parent, matched_devices: dict):
         self.data = matched_devices
         self.parent = parent
+        self.stat = self.parent.stat
+        self.sorted = self.parent.sorted
         self.name = self.__class__.__name__
         # Assuming the default cells height 20 pixels and width 64
         self.chart_horizontal_spacing = math.ceil((480 * settings[self.name]['chart_x_scale']) / 64) + 1
@@ -271,6 +273,9 @@ class DevicePlotter:
         ws.write(1, 5, 'Reverse', self.center)
         ws.write(1, 6, 'Forward', self.center)
         ws.write(1, 7, 'Average', self.center)
+        if self.sorted:
+            ws.write(0, 8, 'Selected error metric', self.center)
+            ws.write(1, 8, self.stat, self.center)
 
     def write_center_across_selection(self, ws: Worksheet, position: tuple[int, int], text: str,
                                       number_of_cells: int) -> None:
@@ -303,6 +308,9 @@ class DevicePlotter:
                     self.write_center_across_selection(ws, (row, col), device_data[value], 3)
                 elif row < 11:
                     ws.write(row, col, device_data['Parameters'][sweep][value])
+            if self.sorted:
+                ws.write(row, 8, )
+
 
     def fill_tables(self):
         table_type = {self.wb_table: ['G', 'F'],

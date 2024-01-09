@@ -17,8 +17,7 @@ class JVProcessorMAIN(ctk.CTk):
         self.geometry(f"{self.screen_width}x{self.screen_height}")
         self.minsize(700, 600)
         self.resizable(True, True)
-
-        IVProcessingMainClass(parent=self)
+        self.main_frame = IVProcessingMainClass(parent=self)
 
 
 if __name__ == "__main__":

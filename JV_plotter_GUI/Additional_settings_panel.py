@@ -83,6 +83,21 @@ class AdditionalSettings(ctk.CTkFrame):
         hover_text_open_wb = "  Workbook reveal!  \n  Open when done! 🎉  "
         hover_color_wb = "Color Tabs 🌈\nChoose to color your workbook tabs. Note: may affect speed."
         hover_dump_json = "Dump JSON 💾\nChoose to dump data as a JSON file."
+        hover_filtering_label = ("Data Filters: Use at Your Own Risk ⚠️\n"
+                                 "These filters manipulate the dataset based on specific criteria.\n"
+                                 "Be cautious: changes can significantly impact data analysis results.\n"
+                                 "Ensure you understand each filter's function before applying.")
+        hover_filter1 = ("Filter 1: Pixel Efficiency Analysis 🔄\n"
+                         "This filter evaluates each pixel's efficiency within substrates.\n"
+                         "Pixels with an average efficiency below 0.01 are considered 'dead'.\n"
+                         "If all pixels in a substrate are 'dead', none are deleted to maintain substrate representation.\n"
+                         "This ensures comprehensive data analysis, keeping at least one 'dead' pixel when necessary.")
+        hover_filter2 = ("Filter 2: Measurement Point Accuracy 🔍\n"
+                         "This filter scrutinizes each device's measurement points.\n"
+                         "It specifically identifies and removes points where efficiency anomalously\n"
+                         "drops below 0.01 and then inexplicably recovers.\n"
+                         "By filtering out these erratic efficiency fluctuations, Filter 2 ensures\n"
+                         "the reliability and consistency of the overall dataset.")
         Hovertip(self.light_intensity_label, hover_light_intensity, hover_delay=hover_delay)
         Hovertip(self.light_intensity_entry, hover_light_intensity, hover_delay=hover_delay)
         Hovertip(self.distance_to_light_label, hover_distance_to_light, hover_delay=hover_delay)
@@ -96,6 +111,9 @@ class AdditionalSettings(ctk.CTkFrame):
 
         Hovertip(self.additional_settings_label, hover_additional_settings, hover_delay=hover_delay)
         Hovertip(self.dump_json_checkbox, hover_dump_json, hover_delay=hover_delay)
+        Hovertip(self.filtering_label, hover_filtering_label, hover_delay=hover_delay)
+        Hovertip(self.filter1_checkbox, hover_filter1, hover_delay=hover_delay)
+        Hovertip(self.filter2_checkbox, hover_filter2, hover_delay=hover_delay)
 
     def animate_additional_settings(self, step=0.03):
         if self.in_start_pos:  # If the frame is about to be shown

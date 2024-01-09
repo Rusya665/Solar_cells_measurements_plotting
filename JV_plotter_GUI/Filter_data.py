@@ -1,7 +1,10 @@
+import inspect
+import json
 import os
 from datetime import datetime
 from typing import Any, Dict, Optional, List
-import inspect
+
+from icecream import ic
 
 
 class FilterJVData:
@@ -16,55 +19,57 @@ class FilterJVData:
         self.parent = parent
         self.log = []
 
-    def filter1(self, data: Dict[str, Any], substrates: Optional[Dict[str, List[str]]]) -> Dict[str, Any]:
+    def filter1(self, data: Dict[str, Any], substrates: Dict[str, List[str]]) -> Dict[str, Any]:
         """
-        Removes dead pixels from the data.
+        Removes dead pixels from the data unless all pixels in a substrate are dead.
         A pixel is considered dead if its average efficiency is less than 0.01.
-        If all pixels within a substrate are dead, one pixel is retained but with zeroed parameters (except IV data).
+        If all pixels within a substrate are dead, none are deleted.
 
         Iterates through each folder and device, checking each pixel's efficiency.
-        Dead pixels are removed unless
-        all pixels in a substrate are dead, in which case one pixel is retained with zeroed parameters.
+        Dead pixels are removed only if at least one pixel in the same substrate is alive.
 
-        :param substrates: (Optional) A dictionary where each key is a substrate name, and its value is a list of
+        :param substrates: A dictionary where each key is a substrate name, and its value is a list of
                            pixel names.
                            This is used for more advanced filtering based on substrates.
         :param data: A dictionary containing raw device data.
-        The data is expected to be structured with folder names as keys and devices as values.
+                     The data is expected to be structured with folder names as keys and devices as values.
         :return: A tuple containing the modified data and a list of logs detailing the deletions.
         """
         current_frame = inspect.currentframe()
         method_name = inspect.getframeinfo(current_frame).function
         self.log.append(f"{method_name} is activated\n")
         log_counter = 0
-        # Iterate through the folders
+        pixels_to_delete = {}
+
+        # Populate lists of dead and alive pixels
         for folder_name, devices in data.items():
-            # Iterate through the devices in each folder
             for device_name, device_data in devices.items():
-                if device_name in substrates and len(substrates[device_name]) > 1:
+                if device_name in substrates:
                     dead_pixels = []
+                    alive_pixels = []
+
                     # Check each pixel's efficiency
                     for pixel_name in substrates[device_name]:
-                        pixel_data = device_data.get(pixel_name)
+                        pixel_data = devices.get(pixel_name)
                         if pixel_data and pixel_data['Parameters']['Average']['Efficiency (%)'] < 0.01:
                             dead_pixels.append(pixel_name)
+                        else:
+                            alive_pixels.append(pixel_name)
 
-                    # Retain or delete pixels based on the condition
-                    if len(dead_pixels) == len(substrates[device_name]):
-                        retained_pixel = substrates[device_name][0]
-                        device_data[retained_pixel] = {key: 0 for key in device_data[retained_pixel].keys()}
-                        device_data[retained_pixel]['Parameters'] = {k: {p: 0 for p in v} for k, v in
-                                                                     device_data[retained_pixel]['Parameters'].items()}
-                        device_data[retained_pixel]['H-index'] = 0
-                        device_data[retained_pixel]['data'] = device_data[retained_pixel]['data']
-                    else:
+                    # Add dead pixels to the "delete" list if at least one pixel in the substrate is alive
+                    if alive_pixels:
                         for dead_pixel in dead_pixels:
-                            del device_data[dead_pixel]
-                            log_counter += 1
-                            self.log.append(f"{log_counter}. Deleted dead pixel in the folder: {folder_name},"
-                                            f" device: {device_name}")
+                            pixels_to_delete[(folder_name, dead_pixel)] = True
+
+        # Perform deletion based on the populated list
+        for (folder_name, dead_pixel) in pixels_to_delete:
+            if dead_pixel in data[folder_name]:
+                del data[folder_name][dead_pixel]
+                log_counter += 1
+                self.log.append(f"{log_counter}. Deleted dead pixel: {dead_pixel} in folder: {folder_name}")
+
         if log_counter == 0:
-            self.log.append('Non device was filtered out')
+            self.log.append('No device was filtered out')
         self.log.append('\n')
         return data
 
@@ -129,6 +134,39 @@ class FilterJVData:
                 log = f'Filter_log_{today}_for_{base_dir}.txt'
                 filename = os.path.join(self.parent.file_directory, log)
 
-            with open(filename, 'w') as file:
+            with open(filename, 'w') as f:
                 for entry in self.log:
-                    file.write(entry + '\n')
+                    f.write(entry + '\n')
+
+
+def helper(suffix, data):
+    # Accumulate efficiencies for each pixel across devices
+    pixel_efficiencies = {}
+    for device_name, device_data in data.items():
+        for pixel_name, pixel_info in device_data.items():
+            if ('Parameters' in pixel_info and 'Average' in
+                    # pixel_info['Parameters'] and pixel_name == 'scanCVivsE-10R-2'):
+                    pixel_info['Parameters'] and pixel_name == 'scanCVivsE-11R-1'):
+                efficiency = pixel_info['Parameters']['Average'].get('Efficiency (%)')
+                if efficiency is not None:
+                    if pixel_name not in pixel_efficiencies:
+                        pixel_efficiencies[pixel_name] = []
+                    pixel_efficiencies[pixel_name].append([device_name, efficiency])
+    ic(suffix, pixel_efficiencies)
+
+
+if __name__ == "__main__":
+    path = (r'D:/OneDrive - O365 Turun yliopisto/Documents/Aging tests/2023 Carbon revival/'
+            r'3. New thing, dark storage/Measurememnts separated/Mahboubeh/2023-12-07 Mahboubeh data.json')
+    path2 = (r'D:/OneDrive - O365 Turun yliopisto/Documents/Aging tests/2023 Carbon revival/'
+             r'3. New thing, dark storage/Measurememnts separated/Mahboubeh/2024-01-09 Mahboubeh pixels sorted.json')
+    with open(path, 'r', encoding='utf-8') as file:
+        json_data = json.load(file)
+    with open(path2, 'r', encoding='utf-8') as file:
+        sub_data = json.load(file)
+    instance = FilterJVData()
+    helper('before', json_data)
+    data1 = instance.filter1(data=json_data, substrates=sub_data)
+    data1 = instance.filter2(data=data1)
+    helper('after', data=data1)
+    ic(instance.log)

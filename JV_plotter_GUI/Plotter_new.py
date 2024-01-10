@@ -374,6 +374,7 @@ class DevicePlotter:
         # Write the DataFrame values to the Aging sheet
         for row_num, value in enumerate(self.timeline_df[self.timeline_df.columns[0]]):
             self.aging_sheet.write(row_num + 1, 0, value)  # +1 to skip the header
+            # Write the aging hours values in the datetime format, so area chart can display them properly.
             date_time = self.base_date + timedelta(days=value)
             self.aging_sheet.write_datetime(row_num + 2 + len(self.timeline_df), 0, date_time, self.date_format)
 

@@ -216,6 +216,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         """
         depth = 1 if self.aging_mode else 0
         potentiostat_checker = PotentiostatFileChecker(parent=self, potentiostat_choice=self.potentiostat)
+        folder_counter = -1
 
         for file in os.listdir(path):
             abspath = os.path.join(path, file).replace('\\', '/')
@@ -224,11 +225,11 @@ class IVProcessingMainClass(ctk.CTkFrame):
                 checking = potentiostat_checker.check_file(abspath)
                 if checking[0]:  # Insert a file only if it's potentiostats file
                     potentiostat = checking[2]
-                    # data = [potentiostat, checking[1], abspath]
                     data = [potentiostat, checking[-1]['Unit'], abspath]
                     folder_name = os.path.basename(path)
                     if folder_name not in self.added_iv:
                         self.added_iv[folder_name] = {}
+                        folder_counter += 1
                     self.added_iv[folder_name][file] = {
                         "path": abspath,
                         'measurement device': potentiostat,
@@ -237,6 +238,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
                         'data': checking[3]["Data"],
                         'unit': checking[3]['Unit'],
                         'Used files': file,
+                        'timestamp': self.timeline_df[self.timeline_df.columns[0]].iloc[folder_counter]
                     }
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')

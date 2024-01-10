@@ -93,7 +93,7 @@ class PixelSorterInterface(ctk.CTkToplevel):
         menu_dropdown.add_option("Read JSON", command=lambda: self.populate_substrate_dict_from_file(
             path_to_file=filedialog.askdirectory(mustexist=True)))
         menu_dropdown.add_separator()
-        menu_dropdown.add_option("Exit")
+        menu_dropdown.add_option("Exit and terminate instance", command=self.exit_and_terminate)
 
         edit_dropdown = CustomDropdownMenu(widget=edit_button, padx=-10)
         edit_dropdown.add_option(option='Rebuild sorting', command=self.initialize_pixels_placement)
@@ -111,8 +111,26 @@ class PixelSorterInterface(ctk.CTkToplevel):
         error_metric_dropdown.add_option(option='Standard Deviation',
                                          command=lambda: self.parent.main_frame.activate_setting('std_dev'))
         error_metric_dropdown.add_separator()
+
         error_metric_dropdown.add_option(option='Mean Absolute Error',
                                          command=lambda: self.parent.main_frame.activate_setting('mae'))
+        error_metric_dropdown.add_separator()
+
+        error_metric_dropdown.add_option(option='Mean Squared Error',
+                                         command=lambda: self.parent.main_frame.activate_setting('mse'))
+        error_metric_dropdown.add_separator()
+
+        error_metric_dropdown.add_option(option='Root Mean Squared Error',
+                                         command=lambda: self.parent.main_frame.activate_setting('rmse'))
+        error_metric_dropdown.add_separator()
+
+        error_metric_dropdown.add_option(option='Mean Absolute Percentage Error',
+                                         command=lambda: self.parent.main_frame.activate_setting('mape'))
+        error_metric_dropdown.add_separator()
+
+        error_metric_dropdown.add_option(option='Median Absolute Deviation',
+                                         command=lambda: self.parent.main_frame.activate_setting('mad'))
+        error_metric_dropdown.add_separator()
 
         self.save_and_proceed_button = ctk.CTkButton(self, text="Save and Proceed", command=self.withdraw_and_proceed)
         self.save_and_proceed_button.pack(side=tk.BOTTOM, pady=10)
@@ -522,3 +540,10 @@ class PixelSorterInterface(ctk.CTkToplevel):
 
     def return_sorted_dict(self):
         return self.current_layout_state
+
+    def exit_and_terminate(self):
+        self.withdraw()
+        if self.parent.state().lower() != 'normal':
+            self.parent.state('normal')
+        self.parent.main_frame.pixel_sorter_instance = None
+        self.parent.main_frame.additional_settings.filter1_checkbox.configure(state='disabled')

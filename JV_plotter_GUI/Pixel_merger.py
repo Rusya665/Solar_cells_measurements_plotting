@@ -24,10 +24,18 @@ class PixelMerger:
 
     def average_parameters(self, parameter_dicts: List[Dict[str, Any]]) -> Dict[str, float]:
         """
-        Calculate the average and error (standard deviation or mean absolute error) for parameters across a set of pixels.
+        Calculate the average and various error metrics (standard deviation, mean absolute error, mean squared error,
+        root mean squared error, mean absolute percentage error, median absolute deviation) for parameters across a set
+        of pixels.
 
         :param parameter_dicts: A list of dictionaries, all containing parameters of a pixel.
-        :return: A dictionary containing the averages and their corresponding errors.
+        :return: A dictionary containing the averages and their corresponding errors. Error metrics include:
+                 - Standard Deviation ('std_dev')
+                 - Mean Absolute Error ('mae')
+                 - Mean Squared Error ('mse')
+                 - Root Mean Squared Error ('rmse')
+                 - Mean Absolute Percentage Error ('mape')
+                 - Median Absolute Deviation ('mad')
         """
         param_values = {key: [] for key in parameter_dicts[0]}
         for param_dict in parameter_dicts:
@@ -36,6 +44,7 @@ class PixelMerger:
 
         calculated_params = {}
         for key, values in param_values.items():
+            values = np.array(values)
             mean_value = np.mean(values)
             calculated_params[key] = mean_value
 
@@ -43,6 +52,17 @@ class PixelMerger:
                 error_value = np.std(values, ddof=1)  # Sample standard deviation
             elif self.stat == 'mae':
                 error_value = np.mean(np.abs(values - mean_value))  # Mean Absolute Error
+            elif self.stat == 'mse':
+                error_value = np.mean((values - mean_value) ** 2)  # Mean Squared Error
+            elif self.stat == 'rmse':
+                error_value = np.sqrt(np.mean((values - mean_value) ** 2))  # Root Mean Squared Error
+            elif self.stat == 'mape':
+                # Handle division by zero and potential NaN values
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    error_value = np.mean(np.abs((values - mean_value) / values)) * 100
+                    error_value = np.nan_to_num(error_value)  # Convert NaN to 0
+            elif self.stat == 'mad':
+                error_value = np.median(np.abs(values - np.median(values)))  # Median Absolute Deviation
             else:
                 raise ValueError(f"Unknown stat: {self.stat}")
 
@@ -101,7 +121,6 @@ class PixelMerger:
         all_sweep_types = set()
         for pixel_name in substrate_pixels:
             all_sweep_types.update(self.data[folder_name][pixel_name]['data'].keys())
-        # ic(all_sweep_types)
 
         # Process and average IV data for each sweep type
         for sweep_type in all_sweep_types:

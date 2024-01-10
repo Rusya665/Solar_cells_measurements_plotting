@@ -1,5 +1,6 @@
+from tkinter import messagebox
+
 import numpy as np
-from CTkMessagebox import CTkMessagebox
 
 from JV_plotter_GUI.settings import settings
 
@@ -29,11 +30,9 @@ class CalculateIVParameters:
         self.perform_calculation()
         if self.warning_messages:
             all_warnings = "\n".join(self.warning_messages)
-            CTkMessagebox(title="Warning!",
-                          message=f"Invalid data detected while calculating the\n"
-                                  f"series resistance for the following devices:\n{all_warnings}\n"
-                                  "This is likely due to bad JV data from a dead cell.",
-                          icon="warning", option_1='Okay, whatever')
+            messagebox.showwarning("Warning!", f"Invalid data detected while calculating the\n"
+                                               f"series resistance for the following devices:\n{all_warnings}\n"
+                                               "This is likely due to bad JV data from a dead cell.")
 
     def perform_calculation(self):
         # Iterate through the folders

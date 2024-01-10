@@ -50,6 +50,7 @@ class AdditionalSettings(ctk.CTkFrame):
         self.filtering_label.cget("font").configure(size=18)
         self.filter1_checkbox = ctk.CTkCheckBox(self, text='Filter 1',
                                                 command=lambda: self.parent.activate_setting('filter1'))
+        self.filter1_checkbox.configure(state='disabled')
         self.filter2_checkbox = ctk.CTkCheckBox(self, text='Filter 2',
                                                 command=lambda: self.parent.activate_setting('filter2'))
         widgets = [

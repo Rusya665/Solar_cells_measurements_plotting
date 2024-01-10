@@ -102,7 +102,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.filter1 = bool(self.additional_settings.filter1_checkbox.get())
         elif setting_type == "filter2":
             self.filter2 = bool(self.additional_settings.filter2_checkbox.get())
-        elif setting_type in ['std_dev', 'mae']:
+        elif setting_type in ['std_dev', 'mae', 'mse', 'rmse', 'mape', 'mad']:
             self.stat = setting_type
             self.pixel_sorter_instance.error_metric_button.configure(text=f'Chosen metric: {setting_type}')
 
@@ -192,8 +192,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
         Update and fill the file table with filtered files
         """
         if self.pixel_sorter_instance is not None:
-            # self.pixel_sorter_instance.destroy()  # Close and destroy the instance
             self.pixel_sorter_instance = None
+            self.additional_settings.filter1_checkbox.configure(state='disabled')
         if self.file_directory == "":
             return
         # Check if there are any items in the treeview
@@ -237,9 +237,6 @@ class IVProcessingMainClass(ctk.CTkFrame):
                         'data': checking[3]["Data"],
                         'unit': checking[3]['Unit'],
                         'Used files': file,
-                        # 'Active area': None,
-                        # 'Light Intensity': None,
-                        # 'Distance to light source': None,
                     }
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')
@@ -256,10 +253,6 @@ class IVProcessingMainClass(ctk.CTkFrame):
                         # allowed for the Processed folders
                         messagebox.showerror('Waring!', f"Too many sub folders in"
                                                         f" a folder {abspath}")
-                        # box = CTkMessagebox(title='Warning!',
-                        #                      message=f"Too many sub folders in the folder\n{abspath}", icon="warning",
-                        #                      option_1='Cancel', width=600)
-                        # box.info._text_label.configure(wraplength=600)
                         return
                     oid = self.table_frame.files_table.insert(parent, 'end', text=file, open=False, tags='folder',
                                                               values=['', '', abspath])
@@ -289,6 +282,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         else:
             # Disable the "Selected" button, since the logic is not yet adapted
             self.proceed_frame.button_selected.configure(state='disabled')
+            self.additional_settings.filter1_checkbox.configure(state='normal')
             # Create a new instance if none exists
             self.pixel_sorter_instance = PixelSorterInterface(parent=self.parent, sorted_dict=sorted_out,
                                                               pixel_list=self.pixels,
@@ -318,6 +312,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
                 child_items = list(self.table_frame.files_table.get_children(top_level_item))
                 items.extend(child_items)
         matched = self.table_frame.devices_by_folder(items)
+
+        if matched is None:
+            return
 
         self.start_time = time.time()
         matched = CalculateIVParameters(parent=self, matched_devices=matched).return_data()

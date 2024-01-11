@@ -420,6 +420,7 @@ class DevicePlotter:
             else:
                 target_sheet_absolute = self.aging_plots_avg_absolute
                 target_sheet_relative = self.aging_plots_avg_relative
+            area_chart = False
             # Loop through each device
             for device_counter, (device, folder_info_list) in enumerate(unique_devices_folders.items()):
                 first_values[device] = {}  # Initialize for this device
@@ -450,6 +451,7 @@ class DevicePlotter:
                                                relative_value)
                         if self.sorted and self.data[folder_name][device]['Parameters'][sweep].get(
                                 f'{parameter} {self.stat}'):
+                            area_chart = True
                             error_value = self.data[folder_name][device]['Parameters'][sweep][
                                 f'{parameter} {self.stat}']
                             error_metric_lower = value - error_value
@@ -481,7 +483,7 @@ class DevicePlotter:
                                                                       param_column=excel_col_abs,
                                                                       data_start=data_start,
                                                                       data_end=data_end,
-                                                                      shaded_error_bar=self.sorted,
+                                                                      shaded_error_bar=area_chart,
                                                                       value_type_shift=value_type_shift,
                                                                       row=row)
                     chart_iv_relative = self.chart_creator.plot_aging(device_name=device, sweep=sweep,

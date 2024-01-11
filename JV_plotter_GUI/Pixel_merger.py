@@ -1,9 +1,7 @@
-import json
 from typing import Any, List, Dict
 
 import numpy as np
 import pandas as pd
-from icecream import ic
 
 
 class PixelMerger:
@@ -166,38 +164,3 @@ class PixelMerger:
 
     def return_merged_data(self):
         return self.merged_data
-
-
-def helper(suffix, data):
-    # Accumulate efficiencies for each pixel across devices
-    pixel_efficiencies = {}
-    for device_name, device_data in data.items():
-        for pixel_name, pixel_info in device_data.items():
-            if suffix == 'before':
-                name = 'scanCVivsE-11R-1'
-            elif suffix == 'after':
-                name = 'scanCVivsE-11R'
-            if ('Parameters' in pixel_info and 'Average' in
-                    # pixel_info['Parameters'] and pixel_name == 'scanCVivsE-10R-2'):
-                    pixel_info['Parameters'] and pixel_name == name):
-                efficiency = pixel_info['Parameters']['Average'].get('Efficiency (%)')
-                if efficiency is not None:
-                    if pixel_name not in pixel_efficiencies:
-                        pixel_efficiencies[pixel_name] = []
-                    pixel_efficiencies[pixel_name].append([device_name, efficiency])
-    ic(suffix, pixel_efficiencies)
-
-
-if __name__ == "__main__":
-    path = (r'D:/OneDrive - O365 Turun yliopisto/Documents/Aging tests/2023 Carbon revival/'
-            r'3. New thing, dark storage/Measurememnts separated/Mahboubeh/2024-01-09 Mahboubeh IV data.json')
-    path2 = (r'D:/OneDrive - O365 Turun yliopisto/Documents/Aging tests/2023 Carbon revival/'
-             r'3. New thing, dark storage/Measurememnts separated/Mahboubeh/2024-01-09 Mahboubeh pixels sorted.json')
-    with open(path, 'r', encoding='utf-8') as file:
-        json_data = json.load(file)
-    with open(path2, 'r', encoding='utf-8') as file:
-        sub_data = json.load(file)
-    helper('before', json_data)
-    instance = PixelMerger(data=json_data, substrates=sub_data, parent=None)
-    json_data = instance.return_merged_data()
-    helper('after', data=json_data)

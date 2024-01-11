@@ -67,7 +67,7 @@ class DeviceDetector:
                 if filename in processed_files:
                     continue
                 matched_file = self.find_fuzzy_pair(filename, single_sweep_files, folder_name)
-                # Pair found and they have complementary sweeps
+                # The pair found and they have complementary sweeps
                 if matched_file and single_sweep_files[matched_file] != direction:
                     combined_data, used_files = self.combine_data(folder_data[filename], folder_data[matched_file])
                     # Adjust the key to represent the common device name with distinguishing suffixes
@@ -126,7 +126,7 @@ class DeviceDetector:
         """
         best_match = (None, 0)  # Tuple (filename, score)
 
-        # Determine sweep direction and its opposite based on the filename
+        # Determine a sweep direction and its opposite based on the filename
         sweep_direction = 'Forward' if 'fw' in filename.lower() else 'Reverse'
         opposite_direction = 'Reverse' if sweep_direction == 'Forward' else 'Forward'
 

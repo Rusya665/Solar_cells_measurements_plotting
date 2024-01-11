@@ -32,7 +32,6 @@ class ActiveAreaDetector:
             '.json': self.process_json,
             '.xlsx': self.process_xlsx
         }
-        # self.active_area_data = self.check_directory()
 
     @staticmethod
     def similar(a, b):
@@ -100,4 +99,3 @@ class ActiveAreaDetector:
             device, active_area = row
             data_dict[device] = float(active_area)
         return data_dict
-

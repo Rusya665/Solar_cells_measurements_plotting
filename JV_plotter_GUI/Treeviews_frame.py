@@ -183,7 +183,6 @@ class TableFrames(ctk.CTkFrame):
                 file_name = self.files_table.item(item)["text"]
                 if folder_name not in folder_file_dict:
                     folder_file_dict[folder_name] = []
-
                 folder_file_dict[folder_name].append(file_name)
         matched_devices = {}
         for folder, selected_files in folder_file_dict.items():

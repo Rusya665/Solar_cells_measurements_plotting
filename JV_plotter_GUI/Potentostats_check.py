@@ -132,16 +132,3 @@ class PotentiostatFileChecker:
         # data = {str(idx): segment for idx, segment in enumerate(sweeps_data, start=1)}
         # self.check_data_integrity(df, {"Counts": counts, "Data": data}, file)
         return {"Counts": counts, "Data": data, 'Unit': unit}
-
-    # def check_data_integrity(self, df, result,  file):
-    #     """
-    #     #     Check if the total number of rows in the initial dataframe matches the sum of the rows from
-    #     the divided segments.
-    #     """
-    #     # Get the divided segments
-    #     sweeps_data = [data for _, data in result["Data"].items()]
-    #
-    #     # Compute the total number of rows in the divided segments
-    #     total_rows_in_segments = sum(segment.shape[0] for segment in sweeps_data)
-    #     print(f'For {Path(file).stem} the total length is {df.shape[0]} and the sweeps all together are
-    #     {total_rows_in_segments}')

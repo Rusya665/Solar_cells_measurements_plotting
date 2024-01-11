@@ -14,7 +14,7 @@ from JV_plotter_GUI.Device_filter import DeviceDetector
 from JV_plotter_GUI.Filter_data import FilterJVData
 from JV_plotter_GUI.Pixel_merger import PixelMerger
 from JV_plotter_GUI.Pixel_sorter import PixelGroupingManager, PixelSorterInterface
-from JV_plotter_GUI.Plotter_new import DevicePlotter
+from JV_plotter_GUI.Plotter import DevicePlotter
 from JV_plotter_GUI.Potentostats_check import PotentiostatFileChecker
 from JV_plotter_GUI.Slide_frame import SettingsPanel
 from JV_plotter_GUI.The_lower_frames import LowestFrame, ProceedFrame
@@ -35,7 +35,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.start_time_workbook = None
         self.start_time = None
         self.pixel_sorter_instance = None
-        self.pixels = None
+        self.all_unique_devices = None
         self.parent = parent
         self.table_size = settings['Main frame']['table_size']
         self.potentiostat = 'All'
@@ -216,7 +216,6 @@ class IVProcessingMainClass(ctk.CTkFrame):
         """
         depth = 1 if self.aging_mode else 0
         potentiostat_checker = PotentiostatFileChecker(parent=self, potentiostat_choice=self.potentiostat)
-        folder_counter = -1
 
         for file in os.listdir(path):
             abspath = os.path.join(path, file).replace('\\', '/')
@@ -229,7 +228,6 @@ class IVProcessingMainClass(ctk.CTkFrame):
                     folder_name = os.path.basename(path)
                     if folder_name not in self.added_iv:
                         self.added_iv[folder_name] = {}
-                        folder_counter += 1
                     self.added_iv[folder_name][file] = {
                         "path": abspath,
                         'measurement device': potentiostat,
@@ -238,7 +236,6 @@ class IVProcessingMainClass(ctk.CTkFrame):
                         'data': checking[3]["Data"],
                         'unit': checking[3]['Unit'],
                         'Used files': file,
-                        'timestamp': self.timeline_df[self.timeline_df.columns[0]].iloc[folder_counter]
                     }
                     self.table_frame.files_table.insert(parent=parent, index=tk.END, text=file, values=data,
                                                         tags='file')
@@ -264,19 +261,22 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.table_frame.construct_active_areas_entries(data=self.detect_pixels(), path=self.file_directory)
 
     def detect_pixels(self):
+        self.all_unique_devices = None
         detected_devices = DeviceDetector(data_dict=self.added_iv).detect_and_filter()
         unique_devices = set()
         for folder_name, devices in detected_devices.items():
             for device_name, device_data in devices.items():
                 if device_name not in unique_devices:
                     unique_devices.add(device_name)
-        self.pixels = list(unique_devices)
-        self.slide_frame.pixel_manager.configure(state='normal')
+        self.all_unique_devices = list(unique_devices)
+
+        if self.all_unique_devices:
+            self.slide_frame.pixel_manager.configure(state='normal')
         return detected_devices
 
     def pixel_managing(self):
         self.parent.state('iconic')
-        grouping_manager = PixelGroupingManager(self.pixels)
+        grouping_manager = PixelGroupingManager(self.all_unique_devices)
         sorted_out = grouping_manager.group_pixels_by_substrate()
         if self.pixel_sorter_instance is not None and self.pixel_sorter_instance.winfo_exists():
             self.pixel_sorter_instance.deiconify()  # Restore the window if it exists
@@ -287,7 +287,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.additional_settings.filter1_checkbox.configure(state='normal')
             # Create a new instance if none exists
             self.pixel_sorter_instance = PixelSorterInterface(parent=self.parent, sorted_dict=sorted_out,
-                                                              pixel_list=self.pixels,
+                                                              pixel_list=self.all_unique_devices,
                                                               file_directory=self.file_directory)
 
     def final_output(self, state) -> None:
@@ -313,6 +313,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
             for top_level_item in items:
                 child_items = list(self.table_frame.files_table.get_children(top_level_item))
                 items.extend(child_items)
+
         matched = self.table_frame.devices_by_folder(items)
 
         if matched is None:

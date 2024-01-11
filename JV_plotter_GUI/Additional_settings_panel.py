@@ -91,7 +91,8 @@ class AdditionalSettings(ctk.CTkFrame):
         hover_filter1 = ("Filter 1: Pixel Efficiency Analysis 🔄\n"
                          "This filter evaluates each pixel's efficiency within substrates.\n"
                          "Pixels with an average efficiency below 0.01 are considered 'dead'.\n"
-                         "If all pixels in a substrate are 'dead', none are deleted to maintain substrate representation.\n"
+                         "If all pixels in a substrate are 'dead', none are deleted"
+                         " to maintain substrate representation.\n"
                          "This ensures comprehensive data analysis, keeping at least one 'dead' pixel when necessary.")
         hover_filter2 = ("Filter 2: Measurement Point Accuracy 🔍\n"
                          "This filter scrutinizes each device's measurement points.\n"

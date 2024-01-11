@@ -533,6 +533,23 @@ class PixelSorterInterface(ctk.CTkToplevel):
         if read_data:
             # Capture the current layout state
             self.current_layout_state = read_data
+
+            # Flatten the list of current unique devices
+            updated_devices = self.pixel_list.copy()
+
+            for substrate, pixels in read_data.items():
+                # Check if each pixel is in the current unique devices list
+                for pixel in pixels:
+                    if pixel in self.pixel_list:
+                        # Remove the pixel and add the substrate instead
+                        updated_devices.remove(pixel)
+                # Add the substrate name if not already in the list
+                if substrate not in updated_devices:
+                    updated_devices.append(substrate)
+
+            # Update the all_unique_devices list
+            self.parent.main_frame.all_unique_devices = updated_devices
+
             # Minimize or hide the window, keeping it in memory
             self.withdraw()
             if self.parent.state().lower() != 'normal':

@@ -1,10 +1,7 @@
 import inspect
-import json
 import os
 from datetime import datetime
 from typing import Any, Dict, Optional, List
-
-from icecream import ic
 
 
 class FilterJVData:
@@ -137,36 +134,3 @@ class FilterJVData:
             with open(filename, 'w') as f:
                 for entry in self.log:
                     f.write(entry + '\n')
-
-
-def helper(suffix, data):
-    # Accumulate efficiencies for each pixel across devices
-    pixel_efficiencies = {}
-    for device_name, device_data in data.items():
-        for pixel_name, pixel_info in device_data.items():
-            if ('Parameters' in pixel_info and 'Average' in
-                    # pixel_info['Parameters'] and pixel_name == 'scanCVivsE-10R-2'):
-                    pixel_info['Parameters'] and pixel_name == 'scanCVivsE-11R-1'):
-                efficiency = pixel_info['Parameters']['Average'].get('Efficiency (%)')
-                if efficiency is not None:
-                    if pixel_name not in pixel_efficiencies:
-                        pixel_efficiencies[pixel_name] = []
-                    pixel_efficiencies[pixel_name].append([device_name, efficiency])
-    ic(suffix, pixel_efficiencies)
-
-
-if __name__ == "__main__":
-    path = (r'D:/OneDrive - O365 Turun yliopisto/Documents/Aging tests/2023 Carbon revival/'
-            r'3. New thing, dark storage/Measurememnts separated/Mahboubeh/2023-12-07 Mahboubeh data.json')
-    path2 = (r'D:/OneDrive - O365 Turun yliopisto/Documents/Aging tests/2023 Carbon revival/'
-             r'3. New thing, dark storage/Measurememnts separated/Mahboubeh/2024-01-09 Mahboubeh pixels sorted.json')
-    with open(path, 'r', encoding='utf-8') as file:
-        json_data = json.load(file)
-    with open(path2, 'r', encoding='utf-8') as file:
-        sub_data = json.load(file)
-    instance = FilterJVData()
-    helper('before', json_data)
-    data1 = instance.filter1(data=json_data, substrates=sub_data)
-    data1 = instance.filter2(data=data1)
-    helper('after', data=data1)
-    ic(instance.log)

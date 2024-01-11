@@ -7,9 +7,8 @@ from JV_plotter_GUI.settings import settings
 
 class CalculateIVParameters:
     """
-        This class is designed for analyzing device measurements, specifically for photovoltaic devices.
+    This class is designed for analyzing device measurements, specifically for photovoltaic devices.
     """
-
     def __init__(self, parent, matched_devices: dict):
         self.data = matched_devices
         self.parent = parent
@@ -77,7 +76,7 @@ class CalculateIVParameters:
     @staticmethod
     def linfit_golden(x_data, y_data):
         """
-        Linear fit using various methods.
+        A linear fit using various methods.
         Uncomment the desired method.
 
         :param x_data: np.ndarray

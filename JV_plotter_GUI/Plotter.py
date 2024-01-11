@@ -23,6 +23,7 @@ class DevicePlotter:
         self.chart_average_row, self.chart_average_col = None, None
         self.data = matched_devices
         self.parent = parent
+        self.unique_devices = self.parent.all_unique_devices
         self.stat = self.parent.stat
         self.sorted = self.parent.sorted
         self.name = self.__class__.__name__
@@ -320,7 +321,8 @@ class DevicePlotter:
                     self.write_center_across_selection(ws, (row, col), device_data[value], 3)
                 elif row < 11:
                     ws.write(row, col, device_data['Parameters'][sweep][value])
-                if self.sorted and row < 11:
+                if self.sorted and row < 11 and device_data['Parameters'][sweep].get(
+                        f'{value} {self.stat}') is not None:
                     ws.write(row, col + len(sweeps_list), device_data['Parameters'][sweep][f'{value} {self.stat}'])
 
     def fill_tables(self):
@@ -393,8 +395,8 @@ class DevicePlotter:
         sweeps = ['Forward', 'Reverse', 'Average']
 
         unique_devices_folders = {}
-        for folder_name, devices in self.data.items():
-            for device_name, device_data in devices.items():
+        for folder_name in self.data.keys():
+            for device_name in self.unique_devices:
                 if device_name not in unique_devices_folders:
                     unique_devices_folders[device_name] = []
 
@@ -432,6 +434,9 @@ class DevicePlotter:
                     for row, parameter in self.parameter_dict.items():
                         if row in keys_to_exclude:  # Exclude non-parameter key
                             continue
+                        device_data = self.data[folder_name].get(device)
+                        if not device_data:
+                            continue
                         # Retrieve parameter value from self.data
                         value = self.data[folder_name][device]['Parameters'][sweep][parameter]
 
@@ -443,7 +448,8 @@ class DevicePlotter:
                         self.aging_sheet.write(current_row, row + 1, value)
                         self.aging_sheet.write(current_row, row + 1 + len(self.parameter_dict) - len(keys_to_exclude),
                                                relative_value)
-                        if self.sorted:
+                        if self.sorted and self.data[folder_name][device]['Parameters'][sweep].get(
+                                f'{parameter} {self.stat}'):
                             error_value = self.data[folder_name][device]['Parameters'][sweep][
                                 f'{parameter} {self.stat}']
                             error_metric_lower = value - error_value

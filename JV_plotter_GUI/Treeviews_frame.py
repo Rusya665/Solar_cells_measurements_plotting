@@ -106,7 +106,7 @@ class TableFrames(ctk.CTkFrame):
         Otherwise, update the cached_areas dictionary for the specific device.
         If the entered value is empty or only contains whitespace, no action is taken.
 
-        :param event: The event object containing information about the key release event.
+        :param event: The event object which contains information about the key release event.
         :param folder_name: The name of the folder containing the device.
         :param device_name: The name of the device for which the active area is being entered.
         """

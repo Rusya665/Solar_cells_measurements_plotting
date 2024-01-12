@@ -39,7 +39,15 @@ This project aims to help researchers to analyze their JV curves for different p
 ## Usage
 
 Settings panels![img.png](Media/Settings_slide_pannels.png)
+
 Aging mode example![img.png](Media/Aging_mode_example.png)
+
+Now Pixel sorter is also available![img.png](Media/Pixel_sorter_main.png)
+
+Now Pixel sorter may be customized![img.png](Media/Pixel_sorter_4_columns.png)
+
+Users now may decide which Error Metric to use![img.png](Media/Pixel_sorter_Error_metrics.png)
+
 For cases with Windows scaling enabled,
 apply the solution from [this Stack Overflow post](https://stackoverflow.com/questions/62794931/high-dpi-tkinter-re-scaling-when-i-run-it-in-spyder-and-when-i-run-it-direct-in/62937256#62937256)
 to override the DPI settings.
@@ -56,7 +64,7 @@ The project currently supports the following potentiostats and their respective 
 ## Dependencies
 
 - Python 3.9+
-- Key packages: `matplotlib`, `numpy`, `pandas`, `scipy`, `xlsxwriter`
+- Key packages: `matplotlib`, `numpy`, `pandas`, `scipy`, `xlsxwriter`, `customtkinter`
 - For a complete list of packages, see `Pipfile` or `requirements.txt`
 
 ## Contributing

@@ -64,7 +64,7 @@ class PixelSorterInterface(ctk.CTkToplevel):
         self.column_frames = []
         self.substrate_frames = {}  # To store frames for each substrate
         self.initialize_ui()
-        self.protocol("WM_DELETE_WINDOW", self.withdraw_and_proceed)
+        self.protocol("WM_DELETE_WINDOW", self.exit_and_terminate)
 
     def initialize_ui(self) -> None:
         """

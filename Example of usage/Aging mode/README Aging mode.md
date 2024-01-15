@@ -1,5 +1,7 @@
 # Aging Mode Usage Guide
 
+![img.png](../../Media/Usage_example_aging_mode.png)
+
 ## Overview
 
 This document serves as a basic guide for utilizing the Aging Mode within the JV processor. Note that this guide does not encompass all features or error-checking capabilities, focusing instead on core functionalities for ease of use.

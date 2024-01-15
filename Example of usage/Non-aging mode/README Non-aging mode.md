@@ -1,8 +1,10 @@
 # Non-Aging Mode Usage Guide
 
+![img.png](../../Media/Usage_example_non-aging_mode.png)
+
 ## Overview
 
-This guide provides basic instructions for using the Non-Aging Mode of the JV processor. It is important to note that this is not an exhaustive manual; rather, it covers fundamental operations, and other essential features to get you started.
+This guide provides basic instructions for using the Non-Aging Mode (the "Aging mode" checkbox is not checked) of the JV processor. It is important to note that this is not an exhaustive manual; rather, it covers fundamental operations, and other essential features to get you started.
 
 ## Quick Start
 

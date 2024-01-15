@@ -18,7 +18,7 @@ This document serves as a basic guide for utilizing the Aging Mode within the JV
 
 6. **Processing Data**: Unlike the Non-Aging Mode, the 'Select' option is not available. All data within the chosen directory and its sub-folders will be processed automatically.
 
-7. **View Results**: After processing, the results will be displayed, offering insights into the photovoltaic parameters and degradation over time.
+7. **View Results**: After processing, [the results](2024-01-15%20Aging%20mode%20JV%20plots%20and%20calculations.xlsx) will be displayed, offering insights into the photovoltaic parameters and degradation over time.
 
 ## Important Notes
 

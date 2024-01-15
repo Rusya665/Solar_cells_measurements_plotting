@@ -16,7 +16,7 @@ This guide provides basic instructions for using the Non-Aging Mode of the JV pr
 
 5. **Processing Data**: To process the data, click 'All' to proceed with every item or select specific entries in the treeview (the left table) and then click 'Select.'
 
-6. **View Results**: Once the processing is complete, you can enjoy the results which will include the analyzed data and corresponding graphical representations.
+6. **View Results**: Once the processing is complete, you can enjoy [the results](2024-01-15%20Non-aging%20mode%20JV%20plots%20and%20calculations.xlsx) which will include the analyzed data and corresponding graphical representations.
 
 ## Important Notes
 

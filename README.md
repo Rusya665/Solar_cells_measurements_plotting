@@ -8,6 +8,7 @@ This project aims to help researchers to analyze their JV curves for different p
 
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Example of Usage](#example-of-usage)
   - [Supported Potentiostats](#supported-potentiostats)
   - [Dependencies](#dependencies)
 - [Contributing](#contributing)
@@ -51,6 +52,13 @@ Users now may decide which Error Metric to use![img.png](Media/Pixel_sorter_Erro
 For cases with Windows scaling enabled,
 apply the solution from [this Stack Overflow post](https://stackoverflow.com/questions/62794931/high-dpi-tkinter-re-scaling-when-i-run-it-in-spyder-and-when-i-run-it-direct-in/62937256#62937256)
 to override the DPI settings.
+
+### Example of Usage
+
+To get a clearer understanding of how to use this software, please refer to the detailed examples provided:
+
+- [Non-Aging Mode Usage](Example of usage/Non-aging mode/README Non-aging mode.md): Step-by-step instructions for using the software in Non-Aging Mode.
+- [Aging Mode Usage](Example%20of%20usage/Aging mode/README Aging mode.md): Detailed guidance on using the software in Aging Mode.
 
 ### Supported Potentiostats
 

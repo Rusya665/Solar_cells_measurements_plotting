@@ -57,8 +57,8 @@ to override the DPI settings.
 
 To get a clearer understanding of how to use this software, please refer to the detailed examples provided:
 
-- [Non-Aging Mode Usage](Example of usage/Non-aging mode/README Non-aging mode.md): Step-by-step instructions for using the software in Non-Aging Mode.
-- [Aging Mode Usage](Example%20of%20usage/Aging mode/README Aging mode.md): Detailed guidance on using the software in Aging Mode.
+- [Non-Aging Mode Usage](Example%20of%20usage/Non-aging%20mode/README%20Non-aging%20mode.md): Step-by-step instructions for using the software in Non-Aging Mode.
+- [Aging Mode Usage](Example%20of%20usage/Aging%20mode/README%20Aging%20mode.md): Detailed guidance on using the software in Aging Mode.
 
 ### Supported Potentiostats
 

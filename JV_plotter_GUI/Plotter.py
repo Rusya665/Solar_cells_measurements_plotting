@@ -6,7 +6,6 @@ from datetime import date, timedelta, datetime
 from tkinter import messagebox
 
 import xlsxwriter
-from icecream import ic
 from xlsxwriter.worksheet import Worksheet
 
 from JV_plotter_GUI.Chart_creator import ChartsCreator
@@ -23,6 +22,7 @@ class DevicePlotter:
         self.chart_fr_rw_row, self.chart_fr_rw_col = None, None
         self.chart_average_row, self.chart_average_col = None, None
         self.data = matched_devices
+        self.check_data_sweeps_consistence()
         self.parent = parent
         self.unique_devices = self.parent.all_unique_devices
         self.stat = self.parent.stat
@@ -122,6 +122,9 @@ class DevicePlotter:
                                       f"{date.today()} {base_dir} JV plots and calculations.xlsx")
         self.workbook = xlsxwriter.Workbook(self.xlsx_name, {'strings_to_numbers': True, 'nan_inf_to_errors': True})
         return self.workbook
+
+    def check_data_sweeps_consistence(self):
+        ...
 
     def dump_json_data(self):
         """
@@ -445,7 +448,6 @@ class DevicePlotter:
                         # Check if it's the first value for this parameter-device combination
                         if parameter not in first_values[device]:
                             first_values[device][parameter] = value
-                        ic(first_values[device][parameter], parameter)
                         relative_value = value / first_values[device][parameter]
                         # Write the value into the Excel sheet
                         self.aging_sheet.write(current_row, row + 1, value)

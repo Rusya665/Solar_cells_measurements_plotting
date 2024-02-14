@@ -129,6 +129,4 @@ class PotentiostatFileChecker:
                 key = f"{reverse_counter}_Reverse"
                 data[key] = segment
                 reverse_counter += 2
-        # data = {str(idx): segment for idx, segment in enumerate(sweeps_data, start=1)}
-        # self.check_data_integrity(df, {"Counts": counts, "Data": data}, file)
         return {"Counts": counts, "Data": data, 'Unit': unit}

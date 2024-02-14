@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pandas as pd
 from CTkMessagebox import CTkMessagebox
-from icecream import ic
 
 from JV_plotter_GUI.instruments import flip_data_if_necessary
 

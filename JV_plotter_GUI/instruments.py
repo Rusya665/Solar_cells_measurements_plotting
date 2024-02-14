@@ -150,22 +150,10 @@ def sort_inner_keys(data):
     """
     sorted_data = {}
 
-    # # Print original upper and inner keys for debugging
-    # print("Before Sorting")
-    # for date, inner_dict in data.items():
-    #     print(f"Upper key: {date}")
-    #     print(f"Inner keys: {list(inner_dict.keys())}")
-
-    # for date, inner_dict in data.items():
-    #     sorted_inner_dict = OrderedDict(sorted(inner_dict.items(), key=lambda x: int(x[0].split('-')[-1])))
-    #     sorted_data[date] = sorted_inner_dict
     for date, inner_dict in data.items():
         sorted_keys = natsorted(inner_dict.keys())
         sorted_inner_dict = OrderedDict((key, inner_dict[key]) for key in sorted_keys)
         sorted_data[date] = sorted_inner_dict
-        # # Print for debugging
-        # print(f"After Sorting -> Upper key: {date}")
-        # print(f"Sorted inner keys: {list(sorted_inner_dict.keys())}")
 
     return sorted_data
 

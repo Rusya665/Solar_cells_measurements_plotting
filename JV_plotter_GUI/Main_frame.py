@@ -7,7 +7,6 @@ from typing import Optional
 
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
-from icecream import ic
 
 from JV_plotter_GUI.Additional_settings_panel import AdditionalSettings
 from JV_plotter_GUI.Calculate_IV_parameters import CalculateIVParameters
@@ -352,10 +351,33 @@ class IVProcessingMainClass(ctk.CTkFrame):
             print(f"--- {pixel_merger_time} seconds ---")
         self.start_time_workbook = time.time()
         matched_sorted = sort_inner_keys(matched)
-        # for key, val in matched_sorted.items():
-        #     for key1, val1 in val.items():
-        #         # ic(key1, val1)
-        #         for key2, val2 in val1['Sweeps'].items():
-        #             ic(key2, val2)
+
+        for date, devices in matched_sorted.items():
+            devices_to_remove = []  # Reset the list for each date
+            # Iterate over the devices
+            for device, details in devices.items():
+                data = details.get('data', {})
+
+                # Check for the required pairs
+                has_required_pair = ('1_Forward' in data and '2_Reverse' in data) or \
+                                    ('1_Reverse' in data and '2_Forward' in data)
+
+                # If the required pair is not found, mark the device for removal
+                if not has_required_pair:
+                    devices_to_remove.append(device)
+            for device in devices_to_remove:
+                del matched_sorted[date][device]
+            # Remove the devices for the current date
+            if devices_to_remove:
+                messagebox.showerror('Waring!', f"From this folder {date}\n"
+                                                f"Following devices were DELETED:\n"
+                                                f"{' '.join([element for element in devices_to_remove])}\n"
+                                                f"because not enough CV data")
+                # CTkMessagebox(title='Warning!',
+                #               message=f"From this folder {date}\n"
+                #                       f"Following devices were DELETED:\n"
+                #                       f"{' '.join([element for element in devices_to_remove])}\n"
+                #                       f"because not enough CV data", icon="warning", option_1='Cancel')
+
         DevicePlotter(parent=self, matched_devices=matched_sorted)
         self.exit()

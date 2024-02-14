@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 from CTkMessagebox import CTkMessagebox
+from icecream import ic
 
 from JV_plotter_GUI.instruments import flip_data_if_necessary
 
@@ -28,27 +29,42 @@ class IVDataReader:
             df = self.convert_current('I', df)
 
         elif self.potentiostat == "Gamry":
-            # Open the file and read the line containing the units
             with open(self.path, 'r', encoding=self.encoding) as file:
                 lines = file.readlines()
-                try:
-                    start_of_data_index = next(i for i, line in enumerate(lines) if
-                                               line.strip() == "Pt\tT\tVf\tIm\tVu\tSig\tAch\tIERange\tOver\tTemp")
-                except StopIteration:
-                    print(f"The file {self.path} does not contain the expected start marker.")
-                    return None
-                units_line = lines[start_of_data_index + 1].strip()
-                units = units_line.split('\t')
-                current_unit = units[3]  # Assuming the current unit is in the 4th column (0-indexed)
-            df = pd.read_csv(self.path, engine='python',
-                             header=None, skiprows=start_of_data_index + 2, encoding=self.encoding, sep='\t')
-            df.drop(df.columns[[0, 2, 5, 6, 7, 8, 9, 10]], axis=1,
-                    inplace=True)  # Drop unnecessary columns.
-            df.columns = ['Pt', 'V', 'I']  # Keep the "Pt" column for further filtering
-            df = df[df["Pt"].str.contains(r'^\d+$')].reset_index()  # Filter the df by "Pt" column
-            # Drop unnecessary columns
-            df.drop(['Pt', 'index'], axis=1, inplace=True)
-            df = self.convert_current(current_unit, df)
+
+            curve_indices = []
+            for i, line in enumerate(lines):
+                # Detect all the CURVE in the file
+                if "CURVE" in line and "TABLE" in line:
+                    units_line = lines[i + 1].strip()
+                    units = units_line.split('\t')
+                    current_unit_tmp = units[3]  # Assuming the current unit is in the 4th column (0-indexed)
+                    curve_indices.append(i)
+                    if current_unit is None:
+                        current_unit = current_unit_tmp
+                    else:
+                        if current_unit != current_unit_tmp:
+                            CTkMessagebox(title="Perhaps the file is corrupted",
+                                          message=f"The Gamry's DTA file {self.path}\n"
+                                                  f"Contains more than 1 CV data\n"
+                                                  f"and these CV's having different current unit",
+                                          icon="warning", option_1='Okay, fascinating')
+            # Adding the end of the file as the end index for the last curve
+            curve_indices.append(len(lines))
+            curve_dfs = []
+            for i in range(0, len(curve_indices) - 1):
+                curve_df = self.gamry_process_curve(lines, curve_indices[i], curve_indices[i + 1])
+                if len(curve_df) > 1:
+                    curve_dfs.append(curve_df)
+            if len(curve_dfs) > 1:
+                CTkMessagebox(title="Perhaps the file is corrupted",
+                              message=f"The Gamry's DTA file {self.path}\n"
+                                      f"Contains more than 1 CV data",
+                              icon="warning", option_1='Okay, fascinating')
+                # Merging data from all curves into a single DataFrame
+            final_df = pd.concat(curve_dfs).reset_index(drop=True)
+
+            df = self.convert_current(current_unit, final_df)
 
         elif self.potentiostat == "PalmSens4":
             #  Encoding UTF-16
@@ -143,4 +159,21 @@ class IVDataReader:
                                   f" Expected one of ['A', 'mA', 'µA']",
                           icon="cancel")
             self.parent.parent.exit()
+        return df
+
+    @staticmethod
+    def gamry_process_curve(lines, start, end):
+        # Extracting the header line for columns
+        header_line = lines[start + 1].strip().split('\t')
+        # Extracting data for the curve
+        curve_data = lines[start + 3:end]  # Skipping two lines for header and units
+        # Converting to DataFrame
+        df = pd.DataFrame([line.strip().split('\t') for line in curve_data])
+        # Naming columns and selecting relevant ones (V and I)
+        df.columns = header_line
+        df = df[['Vf', 'Im']].rename(columns={'Vf': 'V', 'Im': 'I'})
+        # Converting data to numeric and dropping non-numeric rows
+        df['V'] = pd.to_numeric(df['V'], errors='coerce')
+        df['I'] = pd.to_numeric(df['I'], errors='coerce')
+        df.dropna(inplace=True)
         return df

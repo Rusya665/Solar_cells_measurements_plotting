@@ -18,7 +18,7 @@ class PotentiostatFileChecker:
         """
         self.parent = parent
         self.potentiostat_dict = {
-            '.DTA': {'Gamry': "CV for solar cell characterization"},
+            '.DTA': {'Gamry': "TAG	CV"},
             '.csv': {'PalmSens4': "Cyclic Voltammetry: CV i vs E"},
             '.txt': {'SMU': "[0, 0, 0]"},
             '.mpt': {'SP-150e': 'EC-Lab ASCII FILE'},

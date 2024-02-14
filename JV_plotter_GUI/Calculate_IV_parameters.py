@@ -115,8 +115,8 @@ class CalculateIVParameters:
     def calculate_isc_and_rsh(self, voltage_data, current_data, voc_approx):
         isc_indices_fit = np.abs(voltage_data) / voc_approx < 0.3
         intercept, slope = self.linfit_golden(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
-        isc = slope
-        rsh = 0.0 if intercept == 0 else -1 / intercept
+        isc = 0.0001 if slope == 0 else slope
+        rsh = 10000 if intercept == 0 else -1 / intercept
         return isc, rsh, (slope, intercept)
 
     def calculate_voc_and_rs(self, voltage_data, current_data, voc_index, device_name, folder):

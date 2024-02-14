@@ -6,6 +6,7 @@ from datetime import date, timedelta, datetime
 from tkinter import messagebox
 
 import xlsxwriter
+from icecream import ic
 from xlsxwriter.worksheet import Worksheet
 
 from JV_plotter_GUI.Chart_creator import ChartsCreator
@@ -444,6 +445,7 @@ class DevicePlotter:
                         # Check if it's the first value for this parameter-device combination
                         if parameter not in first_values[device]:
                             first_values[device][parameter] = value
+                        ic(first_values[device][parameter], parameter)
                         relative_value = value / first_values[device][parameter]
                         # Write the value into the Excel sheet
                         self.aging_sheet.write(current_row, row + 1, value)

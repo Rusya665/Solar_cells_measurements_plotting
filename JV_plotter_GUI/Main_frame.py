@@ -7,6 +7,7 @@ from typing import Optional
 
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
+from icecream import ic
 
 from JV_plotter_GUI.Additional_settings_panel import AdditionalSettings
 from JV_plotter_GUI.Calculate_IV_parameters import CalculateIVParameters
@@ -351,5 +352,10 @@ class IVProcessingMainClass(ctk.CTkFrame):
             print(f"--- {pixel_merger_time} seconds ---")
         self.start_time_workbook = time.time()
         matched_sorted = sort_inner_keys(matched)
+        # for key, val in matched_sorted.items():
+        #     for key1, val1 in val.items():
+        #         # ic(key1, val1)
+        #         for key2, val2 in val1['Sweeps'].items():
+        #             ic(key2, val2)
         DevicePlotter(parent=self, matched_devices=matched_sorted)
         self.exit()

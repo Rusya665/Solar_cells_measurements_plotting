@@ -22,7 +22,6 @@ class DevicePlotter:
         self.chart_fr_rw_row, self.chart_fr_rw_col = None, None
         self.chart_average_row, self.chart_average_col = None, None
         self.data = matched_devices
-        self.check_data_sweeps_consistence()
         self.parent = parent
         self.unique_devices = self.parent.all_unique_devices
         self.stat = self.parent.stat
@@ -122,9 +121,6 @@ class DevicePlotter:
                                       f"{date.today()} {base_dir} JV plots and calculations.xlsx")
         self.workbook = xlsxwriter.Workbook(self.xlsx_name, {'strings_to_numbers': True, 'nan_inf_to_errors': True})
         return self.workbook
-
-    def check_data_sweeps_consistence(self):
-        ...
 
     def dump_json_data(self):
         """

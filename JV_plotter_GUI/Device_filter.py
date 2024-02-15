@@ -1,4 +1,5 @@
 import os
+from tkinter import messagebox
 
 import pandas as pd
 from CTkMessagebox import CTkMessagebox
@@ -40,6 +41,8 @@ class DeviceDetector:
         :return: Dictionary of processed data.
         """
 
+        unmatched_files_message = ""
+        multiple_sweeps_message = ""
         result_data = {}
         # Iterate through folders and then files
         for folder_name, folder_data in self.data.items():
@@ -78,25 +81,30 @@ class DeviceDetector:
                     processed_files.add(filename)
                     processed_files.add(matched_file)
 
-                else:
+                if not matched_file:
                     # Remove unmatched single sweep files
                     folder_data.pop(filename, None)
-                    CTkMessagebox(title="Unmatched file detected!",
-                                  message=f'The file {filename} appears to be a file without a match',
-                                  icon="warning", option_1='Okay, whatever')
+                    unmatched_files_message += f"{folder_name}: {filename}\n"
+
             # Average out devices with multiple sweeps
             for filename, details in folder_data.items():
                 fw_sweeps = details['Sweeps']['Forward Sweeps']
                 rv_sweeps = details['Sweeps']['Reverse Sweeps']
 
                 if fw_sweeps > 1 or rv_sweeps > 1:
-                    CTkMessagebox(title="Multiple sweeps case detected!",
-                                  message=f'The file {filename} was detected with multiple sweeps:\n'
-                                          f' {fw_sweeps} Forward Sweeps and {rv_sweeps} Reverse Sweeps.',
-                                  icon="warning", option_1='Okay, fascinating')
+                    multiple_sweeps_message += (f"{folder_name}:"
+                                                f" {filename} - {fw_sweeps} Forward Sweeps and\n"
+                                                f"{rv_sweeps} Reverse Sweeps.\n")
                     averaged_data = self.combine_sweeps(details)
                     result_data[folder_name][filename] = averaged_data
                     result_data[folder_name][filename]['Used files'] = filename
+        if unmatched_files_message:
+            messagebox.showwarning("Unmatched files detected",
+                                   f'The following files are without a match:\n{unmatched_files_message}')
+        if multiple_sweeps_message:
+            messagebox.showwarning("Multiple sweeps cases detected!",
+                                   f'The following files were detected with multiple sweeps:\n'
+                                   f'{multiple_sweeps_message}')
         return self.adjust_keys(result_data)
 
     @staticmethod

@@ -35,7 +35,7 @@ class IVDataReader:
             for i, line in enumerate(lines):
                 # Detect all the CURVE in the file
                 if "CURVE" in line and "TABLE" in line:
-                    units_line = lines[i + 1].strip()
+                    units_line = lines[i + 2].strip()
                     units = units_line.split('\t')
                     current_unit_tmp = units[3]  # Assuming the current unit is in the 4th column (0-indexed)
                     curve_indices.append(i)

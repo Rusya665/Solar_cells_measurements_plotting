@@ -319,6 +319,28 @@ class IVProcessingMainClass(ctk.CTkFrame):
         if matched is None:
             return
 
+        for date, devices in matched.items():
+            devices_to_remove = []  # Reset the list for each date
+            # Iterate over the devices
+            for device, details in devices.items():
+                data = details.get('data', {})
+
+                # Check for the required pairs
+                has_required_pair = ('1_Forward' in data and '2_Reverse' in data) or \
+                                    ('1_Reverse' in data and '2_Forward' in data)
+
+                # If the required pair is not found, mark the device for removal
+                if not has_required_pair:
+                    devices_to_remove.append(device)
+            for device in devices_to_remove:
+                del matched[date][device]
+            # Remove the devices for the current date
+            if devices_to_remove:
+                messagebox.showerror('Waring!', f"From this folder {date}\n"
+                                                f"Following devices were DELETED:\n"
+                                                f"{' '.join([element for element in devices_to_remove])}\n"
+                                                f"because not enough CV data")
+
         self.start_time = time.time()
         matched = CalculateIVParameters(parent=self, matched_devices=matched).return_data()
         iv_calculation_time = time.time() - self.start_time
@@ -351,33 +373,6 @@ class IVProcessingMainClass(ctk.CTkFrame):
             print(f"--- {pixel_merger_time} seconds ---")
         self.start_time_workbook = time.time()
         matched_sorted = sort_inner_keys(matched)
-
-        for date, devices in matched_sorted.items():
-            devices_to_remove = []  # Reset the list for each date
-            # Iterate over the devices
-            for device, details in devices.items():
-                data = details.get('data', {})
-
-                # Check for the required pairs
-                has_required_pair = ('1_Forward' in data and '2_Reverse' in data) or \
-                                    ('1_Reverse' in data and '2_Forward' in data)
-
-                # If the required pair is not found, mark the device for removal
-                if not has_required_pair:
-                    devices_to_remove.append(device)
-            for device in devices_to_remove:
-                del matched_sorted[date][device]
-            # Remove the devices for the current date
-            if devices_to_remove:
-                messagebox.showerror('Waring!', f"From this folder {date}\n"
-                                                f"Following devices were DELETED:\n"
-                                                f"{' '.join([element for element in devices_to_remove])}\n"
-                                                f"because not enough CV data")
-                # CTkMessagebox(title='Warning!',
-                #               message=f"From this folder {date}\n"
-                #                       f"Following devices were DELETED:\n"
-                #                       f"{' '.join([element for element in devices_to_remove])}\n"
-                #                       f"because not enough CV data", icon="warning", option_1='Cancel')
 
         DevicePlotter(parent=self, matched_devices=matched_sorted)
         self.exit()

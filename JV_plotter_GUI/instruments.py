@@ -109,10 +109,10 @@ def convert_df_to_dict(obj):
     """
     Recursively convert Pandas DataFrames to dictionaries within a nested dictionary.
 
-    :param obj: The object to convert. Can be a dictionary or a Pandas DataFrame.
+    :param obj: The object to convert. It can be a dictionary or a Pandas DataFrame.
     :type obj: object
 
-    :return: The converted object. If the input was a dictionary, all nested DataFrames will be converted to dictionaries.
+    :return: The converted object. If the input was a dictionary, all nested DataFrames will be converted to dicts.
     :rtype: object
     """
     if isinstance(obj, pd.DataFrame):
@@ -154,7 +154,6 @@ def sort_inner_keys(data):
         sorted_keys = natsorted(inner_dict.keys())
         sorted_inner_dict = OrderedDict((key, inner_dict[key]) for key in sorted_keys)
         sorted_data[date] = sorted_inner_dict
-
     return sorted_data
 
 

@@ -33,19 +33,27 @@ class PixelGroupingManager:
             grouped[substrate].append(pixel)
         return grouped
 
-    @staticmethod
-    def determine_substrate_name(pixel_name: str) -> str:
+    def determine_substrate_name(self, pixel_name: str) -> str:
         """
-        Determining the substrate name for each the given pixel name using the regex.
-        This regex will match up to the last hyphen that precedes a one or two-digit number optionally prefixed by a string.
+        Process a list of pixel names to determine the substrate name and, if applicable, the contact number.
+        The function checks if all pixel names in the list end with 'C' followed by digits.
+        If so, it uses a regex to extract the base name and contact number.
+        Otherwise, it uses a regex to extract just the substrate name.
 
         :param pixel_name: A string of the pixel name to find the potential substrate.
-        :return: A substrate name as a string if found ot pixel name as it is.
+        :return:  A substrate name as a string if found ot pixel name as it is.
         """
-        pattern = r"^(.*?)(-\D*\d{1,2})?$"
+        # Check if all pixel names in the list end with 'C' followed by digits
+        all_end_with_c = all(re.search(r"C\d+$", name) for name in self.pixel_list)
+        if all_end_with_c:
+            # Use the regex pattern for contact number
+            pattern = r"^(.+?)(C\d+)?$"
+        else:
+            pattern = r"^(.*?)(-\D*\d{1,2})?$"
         match = re.match(pattern, pixel_name)
         if match:
             return match.group(1)
+
         return pixel_name
 
 

@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 from CTkMessagebox import CTkMessagebox
 
-from JV_plotter_GUI.instruments import flip_data_if_necessary
+from JV_plotter_GUI.instruments import flip_data_if_necessary, remove_non_monotonic_last_value
 
 
 class IVDataReader:
@@ -63,7 +63,8 @@ class IVDataReader:
                 # Merging data from all curves into a single DataFrame
             final_df = pd.concat(curve_dfs).reset_index(drop=True)
 
-            df = self.convert_current(current_unit, final_df)
+            df1 = self.convert_current(current_unit, final_df)
+            df = remove_non_monotonic_last_value(df1)
 
         elif self.potentiostat == "PalmSens4":
             #  Encoding UTF-16

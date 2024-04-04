@@ -7,6 +7,7 @@ from collections import OrderedDict
 
 import pandas as pd
 from natsort import natsorted
+from pandas import DataFrame
 
 
 def open_file(path_to_file):
@@ -37,15 +38,15 @@ def print_nested_dict(d, indent=0) -> None:
             print('  ' * (indent + 1) + str(value))
 
 
-def flip_data_if_necessary(df):
+def flip_data_if_necessary(df: DataFrame) -> DataFrame:
     """
     Flip the data if necessary so that the Maximum Power Point (MPP) is on positive I and V.
 
     :param df: The DataFrame containing the IV data with columns 'I' and 'V'
     :return: The DataFrame with data flipped if necessary
     """
-    df['I'] = df['I'].astype(float)
-    df['V'] = df['V'].astype(float)
+    df.loc[:, 'I'] = df['I'].astype(float)
+    df.loc[:, 'V'] = df['V'].astype(float)
     ind_voc = abs(df['I']).idxmin()
     v_oc_test = df['V'][ind_voc]
     ind_isc = abs(df['V']).idxmin()
@@ -53,9 +54,9 @@ def flip_data_if_necessary(df):
 
     # Check if flipping is necessary, and flip if required
     if v_oc_test < 0:
-        df['V'] = -df['V']
+        df.loc[:, 'V'] = -df['V']
     if i_sc_test < 0:
-        df['I'] = -df['I']
+        df.loc[:, 'I'] = -df['I']
 
     return df
 
@@ -157,7 +158,7 @@ def sort_inner_keys(data):
     return sorted_data
 
 
-def get_newest_file_global(root_dir, suffix):
+def get_newest_file_global(root_dir, suffix: str):
     """
     Get the newest file that contains the given suffix in the specified directory and its subdirectories.
 
@@ -179,3 +180,16 @@ def get_newest_file_global(root_dir, suffix):
                     newest_file = full_path
 
     return newest_file
+
+
+def remove_non_monotonic_last_value(df: DataFrame) -> DataFrame:
+    # Determine the monotonicity trend between the second-to-last and third-to-last value
+    increasing = df['V'].iloc[-3] < df['V'].iloc[-2]
+    decreasing = df['V'].iloc[-3] > df['V'].iloc[-2]
+
+    # Remove the last value if it breaks the monotonicity trend
+    if increasing and not df['V'][-3:].is_monotonic_increasing:
+        return df[:-1]
+    elif decreasing and not df['V'][-3:].is_monotonic_decreasing:
+        return df[:-1]
+    return df

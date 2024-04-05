@@ -1,7 +1,9 @@
+from functools import reduce
 from typing import Any, List, Dict
 
 import numpy as np
 import pandas as pd
+from icecream import ic
 
 
 class PixelMerger:
@@ -129,18 +131,28 @@ class PixelMerger:
                     sweep_data_frames.append(pixel_data['data'][sweep_type])
 
             if sweep_data_frames:
+                for df in sweep_data_frames:
+                    ic(len(df))
+                # Find the common 'V' values across all DataFrames
+                common_v = reduce(np.intersect1d, (df['V'] for df in sweep_data_frames))
+
+                # Filter and align DataFrames to the common 'V' values
+                aligned_data_frames = [df[df['V'].isin(common_v)] for df in sweep_data_frames]
+
                 # Assuming 'V' is the same in all DataFrames
                 merged['data'][sweep_type] = pd.DataFrame()
-                merged['data'][sweep_type]['V'] = sweep_data_frames[0]['V']
+                # merged['data'][sweep_type]['V'] = sweep_data_frames[0]['V']
+                merged['data'][sweep_type]['V'] = pd.Series(common_v)
 
                 # Compute the average for the 'I' column across all DataFrames
-                merged['data'][sweep_type]['I'] = sum(df['I'] for df in sweep_data_frames) / len(sweep_data_frames)
+                # merged['data'][sweep_type]['I'] = sum(df['I'] for df in sweep_data_frames) / len(sweep_data_frames)
+                merged['data'][sweep_type]['I'] = sum(df['I'] for df in aligned_data_frames) / len(aligned_data_frames)
 
         # Merge 'Used files' into a list, ensuring no duplicates.
         used_files = [date_data[pixel_name]['Used files'] for pixel_name in substrate_pixels if
                       'Used files' in date_data[pixel_name]]
         merged['Used files'] = list(set(used_files))
-
+        ic(merged)
         return merged
 
     def merge_substrates(self) -> None:

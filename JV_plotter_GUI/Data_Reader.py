@@ -137,7 +137,6 @@ class IVDataReader:
 
         if df is not None:
             df.name = Path(self.path).stem
-            # return columns_swap(df)
             return flip_data_if_necessary(df), current_unit
         else:
             raise ValueError(f"No matching potentiostat found for path: {self.path}")

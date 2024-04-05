@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from datetime import timedelta
 
 from xlsxwriter import Workbook
-from xlsxwriter.workbook import ChartScatter
+from xlsxwriter.workbook import ChartScatter, ChartArea
 
 from JV_plotter_GUI.instruments import row_to_excel_col, custom_round
 
@@ -100,11 +102,11 @@ class ChartsCreator:
         return chart_all_sweeps
 
     def plot_aging(self, device_name, sweep, param, param_column, data_start, data_end, shaded_error_bar=False,
-                   value_type_shift=None, row=None):
+                   value_type_shift=None, row=None) -> ChartScatter | ChartArea:
         max_value = self.timeline_df.iloc[:, 0].max()
         next_rounded_value = custom_round(max_value)
-        major_unit = 500
-        minor_unit = 100
+        major_unit = 10 if max_value < 100 else 100
+        minor_unit = 5 if major_unit == 10 else 25
         name_suffix = f"{device_name} {param} {sweep}"
         chart_type = 'area' if shaded_error_bar else 'scatter'
         chart = self.workbook.add_chart({'type': chart_type})
@@ -194,11 +196,13 @@ class ChartsCreator:
             'name_font': {'size': 14, 'italic': False, 'bold': False, 'name': 'Calibri (Body)'},
         })
         chart.set_legend({'none': True})
+        major_gridlines = {'visible': False} if shaded_error_bar else \
+            {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}}
         chart.set_y_axis({
             'name': param,
             'name_font': {'size': 12, 'italic': False, 'bold': False},
             'num_font': {'size': 10},
-            'major_gridlines': {'visible': False},
+            'major_gridlines': major_gridlines,
             'minor_gridlines': {'visible': False},
             'major_tick_mark': 'outside',
         })

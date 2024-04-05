@@ -73,7 +73,7 @@ class FilterJVData:
     def filter2(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Removes specific erroneous measurement points from the data.
-        It targets measurements where a device is dead (efficiency < 0.01) and then comes back to life
+        It targets measurements where a device is dead (efficiency < 0.1) and then comes back to life
         (efficiency >= 0.01) in subsequent measurements.
         Iterates through each device's measurements, identifying and marking dead-then-alive patterns.
         Such measurements are then deleted from the data.
@@ -82,6 +82,7 @@ class FilterJVData:
         The data is expected to be structured with folder names as keys and devices as values.
         :return: A tuple containing the modified data and a list of logs detailing the deletions.
         """
+        threshold_efficiency = 0.1
         current_frame = inspect.currentframe()
         method_name = inspect.getframeinfo(current_frame).function
         self.log.append(f"{method_name} is activated\n")
@@ -102,9 +103,9 @@ class FilterJVData:
             first_dead_index = None
 
             for measurement_index, (date, efficiency) in enumerate(measurements):
-                if efficiency < 0.01 and first_dead_index is None:
+                if efficiency < threshold_efficiency and first_dead_index is None:
                     first_dead_index = measurement_index
-                elif efficiency >= 0.01 and first_dead_index is not None:
+                elif efficiency >= threshold_efficiency and first_dead_index is not None:
                     to_delete.extend(range(first_dead_index, measurement_index))
                     first_dead_index = None
             for measurement in to_delete:

@@ -129,30 +129,114 @@ class PixelMerger:
                 pixel_data = self.data[folder_name][pixel_name]
                 if sweep_type in pixel_data['data']:
                     sweep_data_frames.append(pixel_data['data'][sweep_type])
-
+            ic(sweep_type)
             if sweep_data_frames:
-                for df in sweep_data_frames:
-                    ic(len(df))
-                # Find the common 'V' values across all DataFrames
-                common_v = reduce(np.intersect1d, (df['V'] for df in sweep_data_frames))
 
-                # Filter and align DataFrames to the common 'V' values
-                aligned_data_frames = [df[df['V'].isin(common_v)] for df in sweep_data_frames]
+                # Check if the lengths of 'V' are different
+                lengths = [len(df) for df in sweep_data_frames]
+                if len(set(lengths)) != 1:
+                    # Find the index of the DataFrame with the longest 'V'
+                    longest_df_index = lengths.index(max(lengths))
+                    v_values = sweep_data_frames[longest_df_index]['V']
+                else:
+                    # If all lengths are the same, use 'V' from the first DataFrame
+                    v_values = sweep_data_frames[0]['V']
 
-                # Assuming 'V' is the same in all DataFrames
-                merged['data'][sweep_type] = pd.DataFrame()
+                # Create a new DataFrame with the longest 'V'
+                merged['data'][sweep_type] = pd.DataFrame({'V': v_values})
+                average_i_values = []
+
+                # Iterate over each index of the longest 'V' series
+                for index in range(len(v_values)):
+                    i_values = []
+
+                    # Collect 'I' values for this index from all DataFrames, if available
+                    for df in sweep_data_frames:
+                        if index < len(df):
+                            i_values.append(df.iloc[index]['I'])
+
+                    # Compute the average of 'I' values, if available
+                    if i_values:
+                        average_i_values.append(np.mean(i_values))
+                    else:
+                        average_i_values.append(np.nan)  # Append NaN if no 'I' values are found
+
+                # Assign the average 'I' values to the merged DataFrame
+                merged['data'][sweep_type]['I'] = average_i_values
+        # # Assuming 'V' is the same in all DataFrames
+                # merged['data'][sweep_type] = pd.DataFrame()
                 # merged['data'][sweep_type]['V'] = sweep_data_frames[0]['V']
-                merged['data'][sweep_type]['V'] = pd.Series(common_v)
-
-                # Compute the average for the 'I' column across all DataFrames
+                #
+                # # Compute the average for the 'I' column across all DataFrames
                 # merged['data'][sweep_type]['I'] = sum(df['I'] for df in sweep_data_frames) / len(sweep_data_frames)
-                merged['data'][sweep_type]['I'] = sum(df['I'] for df in aligned_data_frames) / len(aligned_data_frames)
+
+
+
+
+                # # Check if all data frames have the same length
+                # lengths = [len(df) for df in sweep_data_frames]
+                # common_v = sweep_data_frames[0]['V']
+                # if len(set(lengths)) != 1:  # If lengths vary, then apply the rounding
+                #     ic('Applying tolerance because of varying lengths')
+                #     tolerance = 1e-3  # Set a tolerance level
+                #
+                #     # Round 'V' values to the nearest multiple of tolerance
+                #     for df in sweep_data_frames:
+                #         df['V'] = np.round(df['V'] / tolerance) * tolerance
+                #
+                #     # Deduplicate 'V' values and keep the first occurrence
+                #     for i, df in enumerate(sweep_data_frames):
+                #         df = df[~df.duplicated('V')]
+                #         sweep_data_frames[i] = df
+                #
+                #     # After rounding, find the common 'V' values across all DataFrames
+                #     common_v = reduce(np.intersect1d, (df['V'] for df in sweep_data_frames))
+                # ic(common_v)
+                # # Sort common_v to match the original order of the first DataFrame
+                # # common_v_sorted = sweep_data_frames[0][sweep_data_frames[0]['V'].isin(common_v)]['V']
+                # # Determine the sorting order based on the sweep type
+                # if "Forward" in sweep_type:
+                #     common_v_sorted = sorted(common_v, reverse=True)
+                # elif "Reverse" in sweep_type:
+                #     common_v_sorted = sorted(common_v)
+                # ic(common_v_sorted)
+                # # Assuming 'V' is consistent across all DataFrames now, create a DataFrame with the sorted 'V'
+                # merged['data'][sweep_type] = pd.DataFrame({'V': common_v_sorted})
+                #
+                # # Compute the average for the 'I' column across all DataFrames
+                # i_values = [df.set_index('V')['I'].reindex(common_v_sorted).values for df in sweep_data_frames]
+                # merged['data'][sweep_type]['I'] = np.nanmean(i_values, axis=0)
+
+
+
+
+                # # Check if all data frames have the same length
+                # lengths = [len(df) for df in sweep_data_frames]
+                # common_v = sweep_data_frames[0]['V']
+                # if len(set(lengths)) != 1:  # If lengths vary, then apply the rounding
+                #     ic('omg')
+                #     tolerance = 1e-3  # Set a tolerance level
+                #     # Round 'V' values to the nearest multiple of tolerance
+                #     for df in sweep_data_frames:
+                #         df['V'] = np.round(df['V'] / tolerance) * tolerance
+                #
+                #     # After rounding, we can assume that 'V' values are consistent across data frames
+                #     # Find the common 'V' values across all DataFrames
+                #     common_v = reduce(np.intersect1d, (df['V'] for df in sweep_data_frames))
+                #
+                # # Filter and align DataFrames to the common 'V' values
+                # # aligned_data_frames = [df[df['V'].isin(common_v)] for df in sweep_data_frames]
+                #
+                # # Assuming 'V' is consistent across all DataFrames now, we can take any 'V' column
+                # merged['data'][sweep_type] = pd.DataFrame({'V': common_v})
+                #
+                # # Compute the average for the 'I' column across all DataFrames
+                # merged['data'][sweep_type]['I'] = sum(df['I'] for df in sweep_data_frames) / len(sweep_data_frames)
 
         # Merge 'Used files' into a list, ensuring no duplicates.
         used_files = [date_data[pixel_name]['Used files'] for pixel_name in substrate_pixels if
                       'Used files' in date_data[pixel_name]]
         merged['Used files'] = list(set(used_files))
-        ic(merged)
         return merged
 
     def merge_substrates(self) -> None:

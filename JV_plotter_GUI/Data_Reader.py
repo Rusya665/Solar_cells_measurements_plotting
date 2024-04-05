@@ -67,7 +67,7 @@ class IVDataReader:
             df = remove_non_monotonic_last_value(df1)
 
         elif self.potentiostat == "PalmSens4":
-            #  Encoding UTF-16
+            # Encoding UTF-16
             # Open the file and read the line containing the units
             with open(self.path, 'r', encoding=self.encoding) as file:
                 # Skip the lines until reaching the line containing units

@@ -193,3 +193,23 @@ def remove_non_monotonic_last_value(df: DataFrame) -> DataFrame:
     elif decreasing and not df['V'][-3:].is_monotonic_decreasing:
         return df[:-1]
     return df
+
+
+def validate_numeric_entry(event):
+    """Validate the entry to allow only numeric input, including negative values."""
+    entry_widget = event.widget
+    text = entry_widget.get()
+
+    # Allow negative numbers and numbers with a single decimal point
+    if text and not (text.replace('.', '', 1).isdigit() or
+                     (text.startswith('-') and text[1:].replace('.', '', 1).isdigit())):
+        # If the current value isn't empty, it's not numeric, and it's not a negative number
+        # (allowing one decimal point), reset the text to the last valid value.
+        entry_widget.delete(0, 'end')  # Remove current text
+        try:
+            entry_widget.insert(0, entry_widget.last_valid_value)  # Insert last valid value
+        except AttributeError:
+            pass
+    else:
+        # If the input is valid, store the current value as the last valid value.
+        entry_widget.last_valid_value = text

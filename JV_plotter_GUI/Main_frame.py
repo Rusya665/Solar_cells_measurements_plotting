@@ -363,6 +363,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
             print(f"--- {filter2_time} seconds ---")
 
         filter_instance.dump_log()
+
         if self.pixel_sorter_instance:
             start_time = time.time()
             matched = PixelMerger(data=matched, parent=self,

@@ -4,6 +4,7 @@ from tkinter import END
 import customtkinter as ctk
 
 from JV_plotter_GUI.settings import settings
+from JV_plotter_GUI.instruments import validate_numeric_entry
 
 
 class AdditionalSettings(ctk.CTkFrame):
@@ -27,10 +28,14 @@ class AdditionalSettings(ctk.CTkFrame):
         self.light_intensity_label = ctk.CTkLabel(self, text="Light intensity, W/m²")
         self.light_intensity_entry = ctk.CTkEntry(self)
         self.light_intensity_entry.insert(END, settings['Light intensity (W/cm²)'])
+        self.light_intensity_entry.last_valid_value = '1000'  # Set default last valid value
+        self.light_intensity_entry.bind("<KeyRelease>", validate_numeric_entry)
 
         self.distance_to_light_label = ctk.CTkLabel(self, text="Distance to light source, mm")
         self.distance_to_light_entry = ctk.CTkEntry(self)
         self.distance_to_light_entry.insert(END, settings['Distance to light source (mm)'])
+        self.distance_to_light_entry.last_valid_value = '11'  # Set default last valid value
+        self.distance_to_light_entry.bind("<KeyRelease>", validate_numeric_entry)
 
         self.excel_label = ctk.CTkLabel(self, text='Excel settings')
         self.excel_label.cget("font").configure(size=18)
@@ -53,6 +58,11 @@ class AdditionalSettings(ctk.CTkFrame):
         self.filter1_checkbox.configure(state='disabled')
         self.filter2_checkbox = ctk.CTkCheckBox(self, text='Filter 2',
                                                 command=lambda: self.parent.activate_setting('filter2'))
+        self.threshold_efficiency_label = ctk.CTkLabel(self, text='Minimum allowed η')
+        self.threshold_efficiency_entry = ctk.CTkEntry(self)
+        self.threshold_efficiency_entry.insert(END, '0.01')
+        self.threshold_efficiency_entry.last_valid_value = '0.01'  # Set default last valid value
+        self.threshold_efficiency_entry.bind("<KeyRelease>", validate_numeric_entry)
         widgets = [
             self.light_intensity_label,
             self.light_intensity_entry,
@@ -64,10 +74,12 @@ class AdditionalSettings(ctk.CTkFrame):
             self.dump_json_checkbox,
             self.filtering_label,
             self.filter1_checkbox,
-            self.filter2_checkbox
+            self.filter2_checkbox,
+            self.threshold_efficiency_label,
+            self.threshold_efficiency_entry
         ]
         for widget in widgets:
-            widget.pack(pady=8)
+            widget.pack(pady=6)
         self.hovers()
 
     def hovers(self):
@@ -100,6 +112,15 @@ class AdditionalSettings(ctk.CTkFrame):
                          "drops below 0.01 and then inexplicably recovers.\n"
                          "By filtering out these erratic efficiency fluctuations, Filter 2 ensures\n"
                          "the reliability and consistency of the overall dataset.")
+        hover_threshold_efficiency_label = ("🎯 Minimum η (Efficiency) Alert! 📈\n"
+                                            "Set the minimum efficiency η threshold for the analysis.\n"
+                                            "Be strategic! Too high, and you risk missing crucial data;\n"
+                                            "too low, and the noise might overwhelm the signal! ⚖️")
+
+        hover_threshold_efficiency_entry = ("🔢 Enter the Magic Number! 🌟\n"
+                                            "What's your threshold for efficiency? Type it in!\n"
+                                            "Remember: It's a delicate balance!\n"
+                                            "Choose wisely to ensure meaningful insights! 🧐")
         Hovertip(self.light_intensity_label, hover_light_intensity, hover_delay=hover_delay)
         Hovertip(self.light_intensity_entry, hover_light_intensity, hover_delay=hover_delay)
         Hovertip(self.distance_to_light_label, hover_distance_to_light, hover_delay=hover_delay)
@@ -116,6 +137,8 @@ class AdditionalSettings(ctk.CTkFrame):
         Hovertip(self.filtering_label, hover_filtering_label, hover_delay=hover_delay)
         Hovertip(self.filter1_checkbox, hover_filter1, hover_delay=hover_delay)
         Hovertip(self.filter2_checkbox, hover_filter2, hover_delay=hover_delay)
+        Hovertip(self.threshold_efficiency_label, hover_threshold_efficiency_label, hover_delay=hover_delay)
+        Hovertip(self.threshold_efficiency_entry, hover_threshold_efficiency_entry, hover_delay=hover_delay)
 
     def animate_additional_settings(self, step=0.03):
         if self.in_start_pos:  # If the frame is about to be shown
@@ -143,3 +166,4 @@ class AdditionalSettings(ctk.CTkFrame):
         x, y, _, _ = self.bbox("insert")
         if event.x < x or event.x > x + self.winfo_width() or event.y < y or event.y > y + self.winfo_height():
             self.animate_additional_settings()  # Assuming you have a method to hide the slide frame
+

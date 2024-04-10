@@ -15,11 +15,13 @@ class FilterJVData:
         """
         self.parent = parent
         self.log = []
+        self.threshold_efficiency = float(self.parent.additional_settings.threshold_efficiency_entry.get())
 
     def filter1(self, data: Dict[str, Any], substrates: Dict[str, List[str]]) -> Dict[str, Any]:
         """
         Removes dead pixels from the data unless all pixels in a substrate are dead.
-        A pixel is considered dead if its average efficiency is less than 0.01.
+        A pixel is considered dead if its average efficiency is less than the given threshold efficiency.
+        Default thresholding efficiency is 0.01%.
         If all pixels within a substrate are dead, none are deleted.
 
         Iterates through each folder and device, checking each pixel's efficiency.
@@ -38,32 +40,35 @@ class FilterJVData:
         log_counter = 0
         pixels_to_delete = {}
 
-        # Populate lists of dead and alive pixels
+        # Iterate through folders
         for folder_name, devices in data.items():
-            for device_name, device_data in devices.items():
-                if device_name in substrates:
-                    dead_pixels = []
-                    alive_pixels = []
-
-                    # Check each pixel's efficiency
-                    for pixel_name in substrates[device_name]:
-                        pixel_data = devices.get(pixel_name)
-                        if pixel_data and pixel_data['Parameters']['Average']['Efficiency (%)'] < 0.01:
+            # Check each substrate in the folder
+            for substrate_name, pixel_names in substrates.items():
+                dead_pixels = []
+                alive_pixels = []
+                # Check if the substrate's pixels are in the current folder
+                for pixel_name in pixel_names:
+                    if pixel_name in devices:
+                        pixel_data = devices[pixel_name]
+                        # Check each pixel's efficiency
+                        efficiency = pixel_data['Parameters']['Average']['Efficiency (%)']
+                        if efficiency < self.threshold_efficiency:
                             dead_pixels.append(pixel_name)
                         else:
                             alive_pixels.append(pixel_name)
-
-                    # Add dead pixels to the "delete" list if at least one pixel in the substrate is alive
-                    if alive_pixels:
-                        for dead_pixel in dead_pixels:
-                            pixels_to_delete[(folder_name, dead_pixel)] = True
-
+                # Delete dead pixels if alive pixels exist in the same substrate
+                if alive_pixels:
+                    for dead_pixel in dead_pixels:
+                        if dead_pixel in devices:
+                            del devices[dead_pixel]
+                            # Log the deletion
+                            self.log.append(f"Deleted dead pixel: {dead_pixel} in folder: {folder_name}")
         # Perform deletion based on the populated list
         for (folder_name, dead_pixel) in pixels_to_delete:
             if dead_pixel in data[folder_name]:
                 del data[folder_name][dead_pixel]
                 log_counter += 1
-                self.log.append(f"{log_counter}. Deleted dead pixel: {dead_pixel} in folder: {folder_name}")
+                self.log.append(f"{log_counter}. Deleted dead pixel in the folder: {folder_name}, pixel: {dead_pixel}")
 
         if log_counter == 0:
             self.log.append('No device was filtered out')
@@ -73,8 +78,8 @@ class FilterJVData:
     def filter2(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Removes specific erroneous measurement points from the data.
-        It targets measurements where a device is dead (efficiency < 0.1) and then comes back to life
-        (efficiency >= 0.01) in subsequent measurements.
+        It targets measurements where a device is dead (given threshold efficiency [default thresholding efficiency
+        is 0.01%]) and then comes back to life (efficiency >= threshold efficiency) in subsequent measurements.
         Iterates through each device's measurements, identifying and marking dead-then-alive patterns.
         Such measurements are then deleted from the data.
 
@@ -82,7 +87,6 @@ class FilterJVData:
         The data is expected to be structured with folder names as keys and devices as values.
         :return: A tuple containing the modified data and a list of logs detailing the deletions.
         """
-        threshold_efficiency = 0.1
         current_frame = inspect.currentframe()
         method_name = inspect.getframeinfo(current_frame).function
         self.log.append(f"{method_name} is activated\n")
@@ -103,9 +107,9 @@ class FilterJVData:
             first_dead_index = None
 
             for measurement_index, (date, efficiency) in enumerate(measurements):
-                if efficiency < threshold_efficiency and first_dead_index is None:
+                if efficiency < self.threshold_efficiency and first_dead_index is None:
                     first_dead_index = measurement_index
-                elif efficiency >= threshold_efficiency and first_dead_index is not None:
+                elif efficiency >= self.threshold_efficiency and first_dead_index is not None:
                     to_delete.extend(range(first_dead_index, measurement_index))
                     first_dead_index = None
             for measurement in to_delete:
@@ -133,5 +137,6 @@ class FilterJVData:
                 filename = os.path.join(self.parent.file_directory, log)
 
             with open(filename, 'w') as f:
+                f.write(f'Selected threshold efficiency for the dead device: {self.threshold_efficiency}%\n')
                 for entry in self.log:
                     f.write(entry + '\n')

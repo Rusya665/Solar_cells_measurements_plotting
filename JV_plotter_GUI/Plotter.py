@@ -6,6 +6,7 @@ from datetime import date, timedelta, datetime
 from tkinter import messagebox
 
 import xlsxwriter
+from natsort import natsorted
 from xlsxwriter.worksheet import Worksheet
 
 from JV_plotter_GUI.Chart_creator import ChartsCreator
@@ -421,8 +422,12 @@ class DevicePlotter:
                 target_sheet_absolute = self.aging_plots_avg_absolute
                 target_sheet_relative = self.aging_plots_avg_relative
             area_chart = False
+
+            # Sort devices naturally before processing
+            sorted_devices = natsorted(unique_devices_folders.items())
+
             # Loop through each device
-            for device_counter, (device, folder_info_list) in enumerate(unique_devices_folders.items()):
+            for device_counter, (device, folder_info_list) in enumerate(sorted_devices):
                 first_values[device] = {}  # Initialize for this device
                 # Loop through each folder for the device
                 for folder_info in folder_info_list:

@@ -226,6 +226,8 @@ class DevicePlotter:
                 # Write file name(s) being used to create this pixel/device data
                 used_files_data = [device_data['Used files']] if isinstance(device_data['Used files'], str) else \
                     device_data['Used files']
+                # Flatten data by joining tuples into strings or leaving strings as is
+                used_files_data = [', '.join(files) if isinstance(files, tuple) else files for files in used_files_data]
                 ws.write(0, self.chart_fr_rw_col + self.chart_horizontal_spacing, 'Used files', self.center)
                 ws.write_column(1, self.chart_fr_rw_col + self.chart_horizontal_spacing, used_files_data)
                 # Insert each devise plot separately into the main sheet

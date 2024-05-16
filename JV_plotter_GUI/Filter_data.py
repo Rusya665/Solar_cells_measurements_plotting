@@ -62,14 +62,8 @@ class FilterJVData:
                         if dead_pixel in devices:
                             del devices[dead_pixel]
                             # Log the deletion
+                            log_counter += 1
                             self.log.append(f"Deleted dead pixel: {dead_pixel} in folder: {folder_name}")
-        # Perform deletion based on the populated list
-        for (folder_name, dead_pixel) in pixels_to_delete:
-            if dead_pixel in data[folder_name]:
-                del data[folder_name][dead_pixel]
-                log_counter += 1
-                self.log.append(f"{log_counter}. Deleted dead pixel in the folder: {folder_name}, pixel: {dead_pixel}")
-
         if log_counter == 0:
             self.log.append('No device was filtered out')
         self.log.append('\n')
@@ -118,7 +112,7 @@ class FilterJVData:
                 log_counter += 1
                 self.log.append(f"{log_counter}. Deleted dead device in the folder: {folder_name}, device: {device}")
         if log_counter == 0:
-            self.log.append('Non device was filtered out')
+            self.log.append('No device was filtered out')
         self.log.append('\n')
         return data
 

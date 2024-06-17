@@ -105,8 +105,15 @@ class ChartsCreator:
                    value_type_shift=None, row=None) -> ChartScatter | ChartArea:
         max_value = self.timeline_df.iloc[:, 0].max()
         next_rounded_value = custom_round(max_value)
-        major_unit = 10 if max_value < 100 else 100
-        minor_unit = 5 if major_unit == 10 else 25
+        if max_value <= 100:
+            major_unit = 10
+            minor_unit = 5
+        elif max_value <= 1000:
+            major_unit = 100
+            minor_unit = 20
+        else:
+            major_unit = 500
+            minor_unit = 100
         name_suffix = f"{device_name} {param} {sweep}"
         chart_type = 'area' if shaded_error_bar else 'scatter'
         chart = self.workbook.add_chart({'type': chart_type})

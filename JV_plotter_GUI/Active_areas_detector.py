@@ -19,14 +19,16 @@ class ActiveAreaDetector:
         Processed active area data from the valid files in the directory.
     """
 
-    def __init__(self, path):
+    def __init__(self, path, active_area_json=None):
         """
         Initialize the ActiveAreaDetector with a path.
 
         :param path: Path to the directory to scan for active area files.
+        :param active_area_json: Path to the JSON file containing predefined active areas.
         """
         self.path = path
         self.filepath = ''
+        self.active_area_json = active_area_json
         self.processors = {
             '.txt': self.process_txt,
             '.json': self.process_json,
@@ -44,6 +46,16 @@ class ActiveAreaDetector:
         """
         return SequenceMatcher(None, a, b).ratio()
 
+    def load_predefined_areas(self):
+        """
+        Load predefined active areas from a JSON file if provided.
+
+        :return: Dictionary of predefined active areas or an empty dictionary.
+        """
+        if self.active_area_json and os.path.exists(self.active_area_json):
+            return self.process_json(self.active_area_json)
+        return {}
+
     def check_directory(self):
         """
         Check the directory for files containing active area information.
@@ -60,7 +72,6 @@ class ActiveAreaDetector:
             self.filepath = os.path.join(self.path, file)
             extension = os.path.splitext(file)[-1]
             result_dict.update(self.processors[extension]())
-
         return result_dict if result_dict else None
 
     def process_txt(self):
@@ -77,13 +88,14 @@ class ActiveAreaDetector:
                 data_dict[device] = float(active_area)
         return data_dict
 
-    def process_json(self):
+    def process_json(self, path_to_aa_json=None):
         """
         Process .json files to extract active area data.
 
         :return: Extracted active area data.
         """
-        with open(self.filepath, 'r') as f:
+        path = self.filepath if path_to_aa_json is None else path_to_aa_json
+        with open(path, 'r') as f:
             return json.load(f)
 
     def process_xlsx(self):

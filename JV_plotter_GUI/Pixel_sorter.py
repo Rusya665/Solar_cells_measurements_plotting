@@ -52,6 +52,8 @@ class PixelGroupingManager:
             pattern = r"^(.*?)(-\D*\d{1,2})?$"
         match = re.match(pattern, pixel_name)
         if match:
+            if match.group(1).endswith('_'):
+                return match.group(1)[:-1]
             return match.group(1)
 
         return pixel_name
@@ -475,7 +477,8 @@ class PixelSorterInterface(ctk.CTkToplevel):
             substrate_name = frame_info['substrate_entry'].get()
             if substrate_name in seen:
                 CTkMessagebox(title="Error",
-                              message=f"Duplicate substrate name found:\n{substrate_name}\nDelete the duplicate to proceed.",
+                              message=f"Duplicate substrate name found:\n{substrate_name}"
+                                      f"\nDelete the duplicate to proceed.",
                               icon="cancel")
                 return
             seen.add(substrate_name)

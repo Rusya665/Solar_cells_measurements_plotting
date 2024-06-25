@@ -48,7 +48,9 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.open_wb = True
         self.color_wb = True
         self.dump_json = False
+        self.data_temp = None
         self.filter1, self.filter2 = False, False
+        self.auto_detection_attempted = False
 
         # widgets
         self.pack(fill=ctk.BOTH, expand=True)
@@ -166,9 +168,24 @@ class IVProcessingMainClass(ctk.CTkFrame):
             return
         self.list_files()
         self.label_1.configure(text=self.file_directory)
+        if not self.auto_detection_attempted and self.file_directory != "" and self.aging_mode:
+            self.specify_timeline()
 
     def specify_timeline(self):
+        if not self.auto_detection_attempted and self.file_directory != "":
+            # Try auto-detection first
+            self.timeline_df = TimeLineProcessor(folder_path=self.file_directory).check_the_path(auto_detect=True)
+            self.auto_detection_attempted = True
+
+            if self.timeline_df is None:
+                self.slide_frame.time_label.configure(text='Aging time: auto-detection failed.\n Specify the path')
+            else:
+                max_time = round(self.timeline_df.max().values[0])
+                self.slide_frame.time_label.configure(text=f'Aging time: {max_time} h')
+                return
+        # If auto-detection fails, or it's the second click, prompt the user.
         path_to_timeline = filedialog.askopenfilename()
+        self.auto_detection_attempted = False
         if path_to_timeline == "":
             self.slide_frame.time_label.configure(text='Aging time: undefined.\n Specify the path')
             return
@@ -250,15 +267,32 @@ class IVProcessingMainClass(ctk.CTkFrame):
                 if device_detected:
                     if b == depth:  # Nested folders with the deep of one only
                         # allowed for the Processed folders
-                        messagebox.showerror('Waring!', f"Too many sub folders in"
-                                                        f" a folder {abspath}")
+                        retry_reading_in_aging_mode = messagebox.askyesno('Waring!',
+                                                                          f"Too many sub folders in"
+                                                                          f" a folder {abspath}."
+                                                                          f"\nDo you want to try the aging "
+                                                                          f"mode instead?",
+                                                                          )
+                        if retry_reading_in_aging_mode:
+                            self.slide_frame.aging_mode_checkbox.toggle()
                         return
                     oid = self.table_frame.files_table.insert(parent, 'end', text=file, open=False, tags='folder',
                                                               values=['', '', abspath])
                     self.process_directory(oid, abspath, is_root_call=False)
         # Only run the following lines if it's the root call
         if is_root_call:
-            self.table_frame.construct_active_areas_entries(data=self.detect_pixels(), path=self.file_directory)
+            self.data_temp = self.detect_pixels()
+            self.table_frame.construct_active_areas_entries(data=self.data_temp,
+                                                            path_for_auto_aa_detect=self.file_directory,
+                                                            path_to_aa_file=None)
+
+    def read_aa_from_file(self):
+        if self.data_temp is None:
+            return
+        aa_file = filedialog.askopenfilename(defaultextension='json', filetypes=[('JSON Files', '*.json')])
+        self.table_frame.construct_active_areas_entries(data=self.data_temp,
+                                                        path_for_auto_aa_detect=self.file_directory,
+                                                        path_to_aa_file=aa_file)
 
     def detect_pixels(self):
         self.all_unique_devices = None

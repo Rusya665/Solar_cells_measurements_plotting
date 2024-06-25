@@ -38,7 +38,7 @@ class SettingsPanel(ctk.CTkFrame):
                                                             "identical_active_areas"))
         self.identical_areas_CheckBox.select()
 
-        self.read_from_file = ctk.CTkButton(self, text='Read AA from file', command=self.parent.list_files)
+        self.read_from_file = ctk.CTkButton(self, text='Read AA from file', command=self.parent.read_aa_from_file)
         self.restore_cache_values = ctk.CTkButton(self, text='Cache values',
                                                   command=self.parent.table_frame.update_entries_from_cache)
         self.pixel_manager = ctk.CTkButton(self, text='Pixel Manager', command=self.parent.pixel_managing,
@@ -66,7 +66,13 @@ class SettingsPanel(ctk.CTkFrame):
     def hovers(self):
         hover_delay = 400
         hover_potentiostat_combox = "  Pick your potentiostat!  \n  Your magical device! 🎛️  "
-        hover_text_sa = "  Twinsies! Identical  \n  active areas! 👯  "
+        hover_text_sa = ("     Twinsies! Identical  \n"
+                         "       active areas! 👯  \n"
+                         "  Please note that in case  \n"
+                         "  of detected or provided  \n"
+                         "  nested active areas, the  \n"
+                         "  nested logic will be used  \n"
+                         "  anyway.  ")
         hover_text_read_from = "  Grab active areas  \n  from a secret file! 📁  "
         hover_text_cached = "  Cache me if you can!  \n  Restore NOT in \"Identical\"! 🔄  "
         hover_aging_mode_region = ("  Welcome, Adventurer!  🌟  \n"

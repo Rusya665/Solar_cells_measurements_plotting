@@ -27,6 +27,7 @@ class TableFrames(ctk.CTkFrame):
         self.files_table_scrollbar = None
         self.devices = {}
         self.cached_areas = {}
+        self.areas = {}
         self.files_table_insert()
 
     def files_table_insert(self):
@@ -44,7 +45,7 @@ class TableFrames(ctk.CTkFrame):
         self.files_table.pack(side='left', fill='y')
         self.files_table_scrollbar.configure(command=self.files_table.yview)
 
-    def construct_active_areas_entries(self, data, path) -> None:
+    def construct_active_areas_entries(self, data, path_for_auto_aa_detect, path_to_aa_file=None) -> None:
         for child in self.active_areas_scrollable_frame.winfo_children():
             child.destroy()
         self.devices = data
@@ -57,8 +58,23 @@ class TableFrames(ctk.CTkFrame):
         label0.grid(row=0, column=0, sticky='nsew', padx=5)
         label1.grid(row=0, column=1, sticky='nsew', padx=5)
         label2.grid(row=0, column=2, sticky='nsew')
+
         self.active_areas_scrollable_frame.columnconfigure(1, weight=1)
-        areas = ActiveAreaDetector(path=path).check_directory()
+        aa_detector = ActiveAreaDetector(path=path_for_auto_aa_detect, active_area_json=path_to_aa_file)
+        if path_to_aa_file is None:
+            self.areas = aa_detector.check_directory()
+        else:
+            self.areas = aa_detector.load_predefined_areas()
+        default_area = ''
+        if self.areas:
+            # Check if areas is a nested dictionary
+            if all(isinstance(value, dict) for value in self.areas.values()):
+                # Nested structure case
+                first_folder = next(iter(self.areas.values()))
+                default_area = next(iter(first_folder.values()))
+            else:
+                # Single key-value pair case (old logic)
+                default_area = next(iter(self.areas.values()))
 
         # Initialize self.cached_areas if it's empty
         if not self.cached_areas:
@@ -78,25 +94,22 @@ class TableFrames(ctk.CTkFrame):
                                                 text=device_name, fg_color='transparent')
                     device_label.grid(row=row_counter, column=1, sticky='nsew')
                     active_area_entry = ctk.CTkEntry(master=self.active_areas_scrollable_frame)
-                    # Store the folder and device names in the widget itself
-                    active_area_entry.folder_name = folder_name
-                    active_area_entry.device_name = device_name
+                    active_area_entry.grid(row=row_counter, column=2, sticky='nsew')
                     active_area_entry.bind('<KeyRelease>', partial(self.type_dict_fill,
                                                                    folder_name=folder_name, device_name=device_name))
 
-                    active_area_entry.grid(row=row_counter, column=2, sticky='nsew')
-
-                    if areas:
-                        if self.parent.iaa is True:
-                            _, first_value = next(iter(areas.items()))
-                            active_area_entry.insert(END, first_value)
+                    if self.areas:
+                        # Check if the folder and device names exist in the detected areas dictionary
+                        if isinstance(self.areas.get(folder_name), dict) and device_name in self.areas[folder_name]:
+                            active_area_entry.insert(END, self.areas[folder_name][device_name])
+                        elif device_name in self.areas:
+                            active_area_entry.insert(END, self.areas[device_name])
+                        elif self.parent.iaa:
+                            active_area_entry.insert(END, default_area)
                         else:
-                            # Check if the key (device name) exists in the detected areas dictionary
-                            if device_name in areas:
-                                active_area_entry.insert(END, areas[device_name])
-                            else:
-                                active_area_entry.insert(END, '')  # If the key isn't in the dictionary,
-                                # add an empty string
+                            active_area_entry.insert(END,
+                                                     '')  # If the key isn't in the dictionary, add an empty string
+
                     row_counter += 1
 
     def type_dict_fill(self, event, folder_name, device_name):
@@ -205,7 +218,17 @@ class TableFrames(ctk.CTkFrame):
         Update the 'Active area' sub-key in matched_devices with the corresponding entry values.
 
         :param matched_devices: Dictionary containing the matched devices.
+        :param areas: Dictionary containing the active areas from the JSON file.
         """
+        # Determine if areas is a nested dictionary
+        if self.areas and all(isinstance(value, dict) for value in self.areas.values()):
+            # Nested structure case
+            first_folder = next(iter(self.areas.values()))
+            default_area = next(iter(first_folder.values()))
+        else:
+            # Single key-value pair case (old logic)
+            default_area = next(iter(self.areas.values()))
+
         for child in self.active_areas_scrollable_frame.winfo_children():
             if isinstance(child, ctk.CTkEntry):
                 device_label = self.active_areas_scrollable_frame.grid_slaves(row=child.grid_info()['row'], column=1)[0]
@@ -234,10 +257,16 @@ class TableFrames(ctk.CTkFrame):
                                                   f" (e.g., 5 or 5.25).",
                                           icon="warning", option_1='Okay, this is bad')
                             return
-                        matched_devices[folder][device_name]['Active area (cm²)'] = entry_value / 100
+                        # Update matched_devices with the active area
+                        if isinstance(self.areas.get(folder), dict) and device_name in self.areas[folder]:
+                            matched_devices[folder][device_name]['Active area (cm²)'] = self.areas[folder][device_name] / 100
+                        elif device_name in self.areas:
+                            matched_devices[folder][device_name]['Active area (cm²)'] = self.areas[device_name] / 100
+                        else:
+                            matched_devices[folder][device_name]['Active area (cm²)'] = default_area / 100
+
                         matched_devices[folder][device_name]['Light intensity (W/cm²)'] = \
                             float(self.parent.additional_settings.light_intensity_entry.get()) / 10000  # Store values
-                        # in W/cm²
                         matched_devices[folder][device_name]['Distance to light source (mm)'] = \
                             float(self.parent.additional_settings.distance_to_light_entry.get())
         return matched_devices

@@ -9,6 +9,15 @@ from JV_plotter_GUI.instruments import validate_numeric_entry
 
 class AdditionalSettings(ctk.CTkFrame):
     def __init__(self, parent, start_pos, end_pos):
+        """
+        Initializes the AdditionalSettings object with the provided parameters.
+        Parameters:
+            parent: The parent widget for this AdditionalSettings object.
+            start_pos: The starting position for the AdditionalSettings object.
+            end_pos: The ending position for the AdditionalSettings object.
+        Returns:
+            None
+        """
         super().__init__(master=parent)
         self.parent = parent
         # general attributes

@@ -107,13 +107,11 @@ class ChartsCreator:
         next_rounded_value = custom_round(max_value)
         if max_value <= 100:
             major_unit = 10
-            minor_unit = 5
-        elif max_value <= 1000:
+        elif 1000 <= max_value <= 3000:
             major_unit = 100
-            minor_unit = 20
         else:
             major_unit = 500
-            minor_unit = 100
+        minor_unit = major_unit / 4
         name_suffix = f"{device_name} {param} {sweep}"
         chart_type = 'area' if shaded_error_bar else 'scatter'
         chart = self.workbook.add_chart({'type': chart_type})
@@ -207,6 +205,8 @@ class ChartsCreator:
             {'visible': True, 'line': {'color': 'gray', 'dash_type': 'dash'}}
         chart.set_y_axis({
             'name': param,
+            # 'min': 0,
+            # 'max': 18,
             'name_font': {'size': 12, 'italic': False, 'bold': False},
             'num_font': {'size': 10},
             'major_gridlines': major_gridlines,

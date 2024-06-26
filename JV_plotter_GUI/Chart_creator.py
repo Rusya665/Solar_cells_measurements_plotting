@@ -107,8 +107,10 @@ class ChartsCreator:
         next_rounded_value = custom_round(max_value)
         if max_value <= 100:
             major_unit = 10
-        elif 1000 <= max_value <= 3000:
+        elif 1000 <= max_value < 2000:
             major_unit = 100
+        elif 2000 <= max_value < 4000:
+            major_unit = 250
         else:
             major_unit = 500
         minor_unit = major_unit / 4
@@ -206,7 +208,7 @@ class ChartsCreator:
         chart.set_y_axis({
             'name': param,
             # 'min': 0,
-            # 'max': 18,
+            # 'max': 20,
             'name_font': {'size': 12, 'italic': False, 'bold': False},
             'num_font': {'size': 10},
             'major_gridlines': major_gridlines,

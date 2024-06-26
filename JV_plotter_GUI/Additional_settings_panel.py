@@ -175,4 +175,3 @@ class AdditionalSettings(ctk.CTkFrame):
         x, y, _, _ = self.bbox("insert")
         if event.x < x or event.x > x + self.winfo_width() or event.y < y or event.y > y + self.winfo_height():
             self.animate_additional_settings()  # Assuming you have a method to hide the slide frame
-

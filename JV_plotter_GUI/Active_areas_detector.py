@@ -58,7 +58,8 @@ class ActiveAreaDetector:
 
     def check_directory(self):
         """
-        Check the directory for files containing active area information.
+        Check the directory for the best file containing active area information,
+        with a preference for JSON files over TXT files if their similarity to "Active area" is close.
 
         :return: Dictionary of device names and their corresponding active areas or None if no data found.
         """
@@ -66,13 +67,24 @@ class ActiveAreaDetector:
                        if file.endswith(tuple(self.processors.keys()))
                        and self.similar("Active area", file) > 0.6]  # 0.6 is a threshold, can be adjusted
 
-        result_dict = {}
+        if not valid_files:
+            return None
 
+        # Sort files by similarity
+        valid_files.sort(key=lambda file: self.similar("Active area", file), reverse=True)
+
+        best_file = valid_files[0]
+        best_similarity = self.similar("Active area", best_file)
+
+        # Check if there's a JSON file close enough in similarity to the best file
         for file in valid_files:
-            self.filepath = os.path.join(self.path, file)
-            extension = os.path.splitext(file)[-1]
-            result_dict.update(self.processors[extension]())
-        return result_dict if result_dict else None
+            if file.endswith('.json') and abs(self.similar("Active area", file) - best_similarity) < 0.06:
+                best_file = file
+                break
+
+        self.filepath = os.path.join(self.path, best_file)
+        extension = os.path.splitext(best_file)[-1]
+        return self.processors[extension]()
 
     def process_txt(self):
         """

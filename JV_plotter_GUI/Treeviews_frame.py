@@ -27,7 +27,7 @@ class TableFrames(ctk.CTkFrame):
         self.files_table_scrollbar = None
         self.devices = {}
         self.cached_areas = {}
-        self.areas = {}
+        self.areas_auto_detected = {}
         self.files_table_insert()
 
     def files_table_insert(self):
@@ -46,6 +46,7 @@ class TableFrames(ctk.CTkFrame):
         self.files_table_scrollbar.configure(command=self.files_table.yview)
 
     def construct_active_areas_entries(self, data, path_for_auto_aa_detect, path_to_aa_file=None) -> None:
+        self.areas_auto_detected = None
         for child in self.active_areas_scrollable_frame.winfo_children():
             child.destroy()
         self.devices = data
@@ -62,19 +63,20 @@ class TableFrames(ctk.CTkFrame):
         self.active_areas_scrollable_frame.columnconfigure(1, weight=1)
         aa_detector = ActiveAreaDetector(path=path_for_auto_aa_detect, active_area_json=path_to_aa_file)
         if path_to_aa_file is None:
-            self.areas = aa_detector.check_directory()
+            self.areas_auto_detected = aa_detector.check_directory()
         else:
-            self.areas = aa_detector.load_predefined_areas()
+            self.areas_auto_detected = aa_detector.load_predefined_areas()
         default_area = ''
-        if self.areas:
+
+        if self.areas_auto_detected:
             # Check if areas is a nested dictionary
-            if all(isinstance(value, dict) for value in self.areas.values()):
+            if all(isinstance(value, dict) for value in self.areas_auto_detected.values()):
                 # Nested structure case
-                first_folder = next(iter(self.areas.values()))
+                first_folder = next(iter(self.areas_auto_detected.values()))
                 default_area = next(iter(first_folder.values()))
             else:
                 # Single key-value pair case (old logic)
-                default_area = next(iter(self.areas.values()))
+                default_area = next(iter(self.areas_auto_detected.values()))
 
         # Initialize self.cached_areas if it's empty
         if not self.cached_areas:
@@ -98,12 +100,13 @@ class TableFrames(ctk.CTkFrame):
                     active_area_entry.bind('<KeyRelease>', partial(self.type_dict_fill,
                                                                    folder_name=folder_name, device_name=device_name))
 
-                    if self.areas:
+                    if self.areas_auto_detected:
                         # Check if the folder and device names exist in the detected areas dictionary
-                        if isinstance(self.areas.get(folder_name), dict) and device_name in self.areas[folder_name]:
-                            active_area_entry.insert(END, self.areas[folder_name][device_name])
-                        elif device_name in self.areas:
-                            active_area_entry.insert(END, self.areas[device_name])
+                        if (isinstance(self.areas_auto_detected.get(folder_name), dict) and
+                                device_name in self.areas_auto_detected[folder_name]):
+                            active_area_entry.insert(END, self.areas_auto_detected[folder_name][device_name])
+                        elif device_name in self.areas_auto_detected:
+                            active_area_entry.insert(END, self.areas_auto_detected[device_name])
                         elif self.parent.iaa:
                             active_area_entry.insert(END, default_area)
                         else:
@@ -218,16 +221,7 @@ class TableFrames(ctk.CTkFrame):
         Update the 'Active area' sub-key in matched_devices with the corresponding entry values.
 
         :param matched_devices: Dictionary containing the matched devices.
-        :param areas: Dictionary containing the active areas from the JSON file.
         """
-        # Determine if areas is a nested dictionary
-        if self.areas and all(isinstance(value, dict) for value in self.areas.values()):
-            # Nested structure case
-            first_folder = next(iter(self.areas.values()))
-            default_area = next(iter(first_folder.values()))
-        else:
-            # Single key-value pair case (old logic)
-            default_area = next(iter(self.areas.values()))
 
         for child in self.active_areas_scrollable_frame.winfo_children():
             if isinstance(child, ctk.CTkEntry):
@@ -258,12 +252,22 @@ class TableFrames(ctk.CTkFrame):
                                           icon="warning", option_1='Okay, this is bad')
                             return
                         # Update matched_devices with the active area
-                        if isinstance(self.areas.get(folder), dict) and device_name in self.areas[folder]:
-                            matched_devices[folder][device_name]['Active area (cm²)'] = self.areas[folder][device_name] / 100
-                        elif device_name in self.areas:
-                            matched_devices[folder][device_name]['Active area (cm²)'] = self.areas[device_name] / 100
+                        # Case when Active Areas were successfully autodetect (or a user pointed ot the file)
+                        # and it's a nested dictionary.
+                        if (isinstance(self.areas_auto_detected, dict) and
+                                isinstance(self.areas_auto_detected.get(folder), dict) and
+                                device_name in self.areas_auto_detected[folder]):
+                            matched_devices[folder][device_name]['Active area (cm²)'] =\
+                                self.areas_auto_detected[folder][device_name] / 100
+                        # Case when Active Areas were successfully autodetect (or a user pointed ot the file)
+                        # and it's not a nested dictionary.
+                        elif self.areas_auto_detected and device_name in self.areas_auto_detected:
+                            matched_devices[folder][device_name]['Active area (cm²)'] =\
+                                self.areas_auto_detected[device_name] / 100
+                        # Manually given active areas. If active ares were successfully detected, this will override
+                        # only not nested ones.
                         else:
-                            matched_devices[folder][device_name]['Active area (cm²)'] = default_area / 100
+                            matched_devices[folder][device_name]['Active area (cm²)'] = entry_value / 100
 
                         matched_devices[folder][device_name]['Light intensity (W/cm²)'] = \
                             float(self.parent.additional_settings.light_intensity_entry.get()) / 10000  # Store values

@@ -52,6 +52,7 @@ class IVDataReader:
             # Adding the end of the file as the end index for the last curve
             curve_indices.append(len(lines))
             curve_dfs = []
+
             for i in range(0, len(curve_indices) - 1):
                 curve_df = self.gamry_process_curve(lines, curve_indices[i], curve_indices[i + 1])
                 if len(curve_df) > 1:
@@ -197,7 +198,6 @@ class IVDataReader:
 
         # Handle extra spaces and inconsistent formatting in numeric data
         curve_data = [line.replace(',', '.').replace(' ', '').split() for line in curve_data]
-
         # Convert to DataFrame
         df = pd.DataFrame(curve_data)
 

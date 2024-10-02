@@ -1,5 +1,6 @@
 from datetime import timedelta
 from pathlib import Path
+from typing import List
 
 import pandas as pd
 from CTkMessagebox import CTkMessagebox
@@ -161,18 +162,62 @@ class IVDataReader:
         return df
 
     @staticmethod
-    def gamry_process_curve(lines, start, end):
-        # Extracting the header line for columns
+    def gamry_process_curve(lines: List[str], start: int, end: int) -> pd.DataFrame:
+        """
+        Processes a segment of lines from a Gamry `.DTA` file to extract voltage (V) and current (I) data.
+
+        This function extracts the IV curve data for a single curve segment, converts the raw string data into a
+        pandas DataFrame,
+        handles inconsistent formatting (such as commas in decimal places), and returns a cleaned DataFrame containing
+        the relevant columns.
+
+        :param lines: List of strings, where each string represents a line from the `.DTA` file.
+        :param start: The starting line index of the curve segment within `lines`.
+        :param end: The ending line index of the curve segment within `lines`.
+
+        :return: A pandas DataFrame containing two columns:
+            - 'V': Voltage values extracted from the 'Vf' column of the file.
+            - 'I': Current values extracted from the 'Im' column of the file.
+            If no valid data is found between `start` and `end`, an empty DataFrame is returned.
+        """
+
+        # Check if curve data is present
+        if end <= start + 3:
+            print(f"No data lines between {start} and {end}. Returning empty DataFrame.")
+            return pd.DataFrame(columns=['V', 'I'])
+
+        # Extract the header line for columns
         header_line = lines[start + 1].strip().split('\t')
-        # Extracting data for the curve
-        curve_data = lines[start + 3:end]  # Skipping two lines for header and units
-        # Converting to DataFrame
-        df = pd.DataFrame([line.strip().split('\t') for line in curve_data])
-        # Naming columns and selecting relevant ones (V and I)
-        df.columns = header_line
+
+        # Extract data for the curve, skipping two lines for header and units
+        curve_data = lines[start + 3:end]
+        if not curve_data:
+            print(f"No curve data found between lines {start} and {end}. Returning empty DataFrame.")
+            return pd.DataFrame(columns=['V', 'I'])
+
+        # Handle extra spaces and inconsistent formatting in numeric data
+        curve_data = [line.replace(',', '.').replace(' ', '').split() for line in curve_data]
+
+        # Convert to DataFrame
+        df = pd.DataFrame(curve_data)
+
+        # Ensure the header line matches the number of columns in the DataFrame
+        if len(header_line) != df.shape[1]:
+            df.columns = header_line[:df.shape[1]]  # Assign columns up to the available data
+        else:
+            df.columns = header_line
+
+        # Naming columns and selecting relevant ones (Vf -> 'V' and Im -> 'I')
+        if 'Vf' not in header_line or 'Im' not in header_line:
+            print(f"Expected columns 'Vf' and 'Im' not found in header. Check file format.")
+            return pd.DataFrame(columns=['V', 'I'])
+
+        # Rename columns and select only the 'V' (voltage) and 'I' (current) columns
         df = df[['Vf', 'Im']].rename(columns={'Vf': 'V', 'Im': 'I'})
-        # Converting data to numeric and dropping non-numeric rows
+
+        # Convert data to numeric values after replacing commas and aligning precision
         df['V'] = pd.to_numeric(df['V'], errors='coerce')
         df['I'] = pd.to_numeric(df['I'], errors='coerce')
         df.dropna(inplace=True)
+
         return df

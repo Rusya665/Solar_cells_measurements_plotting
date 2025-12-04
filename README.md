@@ -12,6 +12,7 @@ This project aims to help researchers to analyze their JV curves for different p
   - [Supported Potentiostats](#supported-potentiostats)
   - [Dependencies](#dependencies)
 - [Contributing](#contributing)
+- [Acknowledgements](#acknowledgements)
 - [License](#license)
 - [Contact](#contact)
 
@@ -47,7 +48,7 @@ Now Pixel sorter is also available![img.png](Media/Pixel_sorter_main.png)
 
 Now Pixel sorter may be customized![img.png](Media/Pixel_sorter_4_columns.png)
 
-Users now may decide which Error Metric to use![img.png](Media/Pixel_sorter_Error_metrics.png)
+Users now may decide, which Error Metric to use![img.png](Media/Pixel_sorter_Error_metrics.png)
 
 For cases with Windows scaling enabled,
 apply the solution from [this Stack Overflow post](https://stackoverflow.com/questions/62794931/high-dpi-tkinter-re-scaling-when-i-run-it-in-spyder-and-when-i-run-it-direct-in/62937256#62937256)
@@ -82,6 +83,10 @@ The project currently supports the following potentiostats and their respective 
 3. Commit your changes (`git commit -m 'Add some feature'`)
 4. Push to the branch (`git push origin feature/YourFeature`)
 5. Open a pull request
+
+## Acknowledgements
+
+The mathematical methodologies, specifically the linear fitting algorithms for *V*<sub>oc</sub> and *I*<sub>sc</sub> determination, were adapted from the original MATLAB implementation by [Aleksi Kamppinen](https://orcid.org/0000-0001-8696-6292). I acknowledge his work as the basis for the processing logic utilized in this project.
 
 ## License
 

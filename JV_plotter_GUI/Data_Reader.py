@@ -133,8 +133,10 @@ class IVDataReader:
             mask = df['Time'] > preconditioning_time + df['Time'].iloc[0]
             # Use the mask to filter the DataFrame
             df = df[mask].drop(columns=['Time']).reset_index(drop=True)
+            if df.empty:
+                raise ValueError(f"No data remaining after preconditioning filter for {self.path}")
             # Convert current to appropriate unit
-            df.fillna(0)
+            df = df.fillna(0)
             df = self.convert_current(current_unit, df)
 
         if df is not None:

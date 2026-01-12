@@ -35,6 +35,8 @@ class PixelMerger:
                  - Mean Absolute Percentage Error ('mape')
                  - Median Absolute Deviation ('mad')
         """
+        if not parameter_dicts:
+            return {}
         param_values = {key: [] for key in parameter_dicts[0]}
         for param_dict in parameter_dicts:
             for key, value in param_dict.items():

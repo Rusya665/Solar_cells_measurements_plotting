@@ -357,6 +357,8 @@ class IVProcessingMainClass(ctk.CTkFrame):
             devices_to_remove = []  # Reset the list for each date
             # Iterate over the devices
             for device, details in devices.items():
+                if details is None:
+                    continue
                 data = details.get('data', {})
 
                 # Check for the required pairs

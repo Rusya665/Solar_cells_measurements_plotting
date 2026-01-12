@@ -47,6 +47,8 @@ class CalculateIVParameters:
                     max_power = power[ind_mpp]
                     v_mpp = sweep_data['V'][ind_mpp]
                     j_mpp = sweep_data['I'][ind_mpp] / self.active_area
+                    if self.light_intensity * self.active_area == 0:
+                        raise ValueError(f"Light intensity or active area is zero for device {device_name} in {folder_name}")
                     eff = 100 * max_power / (self.light_intensity * self.active_area)  # Efficiency in percentage
 
                     voc_approx, voc_index = self.calculate_voc_approx(sweep_data['V'], sweep_data['I'])
@@ -113,6 +115,8 @@ class CalculateIVParameters:
         return intercept, slope
 
     def calculate_isc_and_rsh(self, voltage_data, current_data, voc_approx):
+        if voc_approx == 0:
+            voc_approx = 1e-9  # Small epsilon value
         isc_indices_fit = np.abs(voltage_data) / voc_approx < 0.3
         intercept, slope = self.linfit_golden(voltage_data[isc_indices_fit], current_data[isc_indices_fit])
         isc = 0.0001 if slope == 0 else slope
@@ -120,12 +124,16 @@ class CalculateIVParameters:
         return isc, rsh, (slope, intercept)
 
     def calculate_voc_and_rs(self, voltage_data, current_data, voc_index, device_name, folder):
-        voc_indices_fit = [voc_index - 1, voc_index - 0] if current_data[voc_index] < 0 else [voc_index - 1, voc_index]
+        voc_indices_fit = []
+        if voc_index > 0:
+            voc_indices_fit.append(voc_index - 1)
+        voc_indices_fit.append(voc_index)
+        if voc_index < len(current_data) - 1 and current_data[voc_index] >= 0:
+            voc_indices_fit.append(voc_index + 1)
         try:
             intercept, slope = self.linfit_golden(voltage_data[voc_indices_fit], current_data[voc_indices_fit])
         except KeyError:
             self.warning_messages.append(f"{device_name} in {folder}")
-            # Handle the error as you see fit, perhaps setting intercept and slope to some default values
             intercept, slope = 0, 1e-9  # Setting to some default values
         voc = -slope / intercept if intercept != 0 else 0
         rs = 0.0 if intercept == 0 else -1 / intercept

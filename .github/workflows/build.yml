@@ -1,0 +1,73 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'Media/**'
+      - '.gitignore'
+      - 'LICENSE'
+    tags:
+      - 'v*'   # triggers the full build+release on every version tag
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Inject version into installer script
+      run: |
+        $VERSION = '${{ github.ref_name }}'.TrimStart('v')
+        (Get-Content installer/setup.iss) -replace '#define MyAppVersion ".*"', "#define MyAppVersion ""$VERSION""" | Set-Content installer/setup.iss
+
+    - name: Build standalone executable with PyInstaller
+      run: |
+        pyinstaller JV_Processor.spec
+
+    - name: Compile Inno Setup installer
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+      with:
+        path: installer/setup.iss
+
+    - name: Extract tag release notes
+      if: startsWith(github.ref, 'refs/tags/')
+      shell: bash
+      run: |
+        git tag -l --format='%(contents)' ${{ github.ref_name }} > RELEASE_NOTES.md
+
+    - name: Create GitHub Release and upload assets
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/JV_Processor.exe
+          installer/Output/JVProcessor_Setup_*.exe
+        body_path: RELEASE_NOTES.md
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

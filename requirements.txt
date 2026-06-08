@@ -42,3 +42,5 @@ XlsxWriter>=3.1.2
 natsort~=8.4.0
 CTkMenuBar>=0.3
 CTkMessagebox>=2.5
+requests>=2.31.0
+pyinstaller>=6.0.0

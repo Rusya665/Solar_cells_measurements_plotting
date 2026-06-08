@@ -19,6 +19,9 @@ concurrency:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # opt into Node.js 24 before it becomes mandatory (2026-06-16)
+
 jobs:
   build:
     runs-on: windows-latest
@@ -51,7 +54,7 @@ jobs:
         pyinstaller JV_Processor.spec
 
     - name: Compile Inno Setup installer
-      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.4
       with:
         path: installer/setup.iss
 

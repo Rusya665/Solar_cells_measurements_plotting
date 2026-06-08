@@ -70,6 +70,7 @@ def download_and_install_update(download_url: str) -> None:
 
         bat_content = f"""@echo off
 echo Installing JV Processor Update...
+taskkill /F /IM JV_Processor.exe > nul 2>&1
 timeout /t 2 /nobreak > nul
 start /wait "" "{exe_path}" /SILENT /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS
 del "{exe_path}"
@@ -86,6 +87,10 @@ del "%~f0"
 
         # CREATE_NO_WINDOW = 0x08000000
         subprocess.Popen([bat_path], creationflags=0x08000000, env=env)
+        
+        # Exit the application process so files are not locked
+        import sys
+        sys.exit(0)
 
     except Exception as e:
         print(f"Error downloading or installing update: {e}")

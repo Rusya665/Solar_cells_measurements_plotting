@@ -1,5 +1,5 @@
 #define MyAppName "JV Processor"
-#define MyAppVersion "0.2.5"
+#define MyAppVersion "0.2.6"
 #define MyAppPublisher "Rustem Nizamov"
 #define MyAppExeName "JV_Processor.exe"
 #define MyAppURL "https://github.com/Rusya665/Solar_cells_measurements_plotting"
@@ -23,6 +23,8 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 MinVersion=10.0
+CloseApplications=yes
+AppMutex=JVProcessorMutex
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

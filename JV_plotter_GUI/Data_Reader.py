@@ -139,6 +139,15 @@ class IVDataReader:
             df = df.fillna(0)
             df = self.convert_current(current_unit, df)
 
+        elif self.potentiostat == "Keithley2636":
+            # File format: 10-line summary header, then a tab-separated table with columns:
+            # Voltage [V] | Time [s] | Current [A] | Current density [mA/cm2]
+            df = pd.read_csv(self.path, sep='\t', engine='python', encoding=self.encoding,
+                             skiprows=11, header=None, names=['V', 'Time', 'I', 'J'])
+            df = df[['V', 'I']]  # Keep only voltage and current columns
+            current_unit = 'A'   # Current is already in Amps
+            df = self.convert_current(current_unit, df)
+
         if df is not None:
             df.name = Path(self.path).stem
             return flip_data_if_necessary(df), current_unit

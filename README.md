@@ -65,10 +65,11 @@ To get a clearer understanding of how to use this software, please refer to the 
 
 The project currently supports the following potentiostats and their respective file formats:
 
-- **Gamry**: `.DTA`, automated current unit detection
+- **Gamry**: `.DTA` / `.dta`, automated current unit detection
 - **PalmSens4**: `.csv`, automated current unit detection
 - **SMU**: `.txt`, current is set to amps (A)
 - **SP-150e**: `.mpt`, automated current unit detection, preconditioning is taken into account
+- **Keithley 2636**: `.dta`, current in Amps (A), 10-line summary header auto-skipped
 
 ## Dependencies
 

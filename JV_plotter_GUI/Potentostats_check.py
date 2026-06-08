@@ -18,12 +18,15 @@ class PotentiostatFileChecker:
         """
         self.parent = parent
         self.potentiostat_dict = {
-            '.DTA': {'Gamry': "TAG	CV"},
+            '.dta': {'Gamry': "TAG\tCV",
+                     'Keithley2636': "Voltage [V]\tTime [s]"},
             '.csv': {'PalmSens4': "Cyclic Voltammetry: CV i vs E"},
             '.txt': {'SMU': "[0, 0, 0]"},
             '.mpt': {'SP-150e': 'EC-Lab ASCII FILE'},
             # To add a new file extension, add a new entry like this:
             # '.new_extension': {'new_potentiostat': "new text to find"},
+            # To add a new potentiostat sharing an existing extension, add a new key inside
+            # that extension's dict with its own unique header identifier string.
         }
         self.encoding = None
         self.potentiostat_choice = potentiostat_choice
@@ -37,6 +40,7 @@ class PotentiostatFileChecker:
                  If the file is not identified, a tuple with (False, encoding_used, None, None).
         """
         filename, file_extension = os.path.splitext(file)
+        file_extension = file_extension.lower()  # Normalize to lowercase for case-insensitive matching
         if self.potentiostat_choice != 'All':
             # Skip files that do not have an extension corresponding to the chosen potentiostat
             file_extensions = [ext for ext, pots in self.potentiostat_dict.items() if self.potentiostat_choice in pots]

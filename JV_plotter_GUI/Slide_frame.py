@@ -3,9 +3,9 @@ from idlelib.tooltip import Hovertip
 import customtkinter as ctk
 
 
-class SettingsPanel(ctk.CTkFrame):
+class SettingsPanel(ctk.CTkScrollableFrame):
     def __init__(self, parent, start_pos, end_pos):
-        super().__init__(master=parent)
+        super().__init__(master=parent, label_text="")
         self.parent = parent
         # general attributes
         self.start_pos = start_pos + 0.04

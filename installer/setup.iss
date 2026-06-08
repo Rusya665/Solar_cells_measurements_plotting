@@ -1,5 +1,5 @@
 #define MyAppName "JV Processor"
-#define MyAppVersion "0.2.3"
+#define MyAppVersion "0.2.4"
 #define MyAppPublisher "Rustem Nizamov"
 #define MyAppExeName "JV_Processor.exe"
 #define MyAppURL "https://github.com/Rusya665/Solar_cells_measurements_plotting"

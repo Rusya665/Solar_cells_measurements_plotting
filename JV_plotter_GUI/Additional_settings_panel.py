@@ -5,9 +5,10 @@ import customtkinter as ctk
 
 from JV_plotter_GUI.settings import settings
 from JV_plotter_GUI.instruments import validate_numeric_entry
+from JV_plotter_GUI.About_dialog import AboutDialog
 
 
-class AdditionalSettings(ctk.CTkFrame):
+class AdditionalSettings(ctk.CTkScrollableFrame):
     def __init__(self, parent, start_pos, end_pos):
         """
         Initializes the AdditionalSettings object with the provided parameters.
@@ -18,7 +19,7 @@ class AdditionalSettings(ctk.CTkFrame):
         Returns:
             None
         """
-        super().__init__(master=parent)
+        super().__init__(master=parent, label_text="")
         self.parent = parent
         # general attributes
         self.start_pos = start_pos - 0.03
@@ -72,6 +73,13 @@ class AdditionalSettings(ctk.CTkFrame):
         self.threshold_efficiency_entry.insert(END, '0.01')
         self.threshold_efficiency_entry.last_valid_value = '0.01'  # Set default last valid value
         self.threshold_efficiency_entry.bind("<KeyRelease>", validate_numeric_entry)
+
+        self.about_button = ctk.CTkButton(self, text='About App', width=120,
+                                          command=self._open_about,
+                                          fg_color='transparent',
+                                          border_width=1,
+                                          text_color=('gray10', 'gray90'))
+
         widgets = [
             self.light_intensity_label,
             self.light_intensity_entry,
@@ -85,11 +93,19 @@ class AdditionalSettings(ctk.CTkFrame):
             self.filter1_checkbox,
             self.filter2_checkbox,
             self.threshold_efficiency_label,
-            self.threshold_efficiency_entry
+            self.threshold_efficiency_entry,
+            self.about_button
         ]
         for widget in widgets:
             widget.pack(pady=6)
         self.hovers()
+
+    def _open_about(self) -> None:
+        """Open the About dialog (only one instance at a time)."""
+        if not hasattr(self, '_about_win') or not self._about_win.winfo_exists():
+            self._about_win = AboutDialog(parent=self)
+        else:
+            self._about_win.focus_force()
 
     def hovers(self):
         hover_delay = 400
@@ -130,6 +146,8 @@ class AdditionalSettings(ctk.CTkFrame):
                                             "What's your threshold for efficiency? Type it in!\n"
                                             "Remember: It's a delicate balance!\n"
                                             "Choose wisely to ensure meaningful insights! 🧐")
+        hover_about_button = "About JV Processor — version, updates, credits"
+
         Hovertip(self.light_intensity_label, hover_light_intensity, hover_delay=hover_delay)
         Hovertip(self.light_intensity_entry, hover_light_intensity, hover_delay=hover_delay)
         Hovertip(self.distance_to_light_label, hover_distance_to_light, hover_delay=hover_delay)
@@ -148,6 +166,7 @@ class AdditionalSettings(ctk.CTkFrame):
         Hovertip(self.filter2_checkbox, hover_filter2, hover_delay=hover_delay)
         Hovertip(self.threshold_efficiency_label, hover_threshold_efficiency_label, hover_delay=hover_delay)
         Hovertip(self.threshold_efficiency_entry, hover_threshold_efficiency_entry, hover_delay=hover_delay)
+        Hovertip(self.about_button, hover_about_button, hover_delay=hover_delay)
 
     def animate_additional_settings(self, step=0.03):
         if self.in_start_pos:  # If the frame is about to be shown

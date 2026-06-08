@@ -13,6 +13,7 @@ class TopmostFrame(ctk.CTkFrame):
         self.collapse = ctk.CTkButton(self, text='Collapse all', width=20,
                                       command=lambda: self.parent.expand_collapse(False))
         self.settings_button = ctk.CTkButton(self, text='Settings', width=25, command=self.parent.slide_frame.animate)
+
         self.expand.grid(row=0, column=0, pady=15, padx=0)
         self.collapse.grid(row=0, column=1, pady=0, padx=7)
         self.settings_button.grid(row=0, column=2, pady=0, padx=7)
@@ -21,9 +22,7 @@ class TopmostFrame(ctk.CTkFrame):
 
     def hovers(self):
         hover_delay = 400
-        hover_text_expand_all = 'Expand all folders'
-        hover_text_collapse_all = 'Collapse all folders'
-        hover_text_settings = 'Show/hide the side panel with the additional settings'
-        Hovertip(self.expand, hover_text_expand_all, hover_delay=hover_delay)
-        Hovertip(self.collapse, hover_text_collapse_all, hover_delay=hover_delay)
-        Hovertip(self.settings_button, hover_text_settings, hover_delay=hover_delay)
+        Hovertip(self.expand, 'Expand all folders', hover_delay=hover_delay)
+        Hovertip(self.collapse, 'Collapse all folders', hover_delay=hover_delay)
+        Hovertip(self.settings_button, 'Show/hide the side panel with the additional settings',
+                 hover_delay=hover_delay)

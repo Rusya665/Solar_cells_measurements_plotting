@@ -32,6 +32,7 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+!JV_Processor.spec  # Keep our project spec — required by GitHub Actions build
 
 # Installer logs
 pip-log.txt

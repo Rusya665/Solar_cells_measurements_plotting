@@ -92,7 +92,7 @@ class AboutDialog(ctk.CTkToplevel):
             self,
             text=(
                 "Release pipeline & icon assisted by AI:\n"
-                "Gemini 1.5 Flash via Antigravity IDE  ·  Google Imagen"
+                "Gemini 3.5 Flash via Antigravity IDE  ·  Google Imagen"
             ),
             font=("Roboto", 10),
             text_color="#666",

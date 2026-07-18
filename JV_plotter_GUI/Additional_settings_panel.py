@@ -170,9 +170,7 @@ class AdditionalSettings(ctk.CTkScrollableFrame):
 
     def animate_additional_settings(self, step=0.03):
         if self.in_start_pos:  # If the frame is about to be shown
-            self.parent.bind("<Button-1>", self.hide_if_clicked_outside)  # Bind the event
-            self.parent.table_frame.files_table.bind("<Button-1>", self.hide_if_clicked_outside)
-            self.parent.table_frame.active_areas_scrollable_frame.bind("<Button-1>", self.hide_if_clicked_outside)
+            self.parent.winfo_toplevel().bind("<Button-1>", self.hide_if_clicked_outside)  # Bind the event
         target_pos = self.end_pos if self.in_start_pos else self.start_pos
         step = step if self.in_start_pos else -1 * step
         self.animate_to_target(target_pos, step)
@@ -186,9 +184,10 @@ class AdditionalSettings(ctk.CTkScrollableFrame):
             self.after(10, lambda: self.animate_to_target(target_pos, step))
         else:
             if self.in_start_pos:  # If the frame is fully hidden
-                self.parent.unbind("<Button-1>")  # Unbind the event
-                self.parent.table_frame.files_table.unbind("<Button-1>")  # Unbind the event
-                self.parent.table_frame.active_areas_scrollable_frame.unbind("<Button-1>")  # Unbind the event
+                if self.parent.slide_frame.in_start_pos:
+                    self.parent.winfo_toplevel().unbind("<Button-1>")  # Unbind the event
+                else:
+                    self.parent.winfo_toplevel().bind("<Button-1>", self.parent.slide_frame.hide_if_clicked_outside)
 
     def hide_if_clicked_outside(self, event):
         x = self.winfo_rootx()
@@ -196,4 +195,19 @@ class AdditionalSettings(ctk.CTkScrollableFrame):
         w = self.winfo_width()
         h = self.winfo_height()
         if not (x <= event.x_root <= x + w and y <= event.y_root <= y + h):
-            self.animate_additional_settings()
+            # Click is outside AdditionalSettings.
+            # Check if Slide_frame is also open and click is outside it too
+            slide_frame = self.parent.slide_frame
+            if not slide_frame.in_start_pos:
+                s_x = slide_frame.winfo_rootx()
+                s_y = slide_frame.winfo_rooty()
+                s_w = slide_frame.winfo_width()
+                s_h = slide_frame.winfo_height()
+                if not (s_x <= event.x_root <= s_x + s_w and s_y <= event.y_root <= s_y + s_h):
+                    # Click is outside both panels; close the main panel (which closes both)
+                    slide_frame.animate()
+                else:
+                    # Click is inside the main settings panel, just close additional settings
+                    self.animate_additional_settings()
+            else:
+                self.animate_additional_settings()

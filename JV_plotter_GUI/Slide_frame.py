@@ -102,9 +102,7 @@ class SettingsPanel(ctk.CTkScrollableFrame):
 
     def animate(self, step=0.03):
         if self.in_start_pos:  # If the frame is about to be shown
-            self.parent.bind("<Button-1>", self.hide_if_clicked_outside)  # Bind the event
-            self.parent.table_frame.files_table.bind("<Button-1>", self.hide_if_clicked_outside)
-            self.parent.table_frame.active_areas_scrollable_frame.bind("<Button-1>", self.hide_if_clicked_outside)
+            self.parent.winfo_toplevel().bind("<Button-1>", self.hide_if_clicked_outside)  # Bind the event
         if not self.parent.additional_settings.in_start_pos:
             self.parent.additional_settings.animate_additional_settings()
         target_pos = self.end_pos if self.in_start_pos else self.start_pos
@@ -120,9 +118,10 @@ class SettingsPanel(ctk.CTkScrollableFrame):
             self.after(10, lambda: self.animate_to_target(target_pos, step))
         else:
             if self.in_start_pos:  # If the frame is fully hidden
-                self.parent.unbind("<Button-1>")  # Unbind the event
-                self.parent.table_frame.files_table.unbind("<Button-1>")  # Unbind the event
-                self.parent.table_frame.active_areas_scrollable_frame.unbind("<Button-1>")  # Unbind the event
+                if self.parent.additional_settings.in_start_pos:
+                    self.parent.winfo_toplevel().unbind("<Button-1>")  # Unbind the event
+                else:
+                    self.parent.winfo_toplevel().bind("<Button-1>", self.parent.additional_settings.hide_if_clicked_outside)
 
     def hide_if_clicked_outside(self, event):
         x = self.winfo_rootx()

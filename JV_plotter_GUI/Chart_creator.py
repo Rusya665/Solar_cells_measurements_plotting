@@ -107,6 +107,12 @@ class ChartsCreator:
         next_rounded_value = custom_round(max_value)
         if max_value <= 100:
             major_unit = 10
+        elif 100 < max_value <= 250:
+            major_unit = 25
+        elif 250 < max_value <= 500:
+            major_unit = 50
+        elif 500 < max_value < 1000:
+            major_unit = 100
         elif 1000 <= max_value < 2000:
             major_unit = 100
         elif 2000 <= max_value < 4000:

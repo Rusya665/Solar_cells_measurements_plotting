@@ -510,15 +510,19 @@ class PixelSorterInterface(ctk.CTkToplevel):
         Populates the substrate dictionary from a JSON file. If a path to the file is provided, it uses
         that file; otherwise, it searches for the newest 'pixels sorted' JSON file in the file directory.
 
-        :param path_to_file: Optional; the path to the JSON file to load.
+        :param path_to_file: Optional; the path to the JSON file to load or directory containing it.
         :return: None.
         """
-        final_path = self.file_directory if path_to_file is None else get_newest_file_global(path_to_file,
-                                                                                             'pixels sorted')
-        if final_path is None:
+        if path_to_file is None:
+            final_path = get_newest_file_global(self.file_directory, 'pixels sorted')
+        elif os.path.isdir(path_to_file):
+            final_path = get_newest_file_global(path_to_file, 'pixels sorted')
+        else:
+            final_path = path_to_file
+
+        if final_path is None or not os.path.isfile(final_path):
             CTkMessagebox(title="File not found error", message="No suitable json was found", icon="cancel")
             return
-        final_path = path_to_file if path_to_file else get_newest_file_global(self.file_directory, 'pixels sorted')
         with open(final_path, 'r') as f:
             substrates_data = json.load(f)
         for substrate, pixels in substrates_data.items():

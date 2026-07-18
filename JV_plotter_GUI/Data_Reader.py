@@ -113,21 +113,34 @@ class IVDataReader:
 
                     values = line.split("\t")
                     if line_number == num_header_lines:
-                        i_index, v_index = values.index(next(h for h in values if "<I>" in h)), values.index(
-                            next(h for h in values if "Ewe" in h))
-                        # Check if the time column exists
-                        time_index = next((i for i, h in enumerate(values) if "time" in h), None)
-                        current_unit = values[i_index].split("/")[-1]  # Extracting the current unit
+                        try:
+                            i_col = next(h for h in values if "<I>" in h)
+                            v_col = next(h for h in values if "Ewe" in h)
+                            i_index = values.index(i_col)
+                            v_index = values.index(v_col)
+                            # Check if the time column exists
+                            time_index = next((i for i, h in enumerate(values) if "time" in h), None)
+                            current_unit = values[i_index].split("/")[-1]  # Extracting the current unit
+                        except StopIteration:
+                            raise ValueError(f"Could not find required headers '<I>' or 'Ewe' in SP-150e file: {self.path}")
                     elif line_number > num_header_lines and time_index is not None:
-                        time_str = values[time_index].split(' ')[1]
-                        hours, minutes, seconds = map(float, time_str.split(':'))
-                        total_seconds = timedelta(hours=hours, minutes=minutes, seconds=seconds).total_seconds()
-                        time_values.append(float(total_seconds))
-                        i_values.append(float(values[i_index]))
-                        v_values.append(float(values[v_index]))
+                        if len(values) <= max(time_index, i_index, v_index):
+                            continue
+                        try:
+                            time_parts = values[time_index].split(' ')
+                            time_str = time_parts[1] if len(time_parts) > 1 else time_parts[0]
+                            hours, minutes, seconds = map(float, time_str.split(':'))
+                            total_seconds = timedelta(hours=hours, minutes=minutes, seconds=seconds).total_seconds()
+                            time_values.append(float(total_seconds))
+                            i_values.append(float(values[i_index]))
+                            v_values.append(float(values[v_index]))
+                        except (ValueError, IndexError):
+                            continue
 
             # Creating a DataFrame with the I, V, and time values
             df = pd.DataFrame({'I': i_values, 'V': v_values, 'Time': time_values})
+            if df.empty:
+                raise ValueError(f"No valid data remaining after parsing for {self.path}")
             # Creating a mask that checks if the 'Time' value is higher than the first 'Time'
             # value plus preconditioning_time
             mask = df['Time'] > preconditioning_time + df['Time'].iloc[0]

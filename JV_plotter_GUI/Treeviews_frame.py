@@ -143,6 +143,10 @@ class TableFrames(ctk.CTkFrame):
                     # from being updated again
                     child.delete(0, END)
                     child.insert(0, entered_value)
+            # Update the cached_areas dictionary for all devices across all folders
+            for f_name in self.cached_areas:
+                for d_name in self.cached_areas[f_name]:
+                    self.cached_areas[f_name][d_name] = entered_value
         else:
             # Only update the cached_areas dictionary for the specific device
             if folder_name not in self.cached_areas:

@@ -183,6 +183,8 @@ def get_newest_file_global(root_dir, suffix: str):
 
 
 def remove_non_monotonic_last_value(df: DataFrame) -> DataFrame:
+    if len(df) < 3:
+        return df
     # Determine the monotonicity trend between the second-to-last and third-to-last value
     increasing = df['V'].iloc[-3] < df['V'].iloc[-2]
     decreasing = df['V'].iloc[-3] > df['V'].iloc[-2]
@@ -199,6 +201,11 @@ def validate_numeric_entry(event):
     """Validate the entry to allow only numeric input, including negative values."""
     entry_widget = event.widget
     text = entry_widget.get()
+
+    # Allow typing temporary states: empty, minus sign, dot, or minus followed by dot
+    if text in ("", "-", ".", "-."):
+        entry_widget.last_valid_value = text
+        return
 
     # Allow negative numbers and numbers with a single decimal point
     if text and not (text.replace('.', '', 1).isdigit() or

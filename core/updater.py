@@ -77,7 +77,7 @@ del "{exe_path}"
 del "%~f0"
 """
         bat_path = os.path.join(temp_dir, "jv_processor_install_update.bat")
-        with open(bat_path, "w", encoding="ansi") as f:
+        with open(bat_path, "w", encoding="mbcs") as f:
             f.write(bat_content)
 
         # Strip PyInstaller env vars so the restarted app doesn't use stale paths

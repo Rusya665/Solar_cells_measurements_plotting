@@ -130,36 +130,36 @@ class PixelMerger:
                 if sweep_type in pixel_data['data']:
                     sweep_data_frames.append(pixel_data['data'][sweep_type])
             if sweep_data_frames:
-
-                # Check if the lengths of 'V' are different
+                # Find the DataFrame with the longest 'V' to use as the common grid
                 lengths = [len(df) for df in sweep_data_frames]
-                if len(set(lengths)) != 1:
-                    # Find the index of the DataFrame with the longest 'V'
-                    longest_df_index = lengths.index(max(lengths))
-                    v_values = sweep_data_frames[longest_df_index]['V']
-                else:
-                    # If all lengths are the same, use 'V' from the first DataFrame
-                    v_values = sweep_data_frames[0]['V']
+                longest_df_index = lengths.index(max(lengths))
+                v_values = sweep_data_frames[longest_df_index]['V'].reset_index(drop=True)
 
-                # Create a new DataFrame with the longest 'V'
-                merged['data'][sweep_type] = pd.DataFrame({'V': v_values})
-                average_i_values = []
+                # Interpolate each sweep onto the common voltage grid
+                interpolated_i_list = []
+                for df in sweep_data_frames:
+                    x_coords = df['V'].values
+                    y_coords = df['I'].values
+                    if len(x_coords) > 1:
+                        if x_coords[0] > x_coords[-1]:
+                            # Reverse coordinates if decreasing so np.interp gets increasing x
+                            x_coords = x_coords[::-1]
+                            y_coords = y_coords[::-1]
+                        interpolated_i = np.interp(v_values, x_coords, y_coords)
+                        interpolated_i_list.append(interpolated_i)
+                    elif len(x_coords) == 1:
+                        interpolated_i_list.append(np.full_like(v_values, y_coords[0]))
+                    else:
+                        interpolated_i_list.append(np.zeros_like(v_values))
 
-                # Iterate over each index of the longest 'V' series
-                for index in range(len(v_values)):
-                    i_values = []
+                # Compute the mean current across all pixels
+                average_i_values = np.mean(interpolated_i_list, axis=0)
 
-                    # Collect 'I' values for this index from all DataFrames, if available
-                    for df in sweep_data_frames:
-                        if index < len(df):
-                            i_values.append(df.iloc[index]['I'])
-
-                    # Compute the average of 'I' values, if available
-                    if i_values:
-                        average_i_values.append(np.mean(i_values))
-
-                # Assign the average 'I' values to the merged DataFrame
-                merged['data'][sweep_type]['I'] = average_i_values
+                # Assign the averaged values to the merged DataFrame
+                merged['data'][sweep_type] = pd.DataFrame({
+                    'V': v_values,
+                    'I': average_i_values
+                })
 
         # Merge 'Used files' into a list, ensuring no duplicates.
         used_files = [date_data[pixel_name]['Used files'] for pixel_name in substrate_pixels if

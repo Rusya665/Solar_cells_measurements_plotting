@@ -169,7 +169,8 @@ class DeviceDetector:
         :param data2: The second data dictionary.
         :return: The combined data dictionary and a list of contributing files.
         """
-        combined_data = data1.copy()
+        import copy
+        combined_data = copy.deepcopy(data1)
         combined_data['Sweeps']['Total Sweeps'] += data2['Sweeps']['Total Sweeps']
         combined_data['Sweeps']['Forward Sweeps'] += data2['Sweeps']['Forward Sweeps']
         combined_data['Sweeps']['Reverse Sweeps'] += data2['Sweeps']['Reverse Sweeps']
@@ -179,10 +180,10 @@ class DeviceDetector:
                 combined_data['data'][sweep_key] = data2['data'][sweep_key]
             else:
                 # Check if the sweep is Forward or Reverse and assign it accordingly
-                if 'Fw' in sweep_key:
-                    combined_data['data']['1'] = data2['data'][sweep_key]
-                elif 'Rv' in sweep_key:
-                    combined_data['data']['2'] = data2['data'][sweep_key]
+                if 'Forward' in sweep_key:
+                    combined_data['data']['1_Forward'] = data2['data'][sweep_key]
+                elif 'Reverse' in sweep_key:
+                    combined_data['data']['2_Reverse'] = data2['data'][sweep_key]
         used_files = data1['Used files'], data2['Used files']
         combined_data['Used files'] = used_files
 
@@ -197,25 +198,39 @@ class DeviceDetector:
         :param value_data: Dictionary containing sweep data.
         :return: Dictionary with combined sweep data.
         """
-        # Assuming each sweep has a 'V' column, and you want to average them.
-        # This step is illustrative, and you might need to adjust based on the actual data format.
-        # Placeholder for the combined sweeps
         combined_data = {}
-
-        # Logic to combine the sweeps based on V column (Averaging I values for identical V values).
-        # NOTE: This logic may need more refinement based on exact requirements.
-
+        forward_dfs = []
+        reverse_dfs = []
         for sweep, df in value_data['data'].items():
-            if sweep not in combined_data:
-                combined_data[sweep] = df
-            else:
+            if 'Forward' in sweep:
+                forward_dfs.append(df)
+            elif 'Reverse' in sweep:
+                reverse_dfs.append(df)
+
+        def merge_list_of_dfs(dfs):
+            if not dfs:
+                return None
+            merged_df = dfs[0].copy()
+            for next_df in dfs[1:]:
                 # Combining dataframes with identical V values and averaging the I values
-                combined_df = pd.merge(combined_data[sweep], df, on='V', how='outer')
-                combined_df['I'] = combined_df[['I_x', 'I_y']].mean(axis=1)
-                combined_df.drop(columns=['I_x', 'I_y'], inplace=True)
-                combined_data[sweep] = combined_df
+                merged_df = pd.merge(merged_df, next_df, on='V', how='outer')
+                cols_to_avg = [c for c in merged_df.columns if c.startswith('I')]
+                merged_df['I'] = merged_df[cols_to_avg].mean(axis=1)
+                merged_df.drop(columns=cols_to_avg, inplace=True)
+            return merged_df
+
+        f_merged = merge_list_of_dfs(forward_dfs)
+        r_merged = merge_list_of_dfs(reverse_dfs)
+
+        if f_merged is not None:
+            combined_data['1_Forward'] = f_merged
+        if r_merged is not None:
+            combined_data['2_Reverse'] = r_merged
 
         value_data['data'] = combined_data
+        value_data['Sweeps']['Total Sweeps'] = len(combined_data)
+        value_data['Sweeps']['Forward Sweeps'] = 1 if f_merged is not None else 0
+        value_data['Sweeps']['Reverse Sweeps'] = 1 if r_merged is not None else 0
         return value_data
 
     @staticmethod

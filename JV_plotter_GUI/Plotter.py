@@ -451,7 +451,8 @@ class DevicePlotter:
                         # Check if it's the first value for this parameter-device combination
                         if parameter not in first_values[device]:
                             first_values[device][parameter] = value
-                        relative_value = value / first_values[device][parameter]
+                        first_val = first_values[device][parameter]
+                        relative_value = value / first_val if first_val != 0 else 0.0
                         # Write the value into the Excel sheet
                         self.aging_sheet.write(current_row, row + 1, value)
                         self.aging_sheet.write(current_row, row + 1 + len(self.parameter_dict) - len(keys_to_exclude),

@@ -29,7 +29,7 @@ class TimeLineProcessor:
 
         for filename in os.listdir(self.folder_path):
             score = fuzz.partial_ratio("Timeline", filename)
-            if score > highest_score:
+            if score > highest_score and score >= 70:
                 highest_score = score
                 timeline_file = filename
 

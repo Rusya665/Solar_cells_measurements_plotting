@@ -191,6 +191,9 @@ class AdditionalSettings(ctk.CTkScrollableFrame):
                 self.parent.table_frame.active_areas_scrollable_frame.unbind("<Button-1>")  # Unbind the event
 
     def hide_if_clicked_outside(self, event):
-        x, y, _, _ = self.bbox("insert")
-        if event.x < x or event.x > x + self.winfo_width() or event.y < y or event.y > y + self.winfo_height():
-            self.animate_additional_settings()  # Assuming you have a method to hide the slide frame
+        x = self.winfo_rootx()
+        y = self.winfo_rooty()
+        w = self.winfo_width()
+        h = self.winfo_height()
+        if not (x <= event.x_root <= x + w and y <= event.y_root <= y + h):
+            self.animate_additional_settings()

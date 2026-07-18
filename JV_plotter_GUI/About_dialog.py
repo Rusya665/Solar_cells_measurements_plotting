@@ -92,7 +92,7 @@ class AboutDialog(ctk.CTkToplevel):
             self,
             text=(
                 "Release pipeline & icon assisted by AI:\n"
-                "Claude Sonnet 4.5 (extended thinking) via Antigravity IDE  ·  Google Imagen"
+                "Gemini 1.5 Flash via Antigravity IDE  ·  Google Imagen"
             ),
             font=("Roboto", 10),
             text_color="#666",

@@ -57,7 +57,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
         self.table_frame = TableFrames(parent=self, height=400)
         self.additional_settings = AdditionalSettings(parent=self, start_pos=-0.25, end_pos=0)
         self.slide_frame = SettingsPanel(parent=self, start_pos=1.0, end_pos=0.75)
-        self.label_1 = ctk.CTkLabel(self, text='Specify a directory with images to work with')
+        self.label_1 = ctk.CTkLabel(self, text='Specify a directory with measurements to work with')
         self.label_1.pack()
 
         self.ask_directory_button = ctk.CTkButton(self, text='Choose a directory', command=self.ask_directory)
@@ -164,7 +164,7 @@ class IVProcessingMainClass(ctk.CTkFrame):
             self.slide_frame.animate(step=1)
         self.file_directory = filedialog.askdirectory(mustexist=True)
         if self.file_directory == "":
-            self.label_1.configure(text='Specify a directory with images to work with')
+            self.label_1.configure(text='Specify a directory with measurements to work with')
             return
         self.list_files()
         self.label_1.configure(text=self.file_directory)

@@ -5,7 +5,6 @@ from tkinter import messagebox, ttk
 
 import customtkinter as ctk
 
-from JV_plotter_GUI.Main_frame import IVProcessingMainClass
 from JV_plotter_GUI.settings import settings
 from core.version import __version__
 from core.updater import check_for_updates, download_and_install_update
@@ -32,6 +31,12 @@ class JVProcessorMAIN(ctk.CTk):
         self.geometry(f"{self.screen_width}x{self.screen_height}")
         self.minsize(700, 600)
         self.resizable(True, True)
+
+        # Force UI update so window container draws instantly on screen
+        self.update()
+
+        # Lazy load the main frame (which imports heavy packages like pandas/matplotlib)
+        from JV_plotter_GUI.Main_frame import IVProcessingMainClass
         self.main_frame = IVProcessingMainClass(parent=self)
 
         # Set window icon (title bar + taskbar)
